@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "forex-new-module-client-side-solution",
+    "id": "1a074093-5312-444c-bfa4-2b05cf7bd113",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.22.2"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "ForexNewModule description"
+      },
+      "longDescription": {
+        "default": "ForexNewModule description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "forex-new-module Feature",
+        "description": "The feature that activates elements of the forex-new-module solution.",
+        "id": "b3a1063a-9e18-41af-b6db-940ea781dc1b",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/forex-new-module.sppkg"
+  }
+}
