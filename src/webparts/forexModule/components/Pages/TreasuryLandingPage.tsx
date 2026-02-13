@@ -11,7 +11,7 @@ import View from "../../assets/Eye.png";
 import Edit from "../../assets/Pencil.png";
 import Renew from "../../assets/Renew.png";
 
-export const InitiatorDashboard: React.FC<IForexModuleProps> = (
+export const TreasuryLandingPage: React.FC<IForexModuleProps> = (
   props: IForexModuleProps
 ) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -118,7 +118,7 @@ return (
     <div className="header">
       <div className="left-banner">
         <div className="logo-text">
-          <h2>Forex Initiation Dashboard</h2>
+          <h2>Fixed Asset Disposal Advice - Treasury Dashboard</h2>
         </div>
       </div>
     </div>
@@ -148,9 +148,9 @@ return (
         </select>
       </div>
 
-      <Link to="/NewRequest" className="create-button">
+      {/* <Link to="/NewRequest" className="create-button">
         + New Request
-      </Link>
+      </Link> */}
     </div>
 
     {/* Table */}
@@ -264,4 +264,4 @@ return (
 
 };
 
-export default InitiatorDashboard;
+export default TreasuryLandingPage;

@@ -7,6 +7,9 @@ import { HashRouter as Router, Switch, Route } from 'react-router-dom';
 import Sidebar from '../components/Pages/Sidebar';
 import { InitiatorDashboard } from '../components/Pages/InitiatorDashboard';
 import NewRequest from './Pages/NewRequestForm';
+import ApprovalDashboard from './Pages/ApprovalDashboard';
+import APTeamLP from './Pages/APTeamLandingPage';
+import TreasuryLandingPage from './Pages/TreasuryLandingPage';
 
 export default class ForexModule extends React.Component<IForexModuleProps> {
   public render(): React.ReactElement<IForexModuleProps> {
@@ -26,6 +29,10 @@ export default class ForexModule extends React.Component<IForexModuleProps> {
           <Switch>
             <Route exact path="/" render={() => <InitiatorDashboard {...this.props} />} />
             <Route exact path="/NewRequest" render={() => <NewRequest {...this.props} />} />
+            <Route exact path="/ApprovalDashboard" render={() => <ApprovalDashboard {...this.props} />} />
+            <Route exact path="/APTeamLandingPage" render={() => <APTeamLP {...this.props} />} />
+            <Route exact path="/TreasuryLandingPage" render={() => <TreasuryLandingPage {...this.props} />} />
+
           </Switch>
         </div>
       </div>

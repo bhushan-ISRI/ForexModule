@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../Pages/Css/NewRequest.scss";
 import { IForexModuleProps } from "../IForexModuleProps";
+import { useHistory } from 'react-router-dom';
 
 interface InvoiceRow {
     invoiceNo: string;
@@ -15,7 +16,10 @@ interface InvoiceRow {
 }
 
 const NewRequest = (props: IForexModuleProps) => {
+        const history = useHistory();
     const [paymentType, setPaymentType] = useState("Goods-Bill Payment");
+    const [taxDocumentView, setTaxDocumentView] = useState("Yes");
+
     const [rows, setRows] = React.useState([
         {
             invoiceNo: "",
@@ -64,7 +68,17 @@ const NewRequest = (props: IForexModuleProps) => {
     const totalInvoiceAmount = rows.reduce((sum, row) => {
         return sum + (parseFloat(row.invoiceAmount) || 0);
     }, 0);
+    const uniqueBoeNumbers = rows
+        .map(r => r.boeNo)
+        .filter((value, index, self) =>
+            value && self.indexOf(value) === index
+        );
 
+    const uniqueBlNumbers = rows
+        .map(r => r.blNo)
+        .filter((value, index, self) =>
+            value && self.indexOf(value) === index
+        );
     return (
         <div className="forex-wrapper">
 
@@ -122,54 +136,88 @@ const NewRequest = (props: IForexModuleProps) => {
                     <Grid>
                         <Field label="Nature of Payment"><input /></Field>
                         <Field label="Tax Document Available?">
-                            <select><option>Yes</option><option>No</option></select>
+                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }}>
+                                <option>Yes</option>
+                                <option>No</option>
+                            </select>
                         </Field>
-                        <Field label="DTAA Applicable?">
-                            <select><option>Yes</option><option>No</option></select>
+                        {taxDocumentView === "No" && (
+                            <Field >
+                                <span style={{ color: "red" }}>
+                                    (if No, withholding tax will be applicable)
+                                </span>
+                            </Field>
+                        )}
+
+                        {taxDocumentView === "Yes" && (
+                            <Field label="DTAA Applicable?">
+                                <select><option>Yes</option><option>No</option></select>
+                            </Field>
+                        )}
+                    </Grid>
+                </Section>
+                {taxDocumentView === "Yes" && (
+                    <><Section title="Permanent Establishment Declaration">
+                        <Grid>
+                            <Field label="Document Available"><select><option>Yes</option><option>No</option></select></Field>
+                            <Field label="Document Number"><input /></Field>
+                            <Field label="Document Date"><input type="date" /></Field>
+                            <Field label="Validity Start Date"><input type="date" /></Field>
+                            <Field label="Validity End Date"><input type="date" /></Field>
+                            <Field label="View Document"><input type="file" /></Field>
+
+                        </Grid>
+                    </Section><Section title="Tax Residency Certificate">
+                            <Grid>
+                                <Field label="Document Available"><select><option>Yes</option><option>No</option></select></Field>
+                                <Field label="Document Number"><input /></Field>
+                                <Field label="Country of Tax Residence"><input /></Field>
+                                <Field label="Tax Identification Number"><input /></Field>
+                                <Field label="Validity Start Date"><input type="date" /></Field>
+                                <Field label="Validity End Date"><input type="date" /></Field>
+                                <Field label="View Document"><input type="file" /></Field>
+
+                            </Grid>
+                        </Section><Section title="Form 10F">
+                            <Grid>
+                                <Field label="Document Available"><select><option>Yes</option><option>No</option></select></Field>
+                                <Field label="Document Number"><input /></Field>
+                                <Field label="Acknowledgment Number"><input /></Field>
+                                <Field label="Document Date"><input type="date" /></Field>
+                                <Field label="Validity Start Date"><input type="date" /></Field>
+                                <Field label="Validity End Date"><input type="date" /></Field>
+                                <Field label="View Document"><input type="file" /></Field>
+                            </Grid>
+                        </Section></>
+                )}
+                <Section >
+                    <Grid>
+                        <Field label="From"><input type="date" /></Field>
+
+                        <Field label="To"><input type="date" /></Field>
+                    </Grid>
+                    <Grid>
+
+                        <Field label="Eligible amount that can be transmitted without WHT">
+                            <input type="number" />
+                        </Field>
+
+
+                        <Field label="Paid Amount">
+                            <input type="number" />
+                        </Field>
+
+                        <Field label="Balance eligible amount(Without with holding Tax)">
+                            <input type="number" />
                         </Field>
                     </Grid>
-                </Section>
 
-                {/* ================= PERMANENT ESTABLISHMENT ================= */}
-                <Section title="Permanent Establishment Declaration">
-                    <Grid>
-                        <Field label="Document Available"><select><option>Yes</option><option>No</option></select></Field>
-                        <Field label="Document Number"><input /></Field>
-                        <Field label="Document Date"><input type="date" /></Field>
-                        <Field label="Validity Start Date"><input type="date" /></Field>
-                        <Field label="Validity End Date"><input type="date" /></Field>
-                    </Grid>
-                </Section>
-
-                {/* ================= TAX RESIDENCY ================= */}
-                <Section title="Tax Residency Certificate">
-                    <Grid>
-                        <Field label="Document Available"><select><option>Yes</option><option>No</option></select></Field>
-                        <Field label="Document Number"><input /></Field>
-                        <Field label="Country of Tax Residence"><input /></Field>
-                        <Field label="Tax Identification Number"><input /></Field>
-                        <Field label="Validity Start Date"><input type="date" /></Field>
-                        <Field label="Validity End Date"><input type="date" /></Field>
-                    </Grid>
-                </Section>
-
-                {/* ================= FORM 10F ================= */}
-                <Section title="Form 10F">
-                    <Grid>
-                        <Field label="Document Available"><select><option>Yes</option><option>No</option></select></Field>
-                        <Field label="Document Number"><input /></Field>
-                        <Field label="Acknowledgment Number"><input /></Field>
-                        <Field label="Document Date"><input type="date" /></Field>
-                        <Field label="Validity Start Date"><input type="date" /></Field>
-                        <Field label="Validity End Date"><input type="date" /></Field>
-                    </Grid>
                 </Section>
 
                 {/* ================= FOREX DETAILS ================= */}
                 {/* ==============================Goods-Bill Payment============================== */}
                 {paymentType === "Goods-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
-                        <h1>Goods-Bill Payment</h1>
                         <Grid>
                             <Field label="Request Number"><input /></Field>
                             <Field label="Requested On"><input type="date" /></Field>
@@ -341,12 +389,66 @@ const NewRequest = (props: IForexModuleProps) => {
                                 </tr>
                             </tfoot>
                         </table>
+                        <div style={{ display: "flex", gap: "40px", marginTop: "30px" }}>
+
+                            {/* BOE TABLE */}
+                            <div style={{ flex: 1 }}>
+                                <p style={{ color: "red", fontSize: "13px" }}>
+                                    Unique BOE no will be listed below
+                                </p>
+
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>BOE No</th>
+                                            <th>Attach Documents</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {uniqueBoeNumbers.map((boe, index) => (
+                                            <tr key={index}>
+                                                <td>{boe}</td>
+                                                <td>
+                                                    <input type="file" />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {/* BILL OF LADING TABLE */}
+                            <div style={{ flex: 1 }}>
+                                <p style={{ color: "red", fontSize: "13px" }}>
+                                    Unique Bill of lading no will be listed below
+                                </p>
+
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Bill of Lading Number</th>
+                                            <th>Attach Documents</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {uniqueBlNumbers.map((bl, index) => (
+                                            <tr key={index}>
+                                                <td>{bl}</td>
+                                                <td>
+                                                    <input type="file" />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
                     </Section>
                 )}
                 {/* ==============================service-Bill Payment============================== */}
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
-                        <h1>Service-Bill Payment</h1>
                         <Grid>
                             <Field label="Request Number"><input /></Field>
                             <Field label="Requested On"><input type="date" /></Field>
@@ -425,7 +527,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                         <td>
                                             <input
                                                 type="file"
-                                                value={row.blNo}
+
 
                                             />
                                         </td>
@@ -433,7 +535,6 @@ const NewRequest = (props: IForexModuleProps) => {
                                         <td>
                                             <input
                                                 type="file"
-                                                value={row.blDate}
 
                                             />
                                         </td>
@@ -483,6 +584,17 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
+                                        Total Invoice Amount:
+                                    </td>
+                                    <td style={{ fontWeight: "bold" }}>
+                                        {totalInvoiceAmount.toFixed(2)}
+                                    </td>
+                                    <td colSpan={5}></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </Section>
                 )}
@@ -491,7 +603,6 @@ const NewRequest = (props: IForexModuleProps) => {
                 {paymentType === "Service-Advance Payment" && (
 
                     <Section title="Forex Payment Request Details">
-                        <h1>Goods-Advance Payment</h1>
                         <Grid>
                             <Field label="Request Number"><input /></Field>
                             <Field label="Requested On"><input type="date" /></Field>
@@ -506,33 +617,133 @@ const NewRequest = (props: IForexModuleProps) => {
                         <table className="data-table" style={{ marginTop: "10px" }}>
                             <thead>
                                 <tr>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>BOE No</th>
-                                    <th>BOE Date</th>
-                                    <th>MRN No</th>
-                                    <th>Bill of Lading</th>
-                                    <th>Invoice Amount</th>
+                                    <th>Sr No</th>
+                                    <th>Performa Invoice No</th>
+                                    <th>Performa Invoice Date</th>
+                                    <th>Performa Invoice Amount</th>
+                                    <th>Attach PO</th>
+                                    <th>Attach PI</th>
+                                    <th>Attach Other Document</th>
+                                    <th>Add/Delete Entry</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td><input /></td>
-                                    <td><input type="date" /></td>
-                                    <td><input /></td>
-                                    <td><input type="date" /></td>
-                                    <td><input /></td>
-                                    <td><input /></td>
-                                    <td><input type="number" /></td>
-                                </tr>
+                                {rows.map((row, index) => (
+                                    <tr key={index}>
+                                        <td>{index + 1}</td>
+
+                                        <td>
+                                            <input
+                                                value={row.invoiceNo}
+                                                onChange={(e) =>
+                                                    handleChange(index, "invoiceNo", e.target.value)
+                                                }
+                                            />
+                                        </td>
+
+                                        <td>
+                                            <input
+                                                type="date"
+                                                value={row.invoiceDate}
+                                                onChange={(e) =>
+                                                    handleChange(index, "invoiceDate", e.target.value)
+                                                }
+                                            />
+                                        </td>
+
+                                        <td>
+                                            <input
+                                                value={row.invoiceAmount}
+                                                onChange={(e) =>
+                                                    handleChange(index, "invoiceAmount", e.target.value)
+                                                }
+                                            />
+                                        </td>
+
+
+                                        <td>
+                                            <input
+                                                type="file"
+
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="file"
+
+
+                                            />
+                                        </td>
+
+                                        <td>
+                                            <input
+                                                type="file"
+
+                                            />
+                                        </td>
+
+
+
+
+                                        <td style={{ textAlign: "center" }}>
+                                            {/* Show PLUS only on last row */}
+                                            {index === rows.length - 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={addRow}
+                                                    style={{
+                                                        background: "#28a745",
+                                                        color: "white",
+                                                        marginRight: "5px",
+                                                        border: "none",
+                                                        padding: "5px 10px",
+                                                        cursor: "pointer",
+                                                        borderRadius: "4px"
+                                                    }}
+                                                >
+                                                    +
+                                                </button>
+                                            )}
+
+                                            {/* Show DELETE if more than 1 row */}
+                                            {rows.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => deleteRow(index)}
+                                                    style={{
+                                                        background: "#dc3545",
+                                                        color: "white",
+                                                        border: "none",
+                                                        padding: "5px 10px",
+                                                        cursor: "pointer",
+                                                        borderRadius: "4px"
+                                                    }}
+                                                >
+                                                    ✖
+                                                </button>
+                                            )}
+                                        </td>
+
+                                    </tr>
+                                ))}
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
+                                        Total Invoice Amount:
+                                    </td>
+                                    <td style={{ fontWeight: "bold" }}>
+                                        {totalInvoiceAmount.toFixed(2)}
+                                    </td>
+                                    <td colSpan={4}></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </Section>
                 )}
                 {paymentType === "Goods-Advance Payment" && (
 
                     <Section title="Forex Payment Request Details">
-                        <h1>Goods-Advance Payment</h1>
                         <Grid>
                             <Field label="Request Number"><input /></Field>
                             <Field label="Requested On"><input type="date" /></Field>
@@ -547,26 +758,127 @@ const NewRequest = (props: IForexModuleProps) => {
                         <table className="data-table" style={{ marginTop: "10px" }}>
                             <thead>
                                 <tr>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>BOE No</th>
-                                    <th>BOE Date</th>
-                                    <th>MRN No</th>
-                                    <th>Bill of Lading</th>
-                                    <th>Invoice Amount</th>
+                                    <th>Sr No</th>
+                                    <th>Performa Invoice No</th>
+                                    <th>Performa Invoice Date</th>
+                                    <th>Performa Invoice Amount</th>
+                                    <th>Attach PO</th>
+                                    <th>Attach PI</th>
+                                    <th>Attach Other Document</th>
+                                    <th>Add/Delete Entry</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td><input /></td>
-                                    <td><input type="date" /></td>
-                                    <td><input /></td>
-                                    <td><input type="date" /></td>
-                                    <td><input /></td>
-                                    <td><input /></td>
-                                    <td><input type="number" /></td>
-                                </tr>
+                                {rows.map((row, index) => (
+                                    <tr key={index}>
+                                        <td>{index + 1}</td>
+
+                                        <td>
+                                            <input
+                                                value={row.invoiceNo}
+                                                onChange={(e) =>
+                                                    handleChange(index, "invoiceNo", e.target.value)
+                                                }
+                                            />
+                                        </td>
+
+                                        <td>
+                                            <input
+                                                type="date"
+                                                value={row.invoiceDate}
+                                                onChange={(e) =>
+                                                    handleChange(index, "invoiceDate", e.target.value)
+                                                }
+                                            />
+                                        </td>
+
+                                        <td>
+                                            <input
+                                                value={row.invoiceAmount}
+                                                onChange={(e) =>
+                                                    handleChange(index, "invoiceAmount", e.target.value)
+                                                }
+                                            />
+                                        </td>
+
+
+                                        <td>
+                                            <input
+                                                type="file"
+
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="file"
+
+
+                                            />
+                                        </td>
+
+                                        <td>
+                                            <input
+                                                type="file"
+
+                                            />
+                                        </td>
+
+
+
+
+                                        <td style={{ textAlign: "center" }}>
+                                            {/* Show PLUS only on last row */}
+                                            {index === rows.length - 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={addRow}
+                                                    style={{
+                                                        background: "#28a745",
+                                                        color: "white",
+                                                        marginRight: "5px",
+                                                        border: "none",
+                                                        padding: "5px 10px",
+                                                        cursor: "pointer",
+                                                        borderRadius: "4px"
+                                                    }}
+                                                >
+                                                    +
+                                                </button>
+                                            )}
+
+                                            {/* Show DELETE if more than 1 row */}
+                                            {rows.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => deleteRow(index)}
+                                                    style={{
+                                                        background: "#dc3545",
+                                                        color: "white",
+                                                        border: "none",
+                                                        padding: "5px 10px",
+                                                        cursor: "pointer",
+                                                        borderRadius: "4px"
+                                                    }}
+                                                >
+                                                    ✖
+                                                </button>
+                                            )}
+                                        </td>
+
+                                    </tr>
+                                ))}
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
+                                        Total Invoice Amount:
+                                    </td>
+                                    <td style={{ fontWeight: "bold" }}>
+                                        {totalInvoiceAmount.toFixed(2)}
+                                    </td>
+                                    <td colSpan={4}></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </Section>
                 )}
@@ -585,7 +897,7 @@ const NewRequest = (props: IForexModuleProps) => {
 
                 <div className="button-row">
                     <button className="btn-submit">Submit</button>
-                    <button className="btn-exit">Exit</button>
+                    <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
                 </div>
 
             </div>

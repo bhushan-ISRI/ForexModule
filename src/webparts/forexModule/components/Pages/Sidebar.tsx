@@ -173,7 +173,7 @@ const Sidebar = (props: IForexModuleProps) => {
       </div>
 
       <div className="sidehead-user">
-        <i className="fas fa-user" style={{ marginLeft: "20px", marginRight: "15px" }}></i>
+        <i className="fas fa-user" style={{ marginLeft: "6px", marginRight: "10px" }}></i>
         {username}
       </div>
 
