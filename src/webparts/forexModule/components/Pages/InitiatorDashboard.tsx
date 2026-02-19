@@ -46,9 +46,9 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
     const spCrudOps = await SPCRUDOPS();
 
     const parentItems = await spCrudOps.getRootData(
-      "NDADetail",
-      "ID,ReqtNo,RequestorName,RequestorEmail,RequestDate,VendorName,Amount,NDAStartDate,NDAExpiryDate,VendorContactName,VendorContactEmail,AdditionalNotes,Status,ServiceType/ID,ServiceType/Title,Author/ID",
-      "ServiceType,Author",
+      "ForexRequest",
+      "ID,ForexNumber,EmployeeName,EmployeeCode,RequestedOn,Status,Location,VendorName,TotalAmount,Author/Id",
+      "Author",
       "AuthorId eq " + props.id,
       { column: "ID", isAscending: false },
       5000,
@@ -77,13 +77,14 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
 
       data = data.filter((item) =>
         Object.values({
-          requestNo: item.ReqtNo,
-          requestDate: formatDate(item.RequestDate),
+          requestNo: item.ForexNumber,
+         // requestDate: formatDate(item.RequestDate),
           vendorName: item.VendorName,
-          contactPerson: item.VendorContactName,
-          serviceType: item.ServiceType?.Title,
+          EmployeeCode: item.EmployeeCode,
+          EmployeeName: item.EmployeeName,
+          requestDate: formatDate(item.RequestedOn),
           status: item.Status,
-          amount: item.Amount,
+          amount: item.TotalAmount,
         })
           .join(" ")
           .toLowerCase()
@@ -160,9 +161,10 @@ return (
           <thead>
             <tr>
               <th>Request No.</th>
+              <th>EmployeeCode</th>
               <th>Employee Name</th>
-              <th>Request Date</th>
-              <th>Service Type</th>
+              <th>Request Date</th> 
+              <th>Location</th>
               <th>Vendor Name</th>
               <th>Amount</th>
               <th>Status</th>
@@ -186,12 +188,13 @@ return (
             ) : (
               paginatedData.map((item) => (
                 <tr key={item.ID}>
-                  <td>{item.ReqtNo}</td>
-                  <td>{item.RequestorName}</td>
-                  <td>{formatDate(item.RequestDate)}</td>
-                  <td>{item.ServiceType?.Title}</td>
+                  <td>{item.ForexNumber}</td>
+                  <td>{item.EmployeeCode}</td>
+                  <td>{item.EmployeeName}</td>
+                  <td>{formatDate(item.RequestedOn)}</td>
+                  <td>{item.Location}</td>
                   <td>{item.VendorName}</td>
-                  <td>₹ {item.Amount || "-"}</td>
+                  <td>₹ {item.TotalAmount || "-"}</td>
                   <td>
                     <span
                       className={`status-badge ${item.Status?.replace(" ", "-")}`}
@@ -202,23 +205,16 @@ return (
                   <td>
                     {item.Status === "Send back" ||
                     item.Status === "Draft" ? (
-                      <Link to={`/NDAEditform/${item.ID}`}>
+                      <Link to={`/EditRequest/${item.ID}`}>
                         <img src={Edit} width={16} alt="Edit" />
                       </Link>
                     ) : (
                       <>
-                        <Link to={`/NDAViewmore/${item.ID}`}>
+                        <Link to={`/EditRequest/${item.ID}`}>
                           <img src={View} width={16} alt="View" />
                         </Link>
 
-                        {item.Status === "Approved" && (
-                          <Link
-                            to={`/RenewalForm/${item.ID}`}
-                            style={{ marginLeft: "10px" }}
-                          >
-                            <img src={Renew} width={16} alt="Renew" />
-                          </Link>
-                        )}
+                       
                       </>
                     )}
                   </td>

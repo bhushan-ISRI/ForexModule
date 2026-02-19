@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import "../Pages/Css/NewRequest.scss";
 import { IForexModuleProps } from "../IForexModuleProps";
 import { useHistory } from 'react-router-dom';
-import { ComboBox, Dropdown, IComboBox, IComboBoxOption, IDropdownOption } from '@fluentui/react';
+import { Dropdown, IDropdownOption } from '@fluentui/react';
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { Attachment } from "@pnp/sp/attachments";
-import { set } from "@microsoft/sp-lodash-subset/lib/index";
+import { useParams } from "react-router-dom";
+
 //import USESPCRUD from "../../service/BAL/spcrud";
 
 interface InvoiceRow {
@@ -19,6 +20,9 @@ interface InvoiceRow {
     invoiceAmount: string;
     mrnDate?: string; // Added for Service-Bill Payment
 }
+
+
+/* Helper Components */
 const Section = ({ title, children }: any) => (
     <div className="form-section">
         <h3>{title}</h3>
@@ -36,13 +40,15 @@ const Field = ({ label, children, full }: any) => (
         {children}
     </div>
 );
-const NewRequest = (props: IForexModuleProps) => {
+
+const Editrequest = (props: IForexModuleProps) => {
+    const { Id } = useParams<{ Id: string }>();
+
     const history = useHistory();
     const spCrudOps = SPCRUDOPS();
     const [paymentType, setPaymentType] = useState("Goods-Bill Payment");
     const [taxDocumentView, setTaxDocumentView] = useState("Yes");
     const [paymenttypeDropdownValue, setPaymentTypeDropdownValue] = useState<IDropdownOption>();
-    const [currencyOptions, setCurrencyOptions] = useState<IDropdownOption[]>([]);
     const [fromdate, setFromDate] = useState("");
     const [todate, setToDate] = useState("");
     const [dTAAApplicable, setDTAAApplicable] = useState("");
@@ -55,18 +61,16 @@ const NewRequest = (props: IForexModuleProps) => {
     const [requestNumber, setRequestNumber] = useState("");
     const [requestedOn, setRequestedOn] = useState("");
     const [currency, setCurrency] = useState("");
+    const [currencyOptions, setCurrencyOptions] = useState<IDropdownOption[]>([]);
     const [totalAmount, setTotalAmount] = useState("");
     const [foreignBankCharges, setForeignBankCharges] = useState("");
     const [poContractNo, setPoContractNo] = useState("");
     const [poDate, setPoDate] = useState("");
     const [expectedSettlementDate, setExpectedSettlementDate] = useState("");
-    const [incrimentalId, setIncrimentalId] = useState(0);
-    const [nextNo, setNextNo] = useState(0);
-    const [vendorOptions, setVendorOptions] = useState<IComboBoxOption[]>([]);
-    const [approvers, setApprovers] = useState<number[]>([]);
     const [eligibleAmountWithWHT, setEligibleAmountWithWHT] = useState("");
     const [paidAmount, setPaidAmount] = useState("");
     const [ballenceEligibleAmount, setBallenceEligibleAmount] = useState("");
+
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
         EmployeeName: "",
@@ -205,16 +209,15 @@ const NewRequest = (props: IForexModuleProps) => {
         );
 
     useEffect(() => {
-        getuserData();    
+        getuserData();
         getFinancialYearStart();
-        generateRequestNumber();
-        loadVendorOptions();
         getCurrencyData();
+        if (Id) {
+            loadForexData(Id);
+        }
+    }, [Id])
 
-         
-    }, [])
-    //---------------------------GetCurrencyData----------------------------//
-    const getCurrencyData = async () => {
+      const getCurrencyData = async () => {
         try {
             const sp = await spCrudOps;
             await sp.getData(
@@ -234,51 +237,86 @@ const NewRequest = (props: IForexModuleProps) => {
             });
         } catch (error) {console.error("Error fetching currency data:", error);}
     }
-    //---------------------------COUNTER FOR REQUEST NUMBER-------------------------//
-    const getFinancialYear = () => {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = today.getMonth(); // 0 = Jan
-
-        const startYear = month < 3 ? year - 1 : year;
-        const endYear = startYear + 1;
-
-        const shortStart = startYear.toString().slice(-2);
-        const shortEnd = endYear.toString().slice(-2);
-
-        return `${shortStart}-${shortEnd}`;
-    };
-
-    const generateRequestNumber = async () => {
+    //----------------------- load data for edit------------------------//
+    const loadForexData = async (forexId: string) => {
+        const sp = await spCrudOps;
 
         try {
-            const sp = await spCrudOps;
-            const fy = getFinancialYear();
-            const counterItem = await sp.getData("ApplicationNumber", "Id,IDNo", "", "", { column: "ID", isAscending: true }, 1, props);
-            if (!counterItem || counterItem.length === 0) {
-                console.error("Counter row not found in ApplicationNumber list.");
-                return;
+
+            // 🔹 Load Parent
+            const parent = await sp.getData(
+                "ForexRequest",
+                "*,Currency/Title,Currency/Id",
+                "Currency",
+                `ID eq ${forexId}`,
+                { column: "ID", isAscending: true },
+                1,
+                props
+            );
+
+            if (parent.length > 0) {
+                const data = parent[0];
+
+                setPaymentType(data.ForexType || "");
+                setRequestNumber(data.ForexNumber || "");
+                setRequestedOn(data.RequestedOn?.split("T")[0] || "");
+                setCurrency(data.Currency?.Id || "");
+                setTotalAmount(data.TotalAmount || "");
+                setForeignBankCharges(data.ForeignBankCharges || "");
+                setPoContractNo(data.poContractNo || "");
+                setPoDate(data.poDate?.split("T")[0] || "");
+                setExpectedSettlementDate(data.expectedSettlementDate?.split("T")[0] || "");
+                setBankName(data.BankName || "");
+                setBankAccountNo(data.BankAccNo || "");
+                setRemarks(data.Remarks || "");
+                setDTAAApplicable(data.DTAAApplicable || "");
+                setTaxDocumentView(data.DocumentIsAvailable || "");
+                setBankSwiftCode(data.BankSwiftCode || "");
+                setEligibleAmountWithWHT(data.EligibleAmountWithWHT || "");
+                setPaidAmount(data.PaidAmount || "");
+                setBallenceEligibleAmount(data.BallenceEligibleAmount || "");
+
+                setVendor({
+                    ...vendor,
+                    VendorCode: data.VendorCode,
+                    VendorName: data.VendorName
+                });
+
+                getVendorData(data.VendorCode);
             }
 
-            const itemId = counterItem[0].ID;
-            const currentNo = Number(counterItem[0].IDNo) || 0;
+            // 🔹 Load Child Rows
+            const child = await sp.getData(
+                "ForexServicesBillPayment",
+                "*",
+                "",
+                `ForexIDId eq ${forexId}`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
 
-            const nextNo = currentNo + 1;
-            setNextNo(nextNo);
-            setIncrimentalId(itemId);
-            const paddedNumber = nextNo.toString().padStart(4, "0");
+            if (child.length > 0) {
+                const formattedRows = child.map((item: any) => ({
+                    invoiceNo: item.InvoiceNumber || "",
+                    invoiceDate: item.InvoiceDate?.split("T")[0] || "",
+                    invoiceAmount: item.InvoiceAmount || "",
+                    mrnNo: item.MRNNumber || "",
+                    mrnDate: item.MRNDate?.split("T")[0] || "",
+                    blNo: item.BillofLandingNo || "",
+                    blDate: item.BillOfLandingdate?.split("T")[0] || "",
+                    boeNo: item.BOENo || "",
+                    boeDate: item.BOEDate?.split("T")[0] || ""
+                }));
 
-            const formattedNumber = `Forex/${fy}/${paddedNumber}`;
+                setRows(formattedRows);
+            }
 
-            // await sp.updateData(
-            //     "ApplicationNumber",
-            //     itemId,
-            //     { IDNo: nextNo },
-            //     props
-            // );
-            setRequestNumber(formattedNumber);
-        } catch (error) { console.error("Error generating request number:", error); }
-    }
+        } catch (error) {
+            console.error("Error loading edit data:", error);
+        }
+    };
+
     //=----------------------- userdata------------------------//
     const getuserData = async () => {
         (await spCrudOps).getData(
@@ -308,20 +346,6 @@ const NewRequest = (props: IForexModuleProps) => {
                         HODId: userData.HOD?.Id || 0
                     });
 
-                    const rmId = userData.RM?.Id;
-                    const hodId = userData.HOD?.Id;
-
-                    const userApprovers = [rmId, hodId]
-                        .filter((id): id is number => !!id);
-
-                    setApprovers(prev => {
-                        const merged = [...prev, ...userApprovers];
-
-                        return merged.filter((value, index, self) =>
-                            self.indexOf(value) === index
-                        );
-                    });
-                    //  getApprovers();
                 } else {
                     console.log("No user data found for the current email.");
                 }
@@ -329,32 +353,6 @@ const NewRequest = (props: IForexModuleProps) => {
             .catch((error: any) => {
                 console.error("Error fetching user data:", error);
             });
-    };
-    //---------------------------------lOADVENDOR DATA-------------------------//
-    const loadVendorOptions = async () => {
-        const sp = await spCrudOps;
-
-        try {
-            const vendors = await sp.getData(
-                "VendorMaster",
-                "ID,VendorCode,VendorName",
-                "",
-                "",
-                { column: "VendorCode", isAscending: true },
-                5000,
-                props
-            );
-
-            const options = vendors.map((v: any) => ({
-                key: v.VendorCode,
-                text: `${v.VendorCode}`
-            }));
-
-            setVendorOptions(options);
-
-        } catch (error) {
-            console.error("Error loading vendors:", error);
-        }
     };
 
     //----------------------VendorData-------------------------//
@@ -453,6 +451,17 @@ const NewRequest = (props: IForexModuleProps) => {
                         Attachmenturl: permanent.AttachmentFiles?.[0]?.ServerRelativeUrl || "",
                         Attachmentfilename: permanent.AttachmentFiles?.[0]?.FileName || ""
                     });
+                } else {
+                    setPermanentEstablishmentDeclaration({
+                        DocumentAvailable: "",
+                        DocumentNumber: "",
+                        DocumentDate: "",
+                        SEPClause: "",
+                        ValidityStartDate: "",
+                        ValidityEndDate: "",
+                        Attachmenturl: "",
+                        Attachmentfilename: ""
+                    });
                 }
                 const taxRes = res.find(
                     item => item.DeclarationType === "TAX Residency Certificate"
@@ -471,6 +480,18 @@ const NewRequest = (props: IForexModuleProps) => {
                         CountryOfTaxResidence: taxRes.CountryOfTaxResidence || "",
                         Attachmenturl: taxRes.AttachmentFiles?.[0]?.ServerRelativeUrl || "",
                         Attachmentfilename: taxRes.AttachmentFiles?.[0]?.FileName || ""
+                    });
+                } else {
+                    setTaxResidencyCertificate({
+                        DocumentAvailable: "",
+                        DocumentNumber: "",
+                        DocumentDate: "",
+                        ValidityStartDate: "",
+                        ValidityEndDate: "",
+                        TaxIdentificationNumber: "",
+                        CountryOfTaxResidence: "",
+                        Attachmenturl: "",
+                        Attachmentfilename: ""
                     });
                 }
 
@@ -493,6 +514,17 @@ const NewRequest = (props: IForexModuleProps) => {
                         Attachmenturl: form10.AttachmentFiles?.[0]?.ServerRelativeUrl || "",
                         Attachmentfilename: form10.AttachmentFiles?.[0]?.FileName || ""
                     });
+                } else {
+                    setForm10F({
+                        DocumentAvailable: "",
+                        DocumentNumber: "",
+                        DocumentDate: "",
+                        ValidityStartDate: "",
+                        ValidityEndDate: "",
+                        AcknowledgmentNumber: "",
+                        Attachmenturl: "",
+                        Attachmentfilename: ""
+                    });
                 }
                 if (dates.length > 0) {
                     const minDate = dates.sort()[0];   // YYYY-MM-DD format works for sorting
@@ -514,33 +546,6 @@ const NewRequest = (props: IForexModuleProps) => {
         setFromDate(`${fyStartYear}-04-01`);
     };
 
-//     const getApprovers = async () => {
-//         try {
-//             (await spCrudOps).getData(
-//                 "ForexApprovalMAtrix",
-//                 "Title,Role,Approver/Id,Approver/Title,Level",
-//                 "Approver",
-//                 `Title eq 'Approver'`,
-//                 { column: "ID", isAscending: true },
-//                 5000,
-//                 props
-//             ).then((res: any[]) => {
-//                 const approverIds = res
-//                     .map(item => item.Approver?.Id)
-//                     .filter((id): id is number => !!id);
-
-//                setApprovers(prev => {
-//     const newApprovers = approverIds.filter(id => !prev.includes(id));
-//     return [...prev, ...newApprovers];
-// });
-
-//               //  setApprovers(approverIds);
-
-//             })
-
-//         } catch (error) { console.error("Error fetching approvers:", error); }
-//     }
-
     const onsubmit = async () => {
 
         try {
@@ -557,56 +562,73 @@ const NewRequest = (props: IForexModuleProps) => {
                 alert("Please add at least one invoice row.");
                 return;
             }
+            if (Id) {
+                // 🔹 2️⃣ Insert Parent
+                const parentResponse = await sp.updateData(
+                    "ForexRequest",
+                    Number(Id),
+                    {
+                        ForexType: paymentType,
+                        EmployeeCode: employee.EmployeeCode,
+                        EmployeeName: employee.EmployeeName,
+                        Division: employee.Division,
+                        Location: employee.Location,
+                        RMId: employee.RMId,
+                        HODId: employee.HODId,
+                        ContactNo: employee.ContactNo?.toString() || "",
+                        Email: employee.Email,
 
-            const approverslist = approvers || [];
+                        BankName: bankname || "",
+                        BankAccNo: bankaccountno || "",
+                        Remarks: remarks || "",
+                        Status: "Draft",
+                        NatureOfPayment: paymentType,
+                        DocumentIsAvailable: taxDocumentView,
+                        DTAAApplicable: dTAAApplicable,
 
-            // 🔹 2️⃣ Insert Parent
-            const parentResponse = await sp.insertData(
-                "ForexRequest",
-                {
-                    ForexType: paymentType,
-                    EmployeeCode: employee.EmployeeCode,
-                    EmployeeName: employee.EmployeeName,
-                    Division: employee.Division,
-                    Location: employee.Location,
-                    RMId: employee.RMId,
-                    HODId: employee.HODId,
-                    ContactNo: employee.ContactNo?.toString() || "",
-                    Email: employee.Email,
-                    BankName: bankname || "",
-                    BankAccNo: bankaccountno || "",
-                    Remarks: remarks || "",
-                    Status: "Pending",
-                    NatureOfPayment: paymentType,
-                    DocumentIsAvailable: taxDocumentView,
-                    DTAAApplicable: dTAAApplicable,
-                    ForexNumber: requestNumber,
-                    TotalAmount: (totalAmount) || "",
-                    ForeignBankCharges: (foreignBankCharges) || "",
-                    RequestedOn: requestedOn || null,
-                    VendorCode: vendor.VendorCode,
-                    VendorName: vendor.VendorName,
-                    poContractNo: poContractNo || "",
-                    poDate: poDate || null,
-                    expectedSettlementDate: expectedSettlementDate || null,
-                    BankSwiftCode: bankswiftcode || "",
-                    CurrentApproverId: approverslist.length > 0 ? approverslist[0] : null,
-                    NextApproversId:{results: approverslist.slice(1)},
-                    EmployeeStatus:employee.EmployeeStatus || "",
-                    BallenceEligibleAmount:""+ballenceEligibleAmount,
-                    PaidAmount:""+paidAmount,
-                    EligibleAmountWithWHT:""+eligibleAmountWithWHT,
-                    CurrencyId: currency || 0
+                        ForexNumber: requestNumber,
 
-                },
+                        TotalAmount: (totalAmount) || "",
+                        ForeignBankCharges: (foreignBankCharges) || "",
+
+                        RequestedOn: requestedOn || null,
+
+                        VendorCode: vendor.VendorCode,
+                        VendorName: vendor.VendorName,
+                        poContractNo: poContractNo || "",
+                        poDate: poDate || null,
+                        expectedSettlementDate: expectedSettlementDate || null,
+                        BankSwiftCode: bankswiftcode || "",
+                        BallenceEligibleAmount: "" + ballenceEligibleAmount,
+                        PaidAmount: "" + paidAmount,
+                        EligibleAmountWithWHT: "" + eligibleAmountWithWHT
+                    },
+                    props
+                );
+            }
+            // 🔹 DELETE OLD CHILD ROWS
+            const oldRows = await sp.getData(
+                "ForexServicesBillPayment",
+                "ID",
+                "",
+                `ForexIDId eq ${Id}`,
+                { column: "ID", isAscending: true },
+                5000,
                 props
             );
 
-            const requestId = parentResponse.data.ID;
+            await Promise.all(
+                oldRows.map((item: any) =>
+                    sp.deleteData("ForexServicesBillPayment", item.ID, props)
+                )
+            );
+
+            const requestId = Id;
 
             console.log("✅ Parent Saved ID:", requestId);
 
             await Promise.all(
+
                 rows
                     .filter(row => row.invoiceNo)
                     .map((row, index) =>
@@ -614,14 +636,19 @@ const NewRequest = (props: IForexModuleProps) => {
                             "ForexServicesBillPayment",
                             {
                                 ForexIDId: requestId,
+
                                 SrNo: "" + (index + 1),
+
                                 InvoiceNumber: row.invoiceNo || "",
                                 InvoiceDate: row.invoiceDate || null,
                                 InvoiceAmount: (row.invoiceAmount) || "",
+
                                 MRNNumber: row.mrnNo || "",
                                 MRNDate: row.mrnDate || null,
+
                                 BillofLandingNo: row.blNo || "",
                                 BillOfLandingdate: row.blDate || null,
+
                                 BOENo: row.boeNo || "",
                                 BOEDate: row.boeDate || null
                             },
@@ -629,14 +656,8 @@ const NewRequest = (props: IForexModuleProps) => {
                         )
                     )
             );
-            await sp.updateData(
-                "ApplicationNumber",
-                incrimentalId,
-                { IDNo: nextNo },
-                props
-            );
 
-            alert("✅ Data submitted successfully!");
+            alert("✅ Data Updated successfully!");
             history.push("/");
 
 
@@ -654,7 +675,7 @@ const NewRequest = (props: IForexModuleProps) => {
 
             {/* ================= HEADER ================= */}
             <div className="forex-header">
-                <h2>Forex Payment Request Form</h2>
+                <h2>Forex Payment Edit Form</h2>
             </div>
 
             <div className="forex-card">
@@ -715,32 +736,14 @@ const NewRequest = (props: IForexModuleProps) => {
                 <Section title="Vendor / Beneficiary Details">
                     <Grid>
                         <Field label="Vendor Code">
-                            <ComboBox
-                                placeholder="Search Vendor Code"
-                                options={vendorOptions}
-                                selectedKey={vendor.VendorCode}
-                                allowFreeform={false}
-                                autoComplete="on"
-                                useComboBoxAsMenuWidth
-                                onChange={(
-                                    event: React.FormEvent<IComboBox>,
-                                    option?: IComboBoxOption,
-                                    index?: number,
-                                    value?: string
-                                ) => {
-                                    if (option) {
-                                        const code = option.key as string;
-
-                                        setVendor(prev => ({
-                                            ...prev,
-                                            VendorCode: code
-                                        }));
-
-                                        getVendorData(code);
-                                    }
+                            <input
+                                value={vendor.VendorCode}
+                                onChange={(e) => {
+                                    const code = e.target.value;
+                                    setVendor({ ...vendor, VendorCode: code });
                                 }}
+                                onBlur={(e) => getVendorData(e.target.value)}   // fetch when user leaves field
                             />
-
                         </Field>
                         <Field label="Vendor Name">
                             <input value={vendor.VendorName} readOnly />
@@ -987,7 +990,7 @@ const NewRequest = (props: IForexModuleProps) => {
                         </Field>
 
                         <Field label="Balance eligible amount(Without with holding Tax)">
-                            <input type="number" value={ballenceEligibleAmount} onChange={(e)=>setBallenceEligibleAmount(e.target.value)} />
+                            <input type="number" value={ballenceEligibleAmount} onChange={(e) => setBallenceEligibleAmount(e.target.value)} />
                         </Field>
                     </Grid>
 
@@ -998,19 +1001,19 @@ const NewRequest = (props: IForexModuleProps) => {
                 {paymentType === "Goods-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} readOnly /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency">
-                                <Dropdown
-                                    options={currencyOptions}
-                                    selectedKey={currency}
-                                    onChange={(e, option) => {
-                                        if (option) {
-                                            setCurrency(option.key as string);
-                                        }
-                                    }}
-                                />
-                                </Field>
+                                  <Dropdown
+                                                                    options={currencyOptions}
+                                                                    selectedKey={currency}
+                                                                    onChange={(e, option) => {
+                                                                        if (option) {
+                                                                            setCurrency(option.key as string);
+                                                                        }
+                                                                    }}
+                                                                />
+                            </Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
                             <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
@@ -1250,8 +1253,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                             setCurrency(option.key as string);
                                         }
                                     }}
-                                />
-                            </Field>
+                                /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
                             <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
@@ -1403,19 +1405,9 @@ const NewRequest = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency">
-                                <Dropdown
-                                    options={currencyOptions}
-                                    selectedKey={currency}
-                                    onChange={(e, option) => {
-                                        if (option) {
-                                            setCurrency(option.key as string);
-                                        }
-                                    }}
-                                />
-                            </Field>
+                            <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
                             <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
@@ -1554,19 +1546,9 @@ const NewRequest = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency">
-                                <Dropdown
-                                    options={currencyOptions}
-                                    selectedKey={currency}
-                                    onChange={(e, option) => {
-                                        if (option) {
-                                            setCurrency(option.key as string);
-                                        }
-                                    }}
-                                />
-                            </Field>
+                            <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
                             <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
@@ -1752,8 +1734,5 @@ const NewRequest = (props: IForexModuleProps) => {
     );
 };
 
-export default NewRequest;
-
-
-/* Helper Components */
+export default Editrequest;
 
