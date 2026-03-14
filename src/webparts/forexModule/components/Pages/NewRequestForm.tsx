@@ -6,6 +6,11 @@ import { ComboBox, Dropdown, IComboBox, IComboBoxOption, IDropdownOption } from 
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { Attachment } from "@pnp/sp/attachments";
 import { set } from "@microsoft/sp-lodash-subset/lib/index";
+import { SPHttpClient, ISPHttpClientOptions } from '@microsoft/sp-http';
+import "@pnp/sp/webs";
+import "@pnp/sp/files";
+import "@pnp/sp/folders";
+
 //import USESPCRUD from "../../service/BAL/spcrud";
 
 interface InvoiceRow {
@@ -19,6 +24,14 @@ interface InvoiceRow {
     invoiceAmount: string;
     mrnDate?: string; // Added for Service-Bill Payment
 }
+
+interface IApproverDetails {
+    Id: number;
+    Name: string;
+    Role: string;
+    Level: number;
+}
+
 const Section = ({ title, children }: any) => (
     <div className="form-section">
         <h3>{title}</h3>
@@ -30,9 +43,12 @@ const Grid = ({ children }: any) => (
     <div className="form-grid">{children}</div>
 );
 
-const Field = ({ label, children, full }: any) => (
+const Field = ({ label, children, full, required }: any) => (
     <div className={full ? "form-field full" : "form-field"}>
-        <label>{label}</label>
+        <label>
+            {label}
+            {required && <span className="required-star">*</span>}
+        </label>
         {children}
     </div>
 );
@@ -67,6 +83,20 @@ const NewRequest = (props: IForexModuleProps) => {
     const [eligibleAmountWithWHT, setEligibleAmountWithWHT] = useState("");
     const [paidAmount, setPaidAmount] = useState("");
     const [ballenceEligibleAmount, setBallenceEligibleAmount] = useState("");
+    const [approverDetails, setApproverDetails] = useState<IApproverDetails[]>([]);
+
+    const [boeFiles, setBoeFiles] = useState<{ [key: string]: File[] }>({});
+    const [blFiles, setBlFiles] = useState<{ [key: string]: File[] }>({});
+
+    const [invoiceFiles, setInvoiceFiles] = useState<{ [key: number]: File[] }>({});
+    const [otherFiles, setOtherFiles] = useState<{ [key: number]: File[] }>({});
+
+    const [poFiles, setPoFiles] = useState<{ [key: number]: File[] }>({});
+    const [piFiles, setPiFiles] = useState<{ [key: number]: File[] }>({});
+    const [advanceOtherFiles, setAdvanceOtherFiles] = useState<{ [key: number]: File[] }>({});
+
+    const [loading, setLoading] = useState(false);
+
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
         EmployeeName: "",
@@ -205,13 +235,13 @@ const NewRequest = (props: IForexModuleProps) => {
         );
 
     useEffect(() => {
-        getuserData();    
+        getuserData();
         getFinancialYearStart();
         generateRequestNumber();
         loadVendorOptions();
         getCurrencyData();
 
-         
+
     }, [])
     //---------------------------GetCurrencyData----------------------------//
     const getCurrencyData = async () => {
@@ -232,7 +262,7 @@ const NewRequest = (props: IForexModuleProps) => {
                 }));
                 setCurrencyOptions(options);
             });
-        } catch (error) {console.error("Error fetching currency data:", error);}
+        } catch (error) { console.error("Error fetching currency data:", error); }
     }
     //---------------------------COUNTER FOR REQUEST NUMBER-------------------------//
     const getFinancialYear = () => {
@@ -279,6 +309,74 @@ const NewRequest = (props: IForexModuleProps) => {
             setRequestNumber(formattedNumber);
         } catch (error) { console.error("Error generating request number:", error); }
     }
+
+    const buildApprovalFlow = async (employeeData: any, selectedType: string) => {
+        try {
+            const sp = await spCrudOps;
+
+            const baseApprovers: IApproverDetails[] = [];
+
+            if (employeeData.RMId) {
+                baseApprovers.push({
+                    Id: employeeData.RMId,
+                    Name: employeeData.RM,
+                    Role: "RM",
+                    Level: 1
+                });
+            }
+
+            if (employeeData.HODId) {
+                baseApprovers.push({
+                    Id: employeeData.HODId,
+                    Name: employeeData.HOD,
+                    Role: "HOD",
+                    Level: 2
+                });
+            }
+
+            // 🔥 Map UI type to Backend RequestType
+            let requestTypeFilter = "";
+
+            if (
+                selectedType === "Goods-Advance Payment" ||
+                selectedType === "Service-Advance Payment"
+            ) {
+                requestTypeFilter = "Advance Payment";
+            } else {
+                requestTypeFilter = selectedType; // direct match for Bill types
+            }
+
+            const matrixData = await sp.getData(
+                "ForexApprovalMatrix",
+                "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
+                "Approver",
+                `RequestType eq '${requestTypeFilter}'`,
+                { column: "Level", isAscending: true },
+                5000,
+                props
+            );
+
+            const matrixApprovers = matrixData.map((item: any, index: number) => ({
+                Id: item.Approver?.Id,
+                Name: item.Approver?.Title,
+                Role: item.Role,
+                Level: baseApprovers.length + index + 1
+            }));
+
+            const fullFlow = [...baseApprovers, ...matrixApprovers];
+
+            const uniqueFlow = fullFlow.filter(
+                (value, index, self) =>
+                    self.findIndex(v => v.Id === value.Id) === index
+            );
+
+            setApproverDetails(uniqueFlow);
+            setApprovers(uniqueFlow.map(a => a.Id));
+
+        } catch (error) {
+            console.error("Error building approval flow:", error);
+        }
+    };
     //=----------------------- userdata------------------------//
     const getuserData = async () => {
         (await spCrudOps).getData(
@@ -314,14 +412,20 @@ const NewRequest = (props: IForexModuleProps) => {
                     const userApprovers = [rmId, hodId]
                         .filter((id): id is number => !!id);
 
-                    setApprovers(prev => {
-                        const merged = [...prev, ...userApprovers];
+                    const uniqueApprovers = userApprovers.filter(
+                        (value, index, self) => self.indexOf(value) === index
+                    );
 
-                        return merged.filter((value, index, self) =>
-                            self.indexOf(value) === index
-                        );
-                    });
-                    //  getApprovers();
+                    setApprovers(uniqueApprovers);
+
+                    // 🔥 NEW: Fetch Roles From Matrix
+                    buildApprovalFlow({
+                        RMId: userData.RM?.Id,
+                        HODId: userData.HOD?.Id,
+                        RM: userData.RM?.Title,
+                        HOD: userData.HOD?.Title
+                    }, paymentType);
+
                 } else {
                     console.log("No user data found for the current email.");
                 }
@@ -514,34 +618,186 @@ const NewRequest = (props: IForexModuleProps) => {
         setFromDate(`${fyStartYear}-04-01`);
     };
 
-//     const getApprovers = async () => {
-//         try {
-//             (await spCrudOps).getData(
-//                 "ForexApprovalMAtrix",
-//                 "Title,Role,Approver/Id,Approver/Title,Level",
-//                 "Approver",
-//                 `Title eq 'Approver'`,
-//                 { column: "ID", isAscending: true },
-//                 5000,
-//                 props
-//             ).then((res: any[]) => {
-//                 const approverIds = res
-//                     .map(item => item.Approver?.Id)
-//                     .filter((id): id is number => !!id);
+    //     const getApprovers = async () => {
+    //         try {
+    //             (await spCrudOps).getData(
+    //                 "ForexApprovalMAtrix",
+    //                 "Title,Role,Approver/Id,Approver/Title,Level",
+    //                 "Approver",
+    //                 `Title eq 'Approver'`,
+    //                 { column: "ID", isAscending: true },
+    //                 5000,
+    //                 props
+    //             ).then((res: any[]) => {
+    //                 const approverIds = res
+    //                     .map(item => item.Approver?.Id)
+    //                     .filter((id): id is number => !!id);
 
-//                setApprovers(prev => {
-//     const newApprovers = approverIds.filter(id => !prev.includes(id));
-//     return [...prev, ...newApprovers];
-// });
+    //                setApprovers(prev => {
+    //     const newApprovers = approverIds.filter(id => !prev.includes(id));
+    //     return [...prev, ...newApprovers];
+    // });
 
-//               //  setApprovers(approverIds);
+    //               //  setApprovers(approverIds);
 
-//             })
+    //             })
 
-//         } catch (error) { console.error("Error fetching approvers:", error); }
-//     }
+    //         } catch (error) { console.error("Error fetching approvers:", error); }
+    //     }
+
+
+
+
+    const uploadToLibrary = async (
+        libraryName: string,
+        fileName: string,
+        file: File,
+        metadata: any
+    ) => {
+
+        const webUrl = props.context.pageContext.web.absoluteUrl;
+        const serverRelativeUrl = props.context.pageContext.web.serverRelativeUrl;
+        const folderPath = `${serverRelativeUrl}/${libraryName}`;
+
+        // ================= STEP 1: UPLOAD FILE =================
+
+        const uploadUrl =
+            `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${folderPath}')/Files/add(url='${fileName}',overwrite=true)`;
+
+        const uploadOptions: ISPHttpClientOptions = {
+            body: file
+        };
+
+        const uploadResponse = await props.context.spHttpClient.post(
+            uploadUrl,
+            SPHttpClient.configurations.v1,
+            uploadOptions
+        );
+
+        if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error("Upload error:", errorText);
+            throw new Error("File upload failed");
+        }
+
+        const uploadResult = await uploadResponse.json();
+
+        // ================= STEP 2: GET ENTITY TYPE =================
+
+        const entityTypeResponse = await props.context.spHttpClient.get(
+            `${webUrl}/_api/web/lists/getbytitle('${libraryName}')?$select=ListItemEntityTypeFullName`,
+            SPHttpClient.configurations.v1
+        );
+
+        const entityTypeData = await entityTypeResponse.json();
+        const entityTypeName = entityTypeData.ListItemEntityTypeFullName;
+
+        // ================= STEP 3: UPDATE METADATA =================
+        // ================= STEP 3: UPDATE METADATA =================
+
+        const itemUrl =
+            `${webUrl}/_api/web/GetFileByServerRelativeUrl('${uploadResult.ServerRelativeUrl}')/ListItemAllFields`;
+
+        const updateOptions: ISPHttpClientOptions = {
+            headers: {
+                "IF-MATCH": "*",
+                "X-HTTP-Method": "MERGE",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(metadata)
+        };
+
+        const updateResponse = await props.context.spHttpClient.post(
+            itemUrl,
+            SPHttpClient.configurations.v1,
+            updateOptions
+        );
+
+        if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            console.error("Metadata update error:", errorText);
+            throw new Error("Metadata update failed");
+        }
+    };
+
+
+    const validateForm = () => {
+
+        // Employee & Vendor
+        if (!vendor.VendorCode) {
+            alert("Vendor Code is required");
+            return false;
+        }
+
+        if (!requestedOn) {
+            alert("Requested On is required");
+            return false;
+        }
+
+        if (!currency) {
+            alert("Currency is required");
+            return false;
+        }
+
+        if (!totalAmount) {
+            alert("Total Amount is required");
+            return false;
+        }
+
+        if (!foreignBankCharges) {
+            alert("Foreign Bank Charges is required");
+            return false;
+        }
+
+        // Bank Details
+        if (!bankname) {
+            alert("Bank Name is required");
+            return false;
+        }
+
+        if (!bankswiftcode) {
+            alert("Bank Swift Code is required");
+            return false;
+        }
+
+        if (!bankaccountno) {
+            alert("Bank Account No is required");
+            return false;
+        }
+
+        // Invoice rows validation
+        for (let i = 0; i < rows.length; i++) {
+
+            const row = rows[i];
+
+            if (!row.invoiceNo) {
+                alert(`Invoice No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.invoiceDate) {
+                alert(`Invoice Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.invoiceAmount) {
+                alert(`Invoice Amount required in row ${i + 1}`);
+                return false;
+            }
+
+        }
+
+        return true;
+    };
 
     const onsubmit = async () => {
+
+        setLoading(true);
+
+        if (!validateForm()) {
+            setLoading(false);
+            return;
+        }
 
         try {
 
@@ -560,6 +816,24 @@ const NewRequest = (props: IForexModuleProps) => {
 
             const approverslist = approvers || [];
 
+            // Current approver
+            const currentApprover =
+                approverslist.length > 0 ? approverslist[0] : null;
+
+            // ONLY ONE next approver
+            const nextApprover =
+                approverslist.length > 1 ? approverslist[1] : null;
+
+            // Save ALL approvers as JSON
+            const allApproversJson = JSON.stringify(approverDetails);
+
+            const now = new Date().toLocaleString();
+
+            const initialWorkflow =
+                `Request created by ${employee.EmployeeName} on ${now}`;
+
+            const initialComment =
+                `${employee.EmployeeName}: ${remarks || "Request initiated"} [${now}]`;
             // 🔹 2️⃣ Insert Parent
             const parentResponse = await sp.insertData(
                 "ForexRequest",
@@ -590,13 +864,17 @@ const NewRequest = (props: IForexModuleProps) => {
                     poDate: poDate || null,
                     expectedSettlementDate: expectedSettlementDate || null,
                     BankSwiftCode: bankswiftcode || "",
-                    CurrentApproverId: approverslist.length > 0 ? approverslist[0] : null,
-                    NextApproversId:{results: approverslist.slice(1)},
-                    EmployeeStatus:employee.EmployeeStatus || "",
-                    BallenceEligibleAmount:""+ballenceEligibleAmount,
-                    PaidAmount:""+paidAmount,
-                    EligibleAmountWithWHT:""+eligibleAmountWithWHT,
-                    CurrencyId: currency || 0
+                    CurrentApproverId: currentApprover,
+                    // ONLY ONE next approver
+                    NextApproversId: { results: nextApprover ? [nextApprover] : [] },                    // JSON column
+                    AllApprovers: "" + allApproversJson,
+                    EmployeeStatus: employee.EmployeeStatus || "",
+                    BallenceEligibleAmount: "" + ballenceEligibleAmount,
+                    PaidAmount: "" + paidAmount,
+                    EligibleAmountWithWHT: "" + eligibleAmountWithWHT,
+                    CurrencyId: currency || 0,
+                    CommentHistory: initialComment,
+                    WorkFlowHistory: initialWorkflow,
 
                 },
                 props
@@ -606,35 +884,145 @@ const NewRequest = (props: IForexModuleProps) => {
 
             console.log("✅ Parent Saved ID:", requestId);
 
-            await Promise.all(
-                rows
-                    .filter(row => row.invoiceNo)
-                    .map((row, index) =>
-                        sp.insertData(
-                            "ForexServicesBillPayment",
-                            {
-                                ForexIDId: requestId,
-                                SrNo: "" + (index + 1),
-                                InvoiceNumber: row.invoiceNo || "",
-                                InvoiceDate: row.invoiceDate || null,
-                                InvoiceAmount: (row.invoiceAmount) || "",
-                                MRNNumber: row.mrnNo || "",
-                                MRNDate: row.mrnDate || null,
-                                BillofLandingNo: row.blNo || "",
-                                BillOfLandingdate: row.blDate || null,
-                                BOENo: row.boeNo || "",
-                                BOEDate: row.boeDate || null
-                            },
-                            props
-                        )
-                    )
-            );
+            for (let index = 0; index < rows.length; index++) {
+
+                const row = rows[index];
+                if (!row.invoiceNo) continue;
+
+                const childResponse = await sp.insertData(
+                    "ForexServicesBillPayment",
+                    {
+                        ForexIDId: requestId,
+                        SrNo: "" + (index + 1),
+                        InvoiceNumber: row.invoiceNo || "",
+                        InvoiceDate: row.invoiceDate || null,
+                        InvoiceAmount: row.invoiceAmount || "",
+                        MRNNumber: row.mrnNo || "",
+                        MRNDate: row.mrnDate || null,
+                        BillofLandingNo: row.blNo || "",
+                        BillOfLandingdate: row.blDate || null,
+                        BOENo: row.boeNo || "",
+                        BOEDate: row.boeDate || null
+                    },
+                    props
+                );
+
+                const childItemId = childResponse.data.ID;
+                const webUrl = props.context.pageContext.web.absoluteUrl;
+
+                // ================= BILL MODE =================
+                if (paymentType === "Goods-Bill Payment" || paymentType === "Service-Bill Payment") {
+
+                    for (const file of (invoiceFiles[index] || [])) {
+
+                        const fileName = `INV_${row.invoiceNo}_${file.name}`;
+
+                        await props.context.spHttpClient.post(
+                            `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            { body: file }
+                        );
+                    }
+
+                    for (const file of (otherFiles[index] || [])) {
+
+                        const fileName = `DOC_${row.invoiceNo}_${file.name}`;
+
+                        await props.context.spHttpClient.post(
+                            `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            { body: file }
+                        );
+                    }
+                }
+
+                // ================= ADVANCE MODE =================
+                if (paymentType === "Goods-Advance Payment" || paymentType === "Service-Advance Payment") {
+
+                    for (const file of (poFiles[index] || [])) {
+
+                        const fileName = `PO_${row.invoiceNo}_${file.name}`;
+
+                        await props.context.spHttpClient.post(
+                            `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            { body: file }
+                        );
+                    }
+
+                    for (const file of (piFiles[index] || [])) {
+
+                        const fileName = `PI_${row.invoiceNo}_${file.name}`;
+
+                        await props.context.spHttpClient.post(
+                            `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            { body: file }
+                        );
+                    }
+
+                    for (const file of (advanceOtherFiles[index] || [])) {
+
+                        const fileName = `DOC_${row.invoiceNo}_${file.name}`;
+
+                        await props.context.spHttpClient.post(
+                            `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            { body: file }
+                        );
+                    }
+                }
+            }
             await sp.updateData(
                 "ApplicationNumber",
                 incrimentalId,
                 { IDNo: nextNo },
                 props
             );
+
+            // ================= BOE LIBRARY UPLOAD =================
+
+            // ================= BOE MULTIPLE FILE UPLOAD =================
+            for (const boeNo of uniqueBoeNumbers) {
+
+                const files = boeFiles[boeNo] || [];
+
+                for (const file of files) {
+
+                    await uploadToLibrary(
+                        "BOEAttachments",
+                        `${requestId}_${boeNo}_${Date.now()}_${file.name}`,
+                        file,
+                        {
+                            Title: file.name,
+                            BOENo: boeNo,
+                            ReqeuestId: requestId.toString()
+                        }
+                    );
+                }
+            }
+
+            // ================= BILL OF LADING LIBRARY UPLOAD =================
+            // ================= BOL MULTIPLE FILE UPLOAD =================
+
+            for (const blNo of uniqueBlNumbers) {
+
+                const files = blFiles[blNo] || [];
+
+                for (const file of files) {
+
+                    await uploadToLibrary(
+                        "BillOfLandingAttachment",
+                        `${requestId}_${blNo}_${Date.now()}_${file.name}`,
+                        file,
+                        {
+                            Title: file.name,
+                            BOLNo: blNo,
+                            ReqeuestId: requestId.toString()
+                        }
+                    );
+                }
+            }
 
             alert("✅ Data submitted successfully!");
             history.push("/");
@@ -646,11 +1034,23 @@ const NewRequest = (props: IForexModuleProps) => {
             alert("Something went wrong. Please check console.");
 
         }
+        finally {
+
+            setLoading(false); // stop loader
+
+        }
     };
 
 
     return (
+
         <div className="forex-wrapper">
+            {loading && (
+                <div className="loader-overlay">
+                    <div className="loader"></div>
+                    <p>Submitting request...</p>
+                </div>
+            )}
 
             {/* ================= HEADER ================= */}
             <div className="forex-header">
@@ -658,12 +1058,42 @@ const NewRequest = (props: IForexModuleProps) => {
             </div>
 
             <div className="forex-card">
+                {/* ================= APPROVAL FLOW ================= */}
+                <Section title="Approval Flow">
+                    <div className="approval-ribbon">
+
+                        {/* Initiator */}
+                        <div className="ribbon-step initiator">
+                            {employee.EmployeeName}
+                        </div>
+
+                        {approverDetails.map((approver, index) => (
+                            <div key={index} className="ribbon-step approver">
+                                {approver.Name}
+                            </div>
+                        ))}
+
+                    </div>
+                </Section>
 
                 {/* ================= REQUESTOR ================= */}
                 <Section title="Requestor Information">
                     <Grid>
-                        <Field label="Type">
-                            <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)}>
+                        <Field label="Type" required>
+                            <select
+                                value={paymentType}
+                                onChange={(e) => {
+                                    const selected = e.target.value;
+                                    setPaymentType(selected);
+
+                                    buildApprovalFlow({
+                                        RMId: employee.RMId,
+                                        HODId: employee.HODId,
+                                        RM: employee.RM,
+                                        HOD: employee.HOD
+                                    }, selected);
+                                }}
+                            >
                                 <option value="Goods-Bill Payment">Goods-Bill Payment</option>
                                 <option value="Service-Bill Payment">Service-Bill Payment</option>
                                 <option value="Goods-Advance Payment">Goods-Advance Payment</option>
@@ -676,35 +1106,35 @@ const NewRequest = (props: IForexModuleProps) => {
                             <input type="text" value={employee.EmployeeCode} readOnly />
                         </Field>
 
-                        <Field label="Employee Name">
+                        <Field label="Employee Name" required>
                             <input type="text" value={employee.EmployeeName} readOnly />
                         </Field>
 
-                        <Field label="Division">
+                        <Field label="Division" required>
                             <input type="text" value={employee.Division} readOnly />
                         </Field>
 
-                        <Field label="Location">
+                        <Field label="Location" required>
                             <input type="text" value={employee.Location} readOnly />
                         </Field>
 
-                        <Field label="RM">
+                        <Field label="RM" required>
                             <input type="text" value={employee.RM} readOnly />
                         </Field>
 
-                        <Field label="HOD">
+                        <Field label="HOD" required>
                             <input type="text" value={employee.HOD} readOnly />
                         </Field>
 
-                        <Field label="Contact No">
+                        <Field label="Contact No" required >
                             <input type="text" value={employee.ContactNo} readOnly />
                         </Field>
 
-                        <Field label="Employee Status">
+                        <Field label="Employee Status" required>
                             <input type="text" value={employee.EmployeeStatus} readOnly />
                         </Field>
 
-                        <Field label="Email" full>
+                        <Field label="Email" full required>
                             <input type="email" value={employee.Email} readOnly />
                         </Field>
                     </Grid>
@@ -714,7 +1144,7 @@ const NewRequest = (props: IForexModuleProps) => {
                 {/* ================= VENDOR ================= */}
                 <Section title="Vendor / Beneficiary Details">
                     <Grid>
-                        <Field label="Vendor Code">
+                        <Field label="Vendor Code" required>
                             <ComboBox
                                 placeholder="Search Vendor Code"
                                 options={vendorOptions}
@@ -742,33 +1172,33 @@ const NewRequest = (props: IForexModuleProps) => {
                             />
 
                         </Field>
-                        <Field label="Vendor Name">
+                        <Field label="Vendor Name" required>
                             <input value={vendor.VendorName} readOnly />
                         </Field>
-                        <Field label="Address" full><input value={vendor.VendorAddress} readOnly /></Field>
-                        <Field label="City">
+                        <Field label="Address" full required><input value={vendor.VendorAddress} readOnly /></Field>
+                        <Field label="City" required>
                             <input value={vendor.City} readOnly />
                         </Field>
 
-                        <Field label="Country">
+                        <Field label="Country" required>
                             <input value={vendor.Country} readOnly />
                         </Field>
-                        <Field label="Pincode"><input value={vendor.PostalCode} readOnly /></Field>
-                        <Field label="Bank Name">
+                        <Field label="Pincode" required><input value={vendor.PostalCode} readOnly /></Field>
+                        <Field label="Bank Name" required>
                             <input value={vendor.BankName} readOnly />
                         </Field>
-                        <Field label="Bank Country"><input value={vendor.BankCountry} readOnly /></Field>
-                        <Field label="Bank Swift Code"><input value={vendor.SWIFTBICCode} readOnly /></Field>
-                        <Field label="Bank Branch Address"><input value={vendor.BankAddress} readOnly /></Field>
-                        <Field label="Bank IBAN / Account No" full><input value={vendor.AccountNumberIBAN} readOnly /></Field>
+                        <Field label="Bank Country" required><input value={vendor.BankCountry} readOnly /></Field>
+                        <Field label="Bank Swift Code" required><input value={vendor.SWIFTBICCode} readOnly /></Field>
+                        <Field label="Bank Branch Address" required><input value={vendor.BankAddress} readOnly /></Field>
+                        <Field label="Bank IBAN / Account No" full required><input value={vendor.AccountNumberIBAN} readOnly /></Field>
                     </Grid>
                 </Section>
 
                 {/* ================= TAX INFO ================= */}
                 <Section title="Tax & Regulatory Information">
                     <Grid>
-                        <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
-                        <Field label="Tax Document Available?">
+                        <Field label="Nature of Payment" required><input value={paymentType} readOnly /></Field>
+                        <Field label="Tax Document Available?" required>
                             <select onChange={(e) => { setTaxDocumentView(e.target.value) }}>
                                 <option>Yes</option>
                                 <option>No</option>
@@ -783,7 +1213,7 @@ const NewRequest = (props: IForexModuleProps) => {
                         )}
 
                         {taxDocumentView === "Yes" && (
-                            <Field label="DTAA Applicable?">
+                            <Field label="DTAA Applicable?" required>
                                 <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)}>
                                     <option value="">Select</option>
                                     <option value="Yes">Yes</option>
@@ -799,7 +1229,7 @@ const NewRequest = (props: IForexModuleProps) => {
                         <Section title="Permanent Establishment Declaration">
                             <Grid>
 
-                                <Field label="Document Available">
+                                <Field label="Document Available" required>
                                     <select
                                         value={permanentEstablishmentDeclaration.DocumentAvailable || ""}
                                         disabled
@@ -810,14 +1240,14 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </select>
                                 </Field>
 
-                                <Field label="Document Number">
+                                <Field label="Document Number" required>
                                     <input
                                         value={permanentEstablishmentDeclaration.DocumentNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Document Date">
+                                <Field label="Document Date" required>
                                     <input
                                         type="date"
                                         value={permanentEstablishmentDeclaration.DocumentDate || ""}
@@ -825,7 +1255,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity Start Date">
+                                <Field label="Validity Start Date" required>
                                     <input
                                         type="date"
                                         value={permanentEstablishmentDeclaration.ValidityStartDate || ""}
@@ -833,7 +1263,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity End Date">
+                                <Field label="Validity End Date" required>
                                     <input
                                         type="date"
                                         value={permanentEstablishmentDeclaration.ValidityEndDate || ""}
@@ -841,7 +1271,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="View Document">
+                                <Field label="View Document" required>
                                     <span><a href={permanentEstablishmentDeclaration.Attachmenturl || "#"} target="_blank">{permanentEstablishmentDeclaration.Attachmentfilename || "No Document Available"}</a></span>
                                 </Field>
 
@@ -852,7 +1282,7 @@ const NewRequest = (props: IForexModuleProps) => {
                         <Section title="Tax Residency Certificate">
                             <Grid>
 
-                                <Field label="Document Available">
+                                <Field label="Document Available" required>
                                     <select
                                         value={taxResidencyCertificate.DocumentAvailable || ""}
                                         disabled
@@ -863,28 +1293,28 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </select>
                                 </Field>
 
-                                <Field label="Document Number">
+                                <Field label="Document Number" required>
                                     <input
                                         value={taxResidencyCertificate.DocumentNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Country of Tax Residence">
+                                <Field label="Country of Tax Residence" required>
                                     <input
                                         value={taxResidencyCertificate.CountryOfTaxResidence || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Tax Identification Number">
+                                <Field label="Tax Identification Number" required>
                                     <input
                                         value={taxResidencyCertificate.TaxIdentificationNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Validity Start Date">
+                                <Field label="Validity Start Date" required>
                                     <input
                                         type="date"
                                         value={taxResidencyCertificate.ValidityStartDate || ""}
@@ -892,7 +1322,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity End Date">
+                                <Field label="Validity End Date" required>
                                     <input
                                         type="date"
                                         value={taxResidencyCertificate.ValidityEndDate || ""}
@@ -900,7 +1330,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="View Document">
+                                <Field label="View Document" required>
                                     <span><a href={taxResidencyCertificate.Attachmenturl || "#"} target="_blank">{taxResidencyCertificate.Attachmentfilename || "No Document Available"}</a></span>
                                 </Field>
 
@@ -911,7 +1341,7 @@ const NewRequest = (props: IForexModuleProps) => {
                         <Section title="Form 10F">
                             <Grid>
 
-                                <Field label="Document Available">
+                                <Field label="Document Available" required>
                                     <select
                                         value={form10F.DocumentAvailable || ""}
                                         disabled
@@ -922,21 +1352,21 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </select>
                                 </Field>
 
-                                <Field label="Document Number">
+                                <Field label="Document Number" required>
                                     <input
                                         value={form10F.DocumentNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Acknowledgment Number">
+                                <Field label="Acknowledgment Number" required>
                                     <input
                                         value={form10F.AcknowledgmentNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Document Date">
+                                <Field label="Document Date" required>
                                     <input
                                         type="date"
                                         value={form10F.DocumentDate || ""}
@@ -944,7 +1374,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity Start Date">
+                                <Field label="Validity Start Date" required>
                                     <input
                                         type="date"
                                         value={form10F.ValidityStartDate || ""}
@@ -952,7 +1382,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity End Date">
+                                <Field label="Validity End Date" required>
                                     <input
                                         type="date"
                                         value={form10F.ValidityEndDate || ""}
@@ -960,7 +1390,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="View Document">
+                                <Field label="View Document" required>
                                     <span><a href={form10F.Attachmenturl || "#"} target="_blank">{form10F.Attachmentfilename || "No Document Available"}</a></span>
                                 </Field>
 
@@ -969,28 +1399,51 @@ const NewRequest = (props: IForexModuleProps) => {
                     </>
                 )}
 
-                <Section >
-                    <Grid>
-                        <Field label="From"><input type="date" value={fromdate} /></Field>
+                <Section>
 
-                        <Field label="To"><input type="date" value={todate} /></Field>
-                    </Grid>
-                    <Grid>
 
-                        <Field label="Eligible amount that can be transmitted without WHT">
-                            <input type="number" value={eligibleAmountWithWHT} onChange={(e) => setEligibleAmountWithWHT(e.target.value)} />
+
+                    <Grid>
+                        <Field>
+                            <span><b>From Date:</b> <b>{fromdate}</b></span>
                         </Field>
 
-
-                        <Field label="Paid Amount">
-                            <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} />
-                        </Field>
-
-                        <Field label="Balance eligible amount(Without with holding Tax)">
-                            <input type="number" value={ballenceEligibleAmount} onChange={(e)=>setBallenceEligibleAmount(e.target.value)} />
+                        <Field>
+                            <span><b>To Date:</b> <b>{todate}</b></span>
                         </Field>
                     </Grid>
 
+
+
+
+                    <Grid>
+                        {paymentType !== "Service-Bill Payment" &&
+                            paymentType !== "Service-Advance Payment" && (
+                                <Field label="Eligible amount that can be transmitted without WHT" required>
+                                    <input
+                                        type="number"
+                                        value={eligibleAmountWithWHT}
+                                        onChange={(e) => setEligibleAmountWithWHT(e.target.value)}
+                                    />
+                                </Field>
+                            )}
+
+                        <Field label="Paid Amount" required>
+                            <input
+                                type="number"
+                                value={paidAmount}
+                                onChange={(e) => setPaidAmount(e.target.value)}
+                            />
+                        </Field>
+
+                        <Field label="Balance eligible amount (Without withholding Tax)" required>
+                            <input
+                                type="number"
+                                value={ballenceEligibleAmount}
+                                onChange={(e) => setBallenceEligibleAmount(e.target.value)}
+                            />
+                        </Field>
+                    </Grid>
                 </Section>
 
                 {/* ================= FOREX DETAILS ================= */}
@@ -1010,7 +1463,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                         }
                                     }}
                                 />
-                                </Field>
+                            </Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
                             <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
@@ -1117,11 +1570,37 @@ const NewRequest = (props: IForexModuleProps) => {
                                         </td>
 
                                         <td>
-                                            <input type="file" />
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
+
+                                                        setInvoiceFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
+                                            />
                                         </td>
 
                                         <td>
-                                            <input type="file" />
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
+
+                                                        setOtherFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
+                                            />
                                         </td>
 
                                         <td style={{ textAlign: "center" }}>
@@ -1198,7 +1677,20 @@ const NewRequest = (props: IForexModuleProps) => {
                                             <tr key={index}>
                                                 <td>{boe}</td>
                                                 <td>
-                                                    <input type="file" />
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        onChange={(e) => {
+                                                            if (e.target.files) {
+                                                                const filesArray = Array.from(e.target.files);
+
+                                                                setBoeFiles(prev => ({
+                                                                    ...prev,
+                                                                    [boe]: [...(prev[boe] || []), ...filesArray]
+                                                                }));
+                                                            }
+                                                        }}
+                                                    />
                                                 </td>
                                             </tr>
                                         ))}
@@ -1223,7 +1715,20 @@ const NewRequest = (props: IForexModuleProps) => {
                                             <tr key={index}>
                                                 <td>{bl}</td>
                                                 <td>
-                                                    <input type="file" />
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        onChange={(e) => {
+                                                            if (e.target.files) {
+                                                                const filesArray = Array.from(e.target.files);
+
+                                                                setBlFiles(prev => ({
+                                                                    ...prev,
+                                                                    [bl]: [...(prev[bl] || []), ...filesArray]
+                                                                }));
+                                                            }
+                                                        }}
+                                                    />
                                                 </td>
                                             </tr>
                                         ))}
@@ -1326,15 +1831,34 @@ const NewRequest = (props: IForexModuleProps) => {
                                         <td>
                                             <input
                                                 type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
 
-
+                                                        setInvoiceFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         </td>
 
                                         <td>
                                             <input
                                                 type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
 
+                                                        setOtherFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         </td>
 
@@ -1473,21 +1997,50 @@ const NewRequest = (props: IForexModuleProps) => {
                                         <td>
                                             <input
                                                 type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
 
+                                                        setPoFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         </td>
                                         <td>
                                             <input
                                                 type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
 
-
+                                                        setPiFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         </td>
 
                                         <td>
                                             <input
                                                 type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
 
+                                                        setAdvanceOtherFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         </td>
 
@@ -1624,21 +2177,50 @@ const NewRequest = (props: IForexModuleProps) => {
                                         <td>
                                             <input
                                                 type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
 
+                                                        setPoFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         </td>
                                         <td>
                                             <input
                                                 type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
 
-
+                                                        setPiFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         </td>
 
                                         <td>
                                             <input
                                                 type="file"
+                                                multiple
+                                                onChange={(e) => {
+                                                    if (e.target.files) {
+                                                        const filesArray = Array.from(e.target.files);
 
+                                                        setAdvanceOtherFiles(prev => ({
+                                                            ...prev,
+                                                            [index]: [...(prev[index] || []), ...filesArray]
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         </td>
 
@@ -1707,15 +2289,21 @@ const NewRequest = (props: IForexModuleProps) => {
                 {/* ================= CORRESPONDENT ================= */}
                 <Section title="Correspondent Bank Details">
                     <Grid>
-                        <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} /></Field>
-                        <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} /></Field>
-                        <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} /></Field>
-                        <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
+                        <Field label="Bank Name" required><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} /></Field>
+                        <Field label="Swift Code" required><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} /></Field>
+                        <Field label="Bank Account No" required><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} /></Field>
+                        <Field label="Remarks" full required><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
                     </Grid>
                 </Section>
 
                 <div className="button-row">
-                    <button className="btn-submit" onClick={onsubmit}>Submit</button>
+                    <button
+                        className="btn-submit"
+                        onClick={onsubmit}
+                        disabled={loading}
+                    >
+                        {loading ? "Submitting..." : "Submit"}
+                    </button>
                     <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
                 </div>
 

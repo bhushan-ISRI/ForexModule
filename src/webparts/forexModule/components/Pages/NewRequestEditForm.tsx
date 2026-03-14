@@ -22,6 +22,13 @@ interface InvoiceRow {
 }
 
 
+interface IApproverDetails {
+    Id: number;
+    Name: string;
+    Role: string;
+    Level: number;
+}
+
 /* Helper Components */
 const Section = ({ title, children }: any) => (
     <div className="form-section">
@@ -70,7 +77,9 @@ const Editrequest = (props: IForexModuleProps) => {
     const [eligibleAmountWithWHT, setEligibleAmountWithWHT] = useState("");
     const [paidAmount, setPaidAmount] = useState("");
     const [ballenceEligibleAmount, setBallenceEligibleAmount] = useState("");
-
+    const [approvers, setApprovers] = useState<any[]>([]);
+    //const [approverDetails, setApproverDetails] = useState<any[]>([]);
+    const [approverDetails, setApproverDetails] = useState<IApproverDetails[]>([]);
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
         EmployeeName: "",
@@ -212,12 +221,13 @@ const Editrequest = (props: IForexModuleProps) => {
         getuserData();
         getFinancialYearStart();
         getCurrencyData();
+        getApproversdata();
         if (Id) {
             loadForexData(Id);
         }
     }, [Id])
 
-      const getCurrencyData = async () => {
+    const getCurrencyData = async () => {
         try {
             const sp = await spCrudOps;
             await sp.getData(
@@ -235,7 +245,7 @@ const Editrequest = (props: IForexModuleProps) => {
                 }));
                 setCurrencyOptions(options);
             });
-        } catch (error) {console.error("Error fetching currency data:", error);}
+        } catch (error) { console.error("Error fetching currency data:", error); }
     }
     //----------------------- load data for edit------------------------//
     const loadForexData = async (forexId: string) => {
@@ -317,6 +327,74 @@ const Editrequest = (props: IForexModuleProps) => {
         }
     };
 
+    const buildApprovalFlow = async (employeeData: any, selectedType: string) => {
+        try {
+            const sp = await spCrudOps;
+
+            const baseApprovers: IApproverDetails[] = [];
+
+            if (employeeData.RMId) {
+                baseApprovers.push({
+                    Id: employeeData.RMId,
+                    Name: employeeData.RM,
+                    Role: "RM",
+                    Level: 1
+                });
+            }
+
+            if (employeeData.HODId) {
+                baseApprovers.push({
+                    Id: employeeData.HODId,
+                    Name: employeeData.HOD,
+                    Role: "HOD",
+                    Level: 2
+                });
+            }
+
+            // 🔥 Map UI type to Backend RequestType
+            let requestTypeFilter = "";
+
+            if (
+                selectedType === "Goods-Advance Payment" ||
+                selectedType === "Service-Advance Payment"
+            ) {
+                requestTypeFilter = "Advance Payment";
+            } else {
+                requestTypeFilter = selectedType; // direct match for Bill types
+            }
+
+            const matrixData = await sp.getData(
+                "ForexApprovalMatrix",
+                "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
+                "Approver",
+                `RequestType eq '${requestTypeFilter}'`,
+                { column: "Level", isAscending: true },
+                5000,
+                props
+            );
+
+            const matrixApprovers = matrixData.map((item: any, index: number) => ({
+                Id: item.Approver?.Id,
+                Name: item.Approver?.Title,
+                Role: item.Role,
+                Level: baseApprovers.length + index + 1
+            }));
+
+            const fullFlow = [...baseApprovers, ...matrixApprovers];
+
+            const uniqueFlow = fullFlow.filter(
+                (value, index, self) =>
+                    self.findIndex(v => v.Id === value.Id) === index
+            );
+
+            setApproverDetails(uniqueFlow);
+            setApprovers(uniqueFlow.map(a => a.Id));
+
+        } catch (error) {
+            console.error("Error building approval flow:", error);
+        }
+    };
+
     //=----------------------- userdata------------------------//
     const getuserData = async () => {
         (await spCrudOps).getData(
@@ -345,6 +423,13 @@ const Editrequest = (props: IForexModuleProps) => {
                         RMId: userData.RM?.Id || 0,
                         HODId: userData.HOD?.Id || 0
                     });
+
+                    buildApprovalFlow({
+                        RMId: userData.RM?.Id,
+                        HODId: userData.HOD?.Id,
+                        RM: userData.RM?.Title,
+                        HOD: userData.HOD?.Title
+                    }, paymentType);
 
                 } else {
                     console.log("No user data found for the current email.");
@@ -546,6 +631,30 @@ const Editrequest = (props: IForexModuleProps) => {
         setFromDate(`${fyStartYear}-04-01`);
     };
 
+    const getApproversdata = async () => {
+
+        const sp = await spCrudOps;
+
+        const res = await sp.getData(
+            "ForexApproverMatrix",
+            "ID,Approver/Id,Approver/Title,Level",
+            "Approver",
+            "",
+            { column: "Level", isAscending: true },
+            5000,
+            props
+        );
+
+        const approverList = res.map((a: any) => ({
+            Id: a.Approver.Id,
+            Name: a.Approver.Title,
+            Level: a.Level
+        }));
+
+        setApproverDetails(approverList);
+    };
+
+
     const onsubmit = async () => {
 
         try {
@@ -680,11 +789,42 @@ const Editrequest = (props: IForexModuleProps) => {
 
             <div className="forex-card">
 
+
+                {/* ================= APPROVAL FLOW ================= */}
+                <Section title="Approval Flow">
+                    <div className="approval-ribbon">
+
+                        {/* Initiator */}
+                        <div className="ribbon-step initiator">
+                            {employee.EmployeeName}
+                        </div>
+
+                        {approverDetails.map((approver, index) => (
+                            <div key={index} className="ribbon-step approver">
+                                {approver.Name}
+                            </div>
+                        ))}
+
+                    </div>
+                </Section>
                 {/* ================= REQUESTOR ================= */}
                 <Section title="Requestor Information">
                     <Grid>
-                        <Field label="Type">
-                            <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)}>
+                        <Field label="Type" required>
+                            <select
+                                value={paymentType}
+                                onChange={(e) => {
+                                    const selected = e.target.value;
+                                    setPaymentType(selected);
+
+                                    buildApprovalFlow({
+                                        RMId: employee.RMId,
+                                        HODId: employee.HODId,
+                                        RM: employee.RM,
+                                        HOD: employee.HOD
+                                    }, selected);
+                                }}
+                            >
                                 <option value="Goods-Bill Payment">Goods-Bill Payment</option>
                                 <option value="Service-Bill Payment">Service-Bill Payment</option>
                                 <option value="Goods-Advance Payment">Goods-Advance Payment</option>
@@ -974,9 +1114,13 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 <Section >
                     <Grid>
-                        <Field label="From"><input type="date" value={fromdate} /></Field>
+                        <Field>
+                            <span><b>From Date:</b> <b>{fromdate}</b></span>
+                        </Field>
 
-                        <Field label="To"><input type="date" value={todate} /></Field>
+                        <Field>
+                            <span><b>To Date:</b> <b>{todate}</b></span>
+                        </Field>
                     </Grid>
                     <Grid>
 
@@ -1004,15 +1148,15 @@ const Editrequest = (props: IForexModuleProps) => {
                             <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency">
-                                  <Dropdown
-                                                                    options={currencyOptions}
-                                                                    selectedKey={currency}
-                                                                    onChange={(e, option) => {
-                                                                        if (option) {
-                                                                            setCurrency(option.key as string);
-                                                                        }
-                                                                    }}
-                                                                />
+                                <Dropdown
+                                    options={currencyOptions}
+                                    selectedKey={currency}
+                                    onChange={(e, option) => {
+                                        if (option) {
+                                            setCurrency(option.key as string);
+                                        }
+                                    }}
+                                />
                             </Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
                             <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>

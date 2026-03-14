@@ -14,6 +14,8 @@ import Editrequest from './Pages/NewRequestEditForm';
 import ViewRequestForm from './Pages/NewRequestViewForm';
 import ApprovalRequestForm from './Pages/ApprovalRequestForm';
 
+import TrackerForm from './Pages/InitiatorPaymentForm';
+
 const ForexModule: React.FC<IForexModuleProps> = (props) => {
   const {
     description,
@@ -29,7 +31,7 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
     location.pathname === "/NewRequest" ||
     location.pathname.startsWith("/ViewRequest/") ||
     location.pathname.startsWith("/EditRequest/") ||
-    location.pathname.startsWith("/ApprovalRequest/");
+    location.pathname.startsWith("/ApprovalRequest/") || location.pathname.startsWith("/AdvancePaymentTracker/");
     
     return (
    
@@ -41,6 +43,7 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
             <Route exact path="/NewRequest" render={() => <NewRequest {...props} />} />
             <Route exact path="/ViewRequest/:Id" render={() => <ViewRequestForm {...props} />} />
             <Route exact path="/EditRequest/:Id" render={() => <Editrequest {...props} />} />
+            <Route exact path="/AdvancePaymentTracker/:Id" render={() => <TrackerForm {...props} />} />
             <Route exact path="/ApprovalRequest/:Id" render={() => <ApprovalRequestForm {...props} />} />
             <Route exact path="/ApprovalDashboard" render={() => <ApprovalDashboard {...props} />} />
             <Route exact path="/APTeamLandingPage" render={() => <APTeamLP {...props} />} />

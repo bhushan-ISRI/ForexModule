@@ -203,12 +203,12 @@ return (
                     </span>
                   </td>
                   <td>
-                    {item.Status === "Pending" ||
-                    item.Status === "Pending" ? (
+                    {/* {item.Status === "Pending" ||
+                    item.Status === "Pending" ? ( */}
                       <Link to={`/ApprovalRequest/${item.ID}`}>
                         <img src={Edit} width={16} alt="Edit" />
                       </Link>
-                    ) : (
+                    {/* ) : (
                       <>
                         <Link to={`/ApprovalRequest/${item.ID}`}>
                           <img src={View} width={16} alt="View" />
@@ -216,7 +216,7 @@ return (
 
                        
                       </>
-                    )}
+                    )} */}
                   </td>
                 </tr>
               ))

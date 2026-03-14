@@ -38,9 +38,17 @@ const Field = ({ label, children, full }: any) => (
     </div>
 );
 
+interface IApproverDetails {
+    Id: number;
+    Name: string;
+    Role: string;
+    Level: number;
+    Status?: string;
+    Comment?: string;
+}
 
 const ViewRequestForm = (props: IForexModuleProps) => {
-        const { Id } = useParams<{ Id: string }>();
+    const { Id } = useParams<{ Id: string }>();
     const history = useHistory();
     const spCrudOps = SPCRUDOPS();
     const [paymentType, setPaymentType] = useState("Goods-Bill Payment");
@@ -64,9 +72,26 @@ const ViewRequestForm = (props: IForexModuleProps) => {
     const [poDate, setPoDate] = useState("");
     const [expectedSettlementDate, setExpectedSettlementDate] = useState("");
 
-     const [eligibleAmountWithWHT, setEligibleAmountWithWHT] = useState("");
-        const [paidAmount, setPaidAmount] = useState("");
-        const [ballenceEligibleAmount, setBallenceEligibleAmount] = useState("");
+    const [eligibleAmountWithWHT, setEligibleAmountWithWHT] = useState("");
+    const [paidAmount, setPaidAmount] = useState("");
+    const [ballenceEligibleAmount, setBallenceEligibleAmount] = useState("");
+
+    const [invoiceAttachments, setInvoiceAttachments] = useState<any>({});
+    const [otherAttachments, setOtherAttachments] = useState<any>({});
+    const [poAttachments, setPoAttachments] = useState<any>({});
+    const [piAttachments, setPiAttachments] = useState<any>({});
+
+    const [boeLibraryFiles, setBoeLibraryFiles] = useState<any[]>([]);
+    const [bolLibraryFiles, setBolLibraryFiles] = useState<any[]>([]);
+    const [approverDetails, setApproverDetails] = useState<IApproverDetails[]>([]);
+    const [currentApproverId, setCurrentApproverId] = useState<number | null>(null);
+    const [approvers, setApprovers] = useState<any[]>([]);
+    const [foreignCurrency, setForeignCurrency] = useState("");
+    const [foreignCurrencyAmount, setForeignCurrencyAmount] = useState("");
+    const [exchangeRate, setExchangeRate] = useState("");
+    const [inrAmount, setInrAmount] = useState("");
+    const [paymentDate, setPaymentDate] = useState("");
+    const [paymentReferenceNumber, setPaymentReferenceNumber] = useState("");
 
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
@@ -207,103 +232,198 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
     useEffect(() => {
         getFinancialYearStart();
-           if (Id) {
-        loadForexData(Id);
-    }
+        if (Id) {
+            loadForexData(Id);
+        }
     }, [Id])
-//----------------------- load data for edit------------------------//
-const loadForexData = async (forexId: string) => {
-    const sp = await spCrudOps;
+    //----------------------- load data for edit------------------------//
+    const loadForexData = async (forexId: string) => {
+        const sp = await spCrudOps;
 
-    try {
+        try {
 
-        // 🔹 Load Parent
-        const parent = await sp.getData(
-            "ForexRequest",
-            "*,RM/Title,HOD/Title,Author/Id,Currency/Title,Currency/Id",
-            "RM,HOD,Author,Currency",
-            `ID eq ${forexId}`,
-            { column: "ID", isAscending: true },
-            1,
-            props
-        );
+            // 🔹 Load Parent
+            const parent = await sp.getData(
+                "ForexRequest",
+                "*,AllApprovers,RM/Title,HOD/Title,Author/Id,Currency/Title,Currency/Id,CurrentApprover/Id,CurrentApprover/Title,NextApprovers/Id,NextApprovers/Title,PrevApprovers/Id,PrevApprovers/Title",
+                "RM,HOD,Author,Currency,CurrentApprover,NextApprovers,PrevApprovers",
+                `ID eq ${forexId}`,
+                { column: "ID", isAscending: true },
+                1,
+                props
+            );
 
-        if (parent.length > 0) {
-            const data = parent[0];
+            if (parent.length > 0) {
+                const data = parent[0];
 
-            setPaymentType(data.ForexType || "");
-            setRequestNumber(data.ForexNumber || "");
-            setRequestedOn(data.RequestedOn?.split("T")[0] || "");
-            setCurrency(data.Currency.Title || "");
-            setTotalAmount(data.TotalAmount || "");
-            setForeignBankCharges(data.ForeignBankCharges || "");
-            setPoContractNo(data.poContractNo || "");
-            setPoDate(data.poDate?.split("T")[0] || "");
-            setExpectedSettlementDate(data.expectedSettlementDate?.split("T")[0] || "");
-            setBankName(data.BankName || "");
-            setBankAccountNo(data.BankAccNo || "");
-            setRemarks(data.Remarks || "");
-            setDTAAApplicable(data.DTAAApplicable || "");
-            setTaxDocumentView(data.DocumentIsAvailable || "");
-            setBankSwiftCode(data.BankSwiftCode || ""); 
-            setEligibleAmountWithWHT(data.EligibleAmountWithWHT || "");
-            setPaidAmount(data.PaidAmount || "");
+                setPaymentType(data.ForexType || "");
+                setRequestNumber(data.ForexNumber || "");
+                setRequestedOn(data.RequestedOn?.split("T")[0] || "");
+                setCurrency(data.Currency.Title || "");
+                setTotalAmount(data.TotalAmount || "");
+                setForeignBankCharges(data.ForeignBankCharges || "");
+                setPoContractNo(data.poContractNo || "");
+                setPoDate(data.poDate?.split("T")[0] || "");
+                setExpectedSettlementDate(data.expectedSettlementDate?.split("T")[0] || "");
+                setBankName(data.BankName || "");
+                setBankAccountNo(data.BankAccNo || "");
+                setRemarks(data.Remarks || "");
+                setDTAAApplicable(data.DTAAApplicable || "");
+                setTaxDocumentView(data.DocumentIsAvailable || "");
+                setBankSwiftCode(data.BankSwiftCode || "");
+                setEligibleAmountWithWHT(data.EligibleAmountWithWHT || "");
+                setPaidAmount(data.PaidAmount || "");
                 setBallenceEligibleAmount(data.BallenceEligibleAmount || "");
+                setForeignCurrency(data.ForeignCurrency || "");
+                setForeignCurrencyAmount(data.ForeignCurrencyAmount || "");
+                setExchangeRate(data.ExchangeRate || "");
+                setInrAmount(data.INRAmount || "");
+                setPaymentDate(data.PaymentDate?.split("T")[0] || "");
+                setPaymentReferenceNumber(data.PaymentReferenceNumber || "");
 
-            setVendor({
-                ...vendor,
-                VendorCode: data.VendorCode,
-                VendorName: data.VendorName
-            });
-              setEmployee({
-                        EmployeeCode: data.EmployeeCode || "",
-                        EmployeeName: data.EmployeeName || "",
-                        Division: data.Division || "",
-                        Location: data.Location || "",
-                        RM: data.RM?.Title || "",
-                        HOD: data.HOD?.Title || "",
-                        ContactNo: data.ContactNo || "",
-                        EmployeeStatus: data.EmployeeStatus || "",
-                        Email: data.Email || "",
-                        RMId: data.RM?.Id || 0,
-                        HODId: data.HOD?.Id || 0
+                setVendor({
+                    ...vendor,
+                    VendorCode: data.VendorCode,
+                    VendorName: data.VendorName
+                });
+                setEmployee({
+                    EmployeeCode: data.EmployeeCode || "",
+                    EmployeeName: data.EmployeeName || "",
+                    Division: data.Division || "",
+                    Location: data.Location || "",
+                    RM: data.RM?.Title || "",
+                    HOD: data.HOD?.Title || "",
+                    ContactNo: data.ContactNo || "",
+                    EmployeeStatus: data.EmployeeStatus || "",
+                    Email: data.Email || "",
+                    RMId: data.RM?.Id || 0,
+                    HODId: data.HOD?.Id || 0
+                });
+                getVendorData(data.VendorCode);
+                setCurrentApproverId(data.CurrentApprover?.Id || null);
+
+                const approverList: IApproverDetails[] = [];
+
+                if (data.AllApprovers) {
+
+                    const parsed = JSON.parse(data.AllApprovers);
+
+                    parsed.forEach((a: any) => {
+
+                        let status = "pending";
+
+                        if (a.Status === "Approved") {
+                            status = "approved";
+                        }
+
+                        if (data.CurrentApprover?.Id === a.Id) {
+                            status = "current";
+                        }
+
+                        approverList.push({
+                            Id: a.Id,
+                            Name: a.Name,
+                            Role: a.Role,
+                            Level: a.Level,
+                            Status: status,
+                            Comment: a.Remarks
+                        });
+
                     });
-            getVendorData(data.VendorCode);
+
+                }
+
+
+                setApproverDetails(approverList);
+            }
+
+            const child = await sp.getData(
+                "ForexServicesBillPayment",
+                "*,AttachmentFiles",
+                "AttachmentFiles",
+                `ForexIDId eq ${forexId}`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            if (child.length > 0) {
+
+                const formattedRows = child.map((item: any) => ({
+                    invoiceNo: item.InvoiceNumber || "",
+                    invoiceDate: item.InvoiceDate?.split("T")[0] || "",
+                    invoiceAmount: item.InvoiceAmount || "",
+                    mrnNo: item.MRNNumber || "",
+                    mrnDate: item.MRNDate?.split("T")[0] || "",
+                    blNo: item.BillofLandingNo || "",
+                    blDate: item.BillOfLandingdate?.split("T")[0] || "",
+                    boeNo: item.BOENo || "",
+                    boeDate: item.BOEDate?.split("T")[0] || ""
+                }));
+
+                setRows(formattedRows);
+                const attachmentMap: any = {};
+                const invoiceAttachmentMap: any = {};
+                const otherAttachmentMap: any = {};
+                const poAttachmentMap: any = {};
+                const piAttachmentMap: any = {};
+
+                child.forEach((item: any, index: number) => {
+
+                    const allFiles = item.AttachmentFiles || [];
+
+                    invoiceAttachmentMap[index] = allFiles.filter((file: any) =>
+                        file.FileName?.startsWith("INV_")
+                    );
+
+                    otherAttachmentMap[index] = allFiles.filter((file: any) =>
+                        file.FileName?.startsWith("DOC_")
+                    );
+
+                    poAttachmentMap[index] = allFiles.filter((file: any) =>
+                        file.FileName?.startsWith("PO_")
+                    );
+
+                    piAttachmentMap[index] = allFiles.filter((file: any) =>
+                        file.FileName?.startsWith("PI_")
+                    );
+                });
+
+                setInvoiceAttachments(invoiceAttachmentMap);
+                setOtherAttachments(otherAttachmentMap);
+                setPoAttachments(poAttachmentMap);
+                setPiAttachments(piAttachmentMap);
+            }
+
+            const bolFiles = await sp.getData(
+                "BillOfLandingAttachment",
+                "FileLeafRef,FileRef,BOLNo,ReqeuestId",
+                "",
+                `ReqeuestId eq '${Id}'`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            const boeFiles = await sp.getData(
+                "BOEAttachments",
+                "FileLeafRef,FileRef,BOENo,ReqeuestId",
+                "",
+                `ReqeuestId eq '${Id}'`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+            setBoeLibraryFiles(boeFiles);
+
+            setBolLibraryFiles(bolFiles);
+
+        } catch (error) {
+            console.error("Error loading edit data:", error);
         }
-
-        // 🔹 Load Child Rows
-        const child = await sp.getData(
-            "ForexServicesBillPayment",
-            "*",
-            "",
-            `ForexIDId eq ${forexId}`,
-            { column: "ID", isAscending: true },
-            5000,
-            props
-        );
-
-        if (child.length > 0) {
-            const formattedRows = child.map((item: any) => ({
-                invoiceNo: item.InvoiceNumber || "",
-                invoiceDate: item.InvoiceDate?.split("T")[0] || "",
-                invoiceAmount: item.InvoiceAmount || "",
-                mrnNo: item.MRNNumber || "",
-                mrnDate: item.MRNDate?.split("T")[0] || "",
-                blNo: item.BillofLandingNo || "",
-                blDate: item.BillOfLandingdate?.split("T")[0] || "",
-                boeNo: item.BOENo || "",
-                boeDate: item.BOEDate?.split("T")[0] || ""
-            }));
-
-            setRows(formattedRows);
-        }
-
-    } catch (error) {
-        console.error("Error loading edit data:", error);
-    }
-};
+    };
     //=----------------------- userdata------------------------//
-  
+
 
     //----------------------VendorData-------------------------//
     const getVendorData = async (vendorCode: string) => {
@@ -461,6 +581,8 @@ const loadForexData = async (forexId: string) => {
 
         setFromDate(`${fyStartYear}-04-01`);
     };
+
+
     return (
         <div className="forex-wrapper">
 
@@ -470,6 +592,28 @@ const loadForexData = async (forexId: string) => {
             </div>
 
             <div className="forex-card">
+                {/* =============================Approvers================== */}
+                <Section title="Approval Flow">
+                    <div className="approval-ribbon">
+
+                        <div className="ribbon-step initiator">
+                            {employee.EmployeeName}
+                        </div>
+
+                        {approverDetails.map((approver, index) => {
+
+                            let stepClass = approver.Status || "pending";
+
+                            return (
+                                <div key={index} className={`ribbon-step ${stepClass}`}>
+                                    {approver.Role} - {approver.Name}
+                                </div>
+                            );
+
+                        })}
+
+                    </div>
+                </Section>
 
                 {/* ================= REQUESTOR ================= */}
                 <Section title="Requestor Information">
@@ -901,11 +1045,28 @@ const loadForexData = async (forexId: string) => {
                                         </td>
 
                                         <td>
-                                            <input type="file" />
+                                            <div>
+                                                {invoiceAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
+                                            </div>
                                         </td>
 
                                         <td>
-                                            <input type="file" />
+                                            <div>
+                                                {otherAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </td>
 
                                         <td style={{ textAlign: "center" }}>
@@ -982,8 +1143,17 @@ const loadForexData = async (forexId: string) => {
                                             <tr key={index}>
                                                 <td>{boe}</td>
                                                 <td>
-                                                    <input type="file" />
-                                                </td>
+                                                    <div>
+                                                        {boeLibraryFiles
+                                                            .filter(file => file.BOENo === boe)
+                                                            .map((file, i) => (
+                                                                <div key={i}>
+                                                                    <a href={file.FileRef} target="_blank">
+                                                                        {file.FileLeafRef}
+                                                                    </a>
+                                                                </div>
+                                                            ))}
+                                                    </div>                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -1007,8 +1177,17 @@ const loadForexData = async (forexId: string) => {
                                             <tr key={index}>
                                                 <td>{bl}</td>
                                                 <td>
-                                                    <input type="file" />
-                                                </td>
+                                                    <div>
+                                                        {bolLibraryFiles
+                                                            .filter(file => file.BOLNo === bl)
+                                                            .map((file, i) => (
+                                                                <div key={i}>
+                                                                    <a href={file.FileRef} target="_blank">
+                                                                        {file.FileLeafRef}
+                                                                    </a>
+                                                                </div>
+                                                            ))}
+                                                    </div>                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -1098,18 +1277,23 @@ const loadForexData = async (forexId: string) => {
                                             />
                                         </td>
                                         <td>
-                                            <input
-                                                type="file"
-
-
-                                            />
+                                            {invoiceAttachments[index]?.map((file: any, i: number) => (
+                                                <div key={i}>
+                                                    <a href={file.ServerRelativeUrl} target="_blank">
+                                                        {file.FileName}
+                                                    </a>
+                                                </div>
+                                            ))}
                                         </td>
 
                                         <td>
-                                            <input
-                                                type="file"
-
-                                            />
+                                            {otherAttachments[index]?.map((file: any, i: number) => (
+                                                <div key={i}>
+                                                    <a href={file.ServerRelativeUrl} target="_blank">
+                                                        {file.FileName}
+                                                    </a>
+                                                </div>
+                                            ))}
                                         </td>
 
 
@@ -1249,10 +1433,13 @@ const loadForexData = async (forexId: string) => {
                                         </td>
 
                                         <td>
-                                            <input
-                                                type="file"
-
-                                            />
+                                            {otherAttachments[index]?.map((file: any, i: number) => (
+                                                <div key={i}>
+                                                    <a href={file.ServerRelativeUrl} target="_blank">
+                                                        {file.FileName}
+                                                    </a>
+                                                </div>
+                                            ))}
                                         </td>
 
 
@@ -1390,10 +1577,13 @@ const loadForexData = async (forexId: string) => {
                                         </td>
 
                                         <td>
-                                            <input
-                                                type="file"
-
-                                            />
+                                            {otherAttachments[index]?.map((file: any, i: number) => (
+                                                <div key={i}>
+                                                    <a href={file.ServerRelativeUrl} target="_blank">
+                                                        {file.FileName}
+                                                    </a>
+                                                </div>
+                                            ))}
                                         </td>
 
 
@@ -1467,7 +1657,54 @@ const loadForexData = async (forexId: string) => {
                         <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
                     </Grid>
                 </Section>
+                <Section title="Approval Remarks">
 
+                    <Grid>
+
+                        {approverDetails.map((a, i) => (
+
+                            <Field key={i} label={`${a.Role} Remarks`} full>
+
+                                <textarea value={a.Comment || ""} readOnly />
+
+                            </Field>
+
+                        ))}
+
+                    </Grid>
+
+                </Section>
+                <Section title="Payment Details">
+
+                    <Grid>
+
+                        <Field label="Foreign Currency">
+                            <input value={foreignCurrency} readOnly />
+                        </Field>
+
+                        <Field label="Foreign Currency Amount">
+                            <input value={foreignCurrencyAmount} readOnly />
+                        </Field>
+
+                        <Field label="Exchange Rate">
+                            <input value={exchangeRate} readOnly />
+                        </Field>
+
+                        <Field label="INR Amount">
+                            <input value={inrAmount} readOnly />
+                        </Field>
+
+                        <Field label="Payment Date">
+                            <input type="date" value={paymentDate} readOnly />
+                        </Field>
+
+                        <Field label="Payment Reference Number">
+                            <input value={paymentReferenceNumber} readOnly />
+                        </Field>
+
+                    </Grid>
+
+                </Section>
                 <div className="button-row">
                     {/* <button className="btn-submit" onClick={onsubmit}>Submit</button> */}
                     <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>

@@ -4,6 +4,7 @@
 }
 
 /* Header remains same */
+
 .header {
   background: linear-gradient(90deg, #3c3e45, #2d2d2d);
   color: #fff;
@@ -22,7 +23,35 @@
   margin: 0;
 }
 
+/* Tabs */
+
+.dashboard-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 15px 20px 5px 20px;
+}
+
+.dashboard-tabs button {
+  padding: 8px 18px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.dashboard-tabs button.active {
+  background: #0a66c2;
+  color: white;
+  border-color: #0a66c2;
+}
+
+.dashboard-tabs button:hover {
+  background: #f2f2f2;
+}
+
 /* Filter Section */
+
 .filter-section {
   margin: 15px 20px;
   display: flex;
@@ -41,6 +70,7 @@
 }
 
 /* Create Button */
+
 .create-button {
   background-color: #000;
   color: #fff;
@@ -55,6 +85,7 @@
 }
 
 /* Table Section */
+
 .table-section {
   margin: 0 20px;
   background: #fff;
@@ -84,6 +115,7 @@
 }
 
 /* Status Badge */
+
 .status-badge {
   padding: 4px 8px;
   border-radius: 12px;
@@ -116,7 +148,20 @@
   color: #8a4b00;
 }
 
+.status-badge.Paid {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* FIX for "Paid & Closed" */
+
+.status-badge.Paid-\&-Closed {
+  background: #d4edda;
+  color: #155724;
+}
+
 /* Pagination */
+
 .pagination {
   margin-top: 15px;
   text-align: center;

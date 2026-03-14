@@ -9,16 +9,19 @@ import Left from "../../assets/LeftArrow.png";
 import Right from "../../assets/RightArrow.png";
 import View from "../../assets/Eye.png";
 import Edit from "../../assets/Pencil.png";
-import Renew from "../../assets/Renew.png";
 
 export const InitiatorDashboard: React.FC<IForexModuleProps> = (
   props: IForexModuleProps
 ) => {
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [listData, setListData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 🔹 Tabs
+  const [activeTab, setActiveTab] = useState("All");
 
   // Pagination
   const itemsPerPage = 10;
@@ -41,6 +44,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
 
   // 🔹 Fetch Data
   const GetListData = async () => {
+
     setLoading(true);
 
     const spCrudOps = await SPCRUDOPS();
@@ -57,28 +61,38 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
 
     setListData(parentItems);
     setFilteredData(parentItems);
+
     setLoading(false);
+
   };
 
   useEffect(() => {
     GetListData();
   }, []);
 
-  // 🔹 Search + Status Filter Combined
+  // 🔹 Search + Status + Tab Filter
   useEffect(() => {
+
     let data = [...listData];
 
+    // Tab Filter
+    if (activeTab === "Advance") {
+      data = data.filter((item) => item.Status === "Paid");
+    }
+
+    // Status Filter
     if (statusFilter !== "All") {
       data = data.filter((item) => item.Status === statusFilter);
     }
 
+    // Search Filter
     if (searchTerm) {
+
       const lowerSearch = searchTerm.toLowerCase();
 
       data = data.filter((item) =>
         Object.values({
           requestNo: item.ForexNumber,
-         // requestDate: formatDate(item.RequestDate),
           vendorName: item.VendorName,
           EmployeeCode: item.EmployeeCode,
           EmployeeName: item.EmployeeName,
@@ -90,19 +104,23 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
           .toLowerCase()
           .includes(lowerSearch)
       );
+
     }
 
     setFilteredData(data);
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, listData]);
+
+  }, [searchTerm, statusFilter, listData, activeTab]);
 
   // 🔹 Pagination
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const handlePageChange = (page: number) => {
+
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
+
   };
 
   const sortedData = [...filteredData].sort((a, b) => b.ID - a.ID);
@@ -112,151 +130,215 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
     currentPage * itemsPerPage
   );
 
-return (
-  <div className="dashboard-wrapper">
+  return (
 
-    {/* Header (UNCHANGED) */}
-    <div className="header">
-      <div className="left-banner">
-        <div className="logo-text">
-          <h2>Forex Initiation Dashboard</h2>
+    <div className="dashboard-wrapper">
+
+      {/* Header */}
+      <div className="header">
+        <div className="left-banner">
+          <div className="logo-text">
+            <h2>Forex Initiation Dashboard</h2>
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* Filters */}
-    <div className="filter-section">
-      <div className="filter-left">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="form-control"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* 🔹 Tabs */}
+      <div className="dashboard-tabs">
 
-        <select
-          className="form-control"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+        <button
+          className={activeTab === "All" ? "active" : ""}
+          onClick={() => setActiveTab("All")}
         >
-          <option value="All">All Status</option>
-          <option value="Draft">Draft</option>
-          <option value="Submitted">Submitted</option>
-          <option value="Approved">Approved</option>
-          <option value="Send back">Send back</option>
-          <option value="Rejected">Rejected</option>
-        </select>
+          All Requests
+        </button>
+
+        <button
+          className={activeTab === "Advance" ? "active" : ""}
+          onClick={() => setActiveTab("Advance")}
+        >
+          Advance Payment
+        </button>
+
       </div>
 
-      <Link to="/NewRequest" className="create-button">
-        + New Request
-      </Link>
-    </div>
+      {/* Filters */}
+      <div className="filter-section">
 
-    {/* Table */}
-    <div className="table-section">
-      <div className="table-vert-scroll">
-        <table className="custom-table">
-          <thead>
-            <tr>
-              <th>Request No.</th>
-              <th>EmployeeCode</th>
-              <th>Employee Name</th>
-              <th>Request Date</th> 
-              <th>Location</th>
-              <th>Vendor Name</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+        <div className="filter-left">
 
-          <tbody>
-            {loading ? (
+          <input
+            type="text"
+            placeholder="Search..."
+            className="form-control"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <select
+            className="form-control"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All Status</option>
+            <option value="Draft">Draft</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Approved">Approved</option>
+            <option value="Send back">Send back</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Paid">Paid</option>
+          </select>
+
+        </div>
+
+        <Link to="/NewRequest" className="create-button">
+          + New Request
+        </Link>
+
+      </div>
+
+      {/* Table */}
+      <div className="table-section">
+
+        <div className="table-vert-scroll">
+
+          <table className="custom-table">
+
+            <thead>
+
               <tr>
-                <td colSpan={8} className="text-center">
-                  Loading data...
-                </td>
+                <th>Request No.</th>
+                <th>EmployeeCode</th>
+                <th>Employee Name</th>
+                <th>Request Date</th>
+                <th>Location</th>
+                <th>Vendor Name</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
-            ) : paginatedData.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="text-center">
-                  No records found
-                </td>
-              </tr>
-            ) : (
-              paginatedData.map((item) => (
-                <tr key={item.ID}>
-                  <td>{item.ForexNumber}</td>
-                  <td>{item.EmployeeCode}</td>
-                  <td>{item.EmployeeName}</td>
-                  <td>{formatDate(item.RequestedOn)}</td>
-                  <td>{item.Location}</td>
-                  <td>{item.VendorName}</td>
-                  <td>₹ {item.TotalAmount || "-"}</td>
-                  <td>
-                    <span
-                      className={`status-badge ${item.Status?.replace(" ", "-")}`}
-                    >
-                      {item.Status}
-                    </span>
-                  </td>
-                  <td>
-                    {item.Status === "Send back" ||
-                    item.Status === "Draft" ? (
-                      <Link to={`/EditRequest/${item.ID}`}>
-                        <img src={Edit} width={16} alt="Edit" />
-                      </Link>
-                    ) : (
-                      <>
-                        <Link to={`/EditRequest/${item.ID}`}>
-                          <img src={View} width={16} alt="View" />
-                        </Link>
 
-                       
-                      </>
-                    )}
+            </thead>
+
+            <tbody>
+
+              {loading ? (
+
+                <tr>
+                  <td colSpan={9} className="text-center">
+                    Loading data...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+
+              ) : paginatedData.length === 0 ? (
+
+                <tr>
+                  <td colSpan={9} className="text-center">
+                    No records found
+                  </td>
+                </tr>
+
+              ) : (
+
+                paginatedData.map((item) => (
+
+                  <tr key={item.ID}>
+
+                    <td>{item.ForexNumber}</td>
+                    <td>{item.EmployeeCode}</td>
+                    <td>{item.EmployeeName}</td>
+                    <td>{formatDate(item.RequestedOn)}</td>
+                    <td>{item.Location}</td>
+                    <td>{item.VendorName}</td>
+                    <td>₹ {item.TotalAmount || "-"}</td>
+
+                    <td>
+
+                      <span
+                        className={`status-badge ${item.Status?.replace(" ", "-")}`}
+                      >
+                        {item.Status}
+                      </span>
+
+                    </td>
+
+                    <td>
+
+                      <td>
+
+                        {activeTab === "Advance" ? (
+
+                          <Link to={`/AdvancePaymentTracker/${item.ID}`}>
+                            <img src={Edit} width={16} alt="Edit" />
+                          </Link>
+
+                        ) : item.Status === "Send back" || item.Status === "Draft" ? (
+
+                          <Link to={`/EditRequest/${item.ID}`}>
+                            <img src={Edit} width={16} alt="Edit" />
+                          </Link>
+
+                        ) : (
+
+                          <Link to={`/ViewRequest/${item.ID}`}>
+                            <img src={View} width={16} alt="View" />
+                          </Link>
+
+                        )}
+
+                      </td>
+                    </td>
+
+                  </tr>
+
+                ))
+
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+        {/* Pagination */}
+        <div className="pagination">
+
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <img src={Left} width={14} />
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((page) => Math.abs(page - currentPage) <= 2)
+            .map((page) => (
+
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={currentPage === page ? "active" : ""}
+              >
+                {page}
+              </button>
+
+            ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <img src={Right} width={14} />
+          </button>
+
+        </div>
+
       </div>
 
-      {/* Pagination */}
-      <div className="pagination">
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          <img src={Left} width={14} />
-        </button>
-
-        {Array.from({ length: totalPages }, (_, i) => i + 1)
-          .filter((page) => Math.abs(page - currentPage) <= 2)
-          .map((page) => (
-            <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={currentPage === page ? "active" : ""}
-            >
-              {page}
-            </button>
-          ))}
-
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          <img src={Right} width={14} />
-        </button>
-      </div>
     </div>
-  </div>
-);
 
+  );
 
 };
 

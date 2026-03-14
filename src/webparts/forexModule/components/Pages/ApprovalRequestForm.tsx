@@ -6,6 +6,12 @@ import { Dropdown, IDropdownOption } from '@fluentui/react';
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { Attachment } from "@pnp/sp/attachments";
 import { View } from "@pnp/sp/views";
+import { sp } from "@pnp/sp/presets/all";
+import "@pnp/sp/webs";
+import "@pnp/sp/lists";
+import "@pnp/sp/items";
+import "@pnp/sp/attachments";
+import { SPHttpClient } from "@microsoft/sp-http";
 //import USESPCRUD from "../../service/BAL/spcrud";
 
 interface InvoiceRow {
@@ -38,7 +44,7 @@ const Field = ({ label, children, full }: any) => (
     </div>
 );
 const ApprovalRequestForm = (props: IForexModuleProps) => {
-        const { Id } = useParams<{ Id: string }>();
+    const { Id } = useParams<{ Id: string }>();
     const history = useHistory();
     const spCrudOps = SPCRUDOPS();
     const [paymentType, setPaymentType] = useState("Goods-Bill Payment");
@@ -63,6 +69,37 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
     const [expectedSettlementDate, setExpectedSettlementDate] = useState("");
     const [nextApprovers, setNextApprovers] = useState<number[]>([]);
     const [currentApprover, setCurrentApprover] = useState<number[]>([]);
+    const currentUserId = props.context.pageContext.legacyPageContext.userId;
+    const [invoiceAttachments, setInvoiceAttachments] = useState<any>({});
+    const [otherAttachments, setOtherAttachments] = useState<any>({});
+    const [poAttachments, setPoAttachments] = useState<any>({});
+    const [piAttachments, setPiAttachments] = useState<any>({});
+    const [boeLibraryFiles, setBoeLibraryFiles] = useState<any[]>([]);
+    const [bolLibraryFiles, setBolLibraryFiles] = useState<any[]>([]);
+    const [approvalSteps, setApprovalSteps] = useState<any[]>([]);
+
+    const [prevApprovers, setPrevApprovers] = useState<number[]>([]);
+    const [allApprovers, setAllApprovers] = useState<number[]>([]);
+
+    const [approverRemarks, setApproverRemarks] = useState("");
+    const [validationDate, setValidationDate] = useState("");
+    const [voucherNumber, setVoucherNumber] = useState("");
+    const [vouchingRemarks, setVouchingRemarks] = useState("");
+    const [treasuryRemarks, setTreasuryRemarks] = useState("");
+    const [currentRole, setCurrentRole] = useState("");
+
+    const [foreignCurrency, setForeignCurrency] = useState("");
+    const [foreignAmount, setForeignAmount] = useState("");
+    const [exchangeRate, setExchangeRate] = useState("");
+    const [inrAmount, setInrAmount] = useState("");
+    const [paymentDate, setPaymentDate] = useState("");
+    const [paymentReference, setPaymentReference] = useState("");
+
+    const [swiftCopy, setSwiftCopy] = useState<File | null>(null);
+    const [form15CA, setForm15CA] = useState<File | null>(null);
+    const [form15CB, setForm15CB] = useState<File | null>(null);
+    const [allApproversJson, setAllApproversJson] = useState<string>("");
+
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
         EmployeeName: "",
@@ -153,6 +190,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             mrnDate: "" // Added for Service-Bill Payment
         }
     ]);
+
     const addRow = () => {
         setRows([
             ...rows,
@@ -201,102 +239,224 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
         );
 
     useEffect(() => {
+
+        sp.setup({
+            spfxContext: props.context
+        });
+
+    }, []);
+
+    useEffect(() => {
         getFinancialYearStart();
-        
-           if (Id) {
-        loadForexData(Id);
-    }
+
+        if (Id) {
+            loadForexData(Id);
+        }
     }, [Id])
-//----------------------- load data for edit------------------------//
-const loadForexData = async (forexId: string) => {
-    const sp = await spCrudOps;
+    //----------------------- load data for edit------------------------//
+    const loadForexData = async (forexId: string) => {
+        const sp = await spCrudOps;
 
-    try {
+        try {
 
-        // 🔹 Load Parent
-        const parent = await sp.getData(
-            "ForexRequest",
-            "*,RM/Title,HOD/Title,Author/Id,Currency/Title,Currency/Id,NextApprovers/Id,CurrentApprover/Id",
-            "RM,HOD,Author,Currency,NextApprovers,CurrentApprover",
-            `ID eq ${forexId}`,
-            { column: "ID", isAscending: true },
-            1,
-            props
-        );
+            // 🔹 Load Parent
+            const parent = await sp.getData(
+                "ForexRequest",
+                "*,AllApprovers,RM/Title,HOD/Title,RM/Id,HOD/Id,Author/Id,Currency/Title,Currency/Id,NextApprovers/Id,NextApprovers/Title,CurrentApprover/Id,CurrentApprover/Title,PrevApprovers/Id,PrevApprovers/Title",
+                "RM,HOD,Author,Currency,NextApprovers,CurrentApprover,PrevApprovers",
+                `ID eq ${forexId}`,
+                { column: "ID", isAscending: true },
+                1,
+                props
+            );
 
-        if (parent.length > 0) {
-            const data = parent[0];
+            if (parent.length > 0) {
+                const data = parent[0];
 
-            setPaymentType(data.ForexType || "");
-            setRequestNumber(data.ForexNumber || "");
-            setRequestedOn(data.RequestedOn?.split("T")[0] || "");
-            setCurrency(data.Currency?.Title || "");
-            setTotalAmount(data.TotalAmount || "");
-            setForeignBankCharges(data.ForeignBankCharges || "");
-            setPoContractNo(data.poContractNo || "");
-            setPoDate(data.poDate?.split("T")[0] || "");
-            setExpectedSettlementDate(data.expectedSettlementDate?.split("T")[0] || "");
-            setBankName(data.BankName || "");
-            setBankAccountNo(data.BankAccNo || "");
-            setRemarks(data.Remarks || "");
-            setDTAAApplicable(data.DTAAApplicable || "");
-            setTaxDocumentView(data.DocumentIsAvailable || "");
-            setBankSwiftCode(data.BankSwiftCode || ""); 
-            setNextApprovers(data.NextApprovers?.map((approver: any) => approver.Id) || []);
-            setCurrentApprover(data.CurrentApprover ? [data.CurrentApprover.Id] : []);
+                setPaymentType(data.ForexType || "");
+                setRequestNumber(data.ForexNumber || "");
+                setRequestedOn(data.RequestedOn?.split("T")[0] || "");
+                setCurrency(data.Currency?.Title || "");
+                setTotalAmount(data.TotalAmount || "");
+                setForeignBankCharges(data.ForeignBankCharges || "");
+                setPoContractNo(data.poContractNo || "");
+                setPoDate(data.poDate?.split("T")[0] || "");
+                setExpectedSettlementDate(data.expectedSettlementDate?.split("T")[0] || "");
+                setBankName(data.BankName || "");
+                setBankAccountNo(data.BankAccNo || "");
+                setRemarks(data.Remarks || "");
+                setDTAAApplicable(data.DTAAApplicable || "");
+                setTaxDocumentView(data.DocumentIsAvailable || "");
+                setBankSwiftCode(data.BankSwiftCode || "");
+                setNextApprovers(data.NextApprovers?.map((approver: any) => approver.Id) || []);
 
-            setVendor({
-                ...vendor,
-                VendorCode: data.VendorCode,
-                VendorName: data.VendorName
-            });
-              setEmployee({
-                        EmployeeCode: data.EmployeeCode || "",
-                        EmployeeName: data.EmployeeName || "",
-                        Division: data.Division || "",
-                        Location: data.Location || "",
-                        RM: data.RM?.Title || "",
-                        HOD: data.HOD?.Title || "",
-                        ContactNo: data.ContactNo || "",
-                        EmployeeStatus: data.EmployeeStatus || "",
-                        Email: data.Email || "",
-                        RMId: data.RM?.Id || 0,
-                        HODId: data.HOD?.Id || 0
+
+                if (data.AllApprovers) {
+
+                    setAllApproversJson(data.AllApprovers);
+
+                    const parsed = JSON.parse(data.AllApprovers);
+
+                    const ids = parsed.map((a: any) => a.Id);
+
+                    setAllApprovers(ids);
+
+                }
+                setVendor({
+                    ...vendor,
+                    VendorCode: data.VendorCode,
+                    VendorName: data.VendorName
+                });
+                setEmployee({
+                    EmployeeCode: data.EmployeeCode || "",
+                    EmployeeName: data.EmployeeName || "",
+                    Division: data.Division || "",
+                    Location: data.Location || "",
+                    RM: data.RM?.Title || "",
+                    HOD: data.HOD?.Title || "",
+                    ContactNo: data.ContactNo || "",
+                    EmployeeStatus: data.EmployeeStatus || "",
+                    Email: data.Email || "",
+                    RMId: data.RM?.Id || 0,
+                    HODId: data.HOD?.Id || 0
+                });
+                getVendorData(data.VendorCode);
+                setCurrentApprover(data.CurrentApprover ? [data.CurrentApprover.Id] : []);
+                if (data.AllApprovers) {
+
+                    const approvers = JSON.parse(data.AllApprovers);
+
+                    const current = approvers.find((a: any) => a.Id === data.CurrentApprover?.Id);
+
+                    if (current) {
+                        setCurrentRole(current.Role);
+                    }
+
+                }
+
+                setPrevApprovers(
+                    data.PrevApprovers?.map((p: any) => p.Id) || []
+                );
+                const steps: any[] = [];
+
+                steps.push({
+                    name: data.EmployeeName,
+                    status: "initiator"
+                });
+
+                let approvers: any[] = [];
+
+                if (data.AllApprovers) {
+                    approvers = JSON.parse(data.AllApprovers);
+                }
+
+                approvers.forEach((a: any) => {
+
+                    let status = "pending";
+
+                    if (a.Status === "Approved") {
+                        status = "approved";
+                    }
+                    else if (data.CurrentApprover?.Id === a.Id) {
+                        status = "current";
+                    }
+
+                    steps.push({
+                        id: a.Id,
+                        name: `${a.Role} - ${a.Name}`,
+                        status
                     });
-            getVendorData(data.VendorCode);
+
+                });
+
+                setApprovalSteps(steps);
+
+            }
+
+            // 🔹 Load Child Rows
+            const child = await sp.getData(
+                "ForexServicesBillPayment",
+                "*,AttachmentFiles",
+                "AttachmentFiles",
+                `ForexIDId eq ${forexId}`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            if (child.length > 0) {
+                const formattedRows = child.map((item: any) => ({
+                    invoiceNo: item.InvoiceNumber || "",
+                    invoiceDate: item.InvoiceDate?.split("T")[0] || "",
+                    invoiceAmount: item.InvoiceAmount || "",
+                    mrnNo: item.MRNNumber || "",
+                    mrnDate: item.MRNDate?.split("T")[0] || "",
+                    blNo: item.BillofLandingNo || "",
+                    blDate: item.BillOfLandingdate?.split("T")[0] || "",
+                    boeNo: item.BOENo || "",
+                    boeDate: item.BOEDate?.split("T")[0] || ""
+                }));
+
+                setRows(formattedRows);
+                const invoiceMap: any = {};
+                const otherMap: any = {};
+                const poMap: any = {};
+                const piMap: any = {};
+
+                child.forEach((item: any, index: number) => {
+
+                    const allFiles = item.AttachmentFiles || [];
+
+                    invoiceMap[index] = allFiles.filter((f: any) =>
+                        f.FileName?.startsWith("INV_")
+                    );
+
+                    otherMap[index] = allFiles.filter((f: any) =>
+                        f.FileName?.startsWith("DOC_")
+                    );
+
+                    poMap[index] = allFiles.filter((f: any) =>
+                        f.FileName?.startsWith("PO_")
+                    );
+
+                    piMap[index] = allFiles.filter((f: any) =>
+                        f.FileName?.startsWith("PI_")
+                    );
+                });
+
+                setInvoiceAttachments(invoiceMap);
+                setOtherAttachments(otherMap);
+                setPoAttachments(poMap);
+                setPiAttachments(piMap);
+            }
+
+            const bolFiles = await sp.getData(
+                "BillOfLandingAttachment",
+                "FileLeafRef,FileRef,BOLNo,ReqeuestId",
+                "",
+                `ReqeuestId eq '${Id}'`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            const boeFiles = await sp.getData(
+                "BOEAttachments",
+                "FileLeafRef,FileRef,BOENo,ReqeuestId",
+                "",
+                `ReqeuestId eq '${Id}'`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+            setBoeLibraryFiles(boeFiles);
+
+            setBolLibraryFiles(bolFiles);
+
+        } catch (error) {
+            console.error("Error loading edit data:", error);
         }
-
-        // 🔹 Load Child Rows
-        const child = await sp.getData(
-            "ForexServicesBillPayment",
-            "*",
-            "",
-            `ForexIDId eq ${forexId}`,
-            { column: "ID", isAscending: true },
-            5000,
-            props
-        );
-
-        if (child.length > 0) {
-            const formattedRows = child.map((item: any) => ({
-                invoiceNo: item.InvoiceNumber || "",
-                invoiceDate: item.InvoiceDate?.split("T")[0] || "",
-                invoiceAmount: item.InvoiceAmount || "",
-                mrnNo: item.MRNNumber || "",
-                mrnDate: item.MRNDate?.split("T")[0] || "",
-                blNo: item.BillofLandingNo || "",
-                blDate: item.BillOfLandingdate?.split("T")[0] || "",
-                boeNo: item.BOENo || "",
-                boeDate: item.BOEDate?.split("T")[0] || ""
-            }));
-
-            setRows(formattedRows);
-        }
-
-    } catch (error) {
-        console.error("Error loading edit data:", error);
-    }
-};
+    };
     //----------------------VendorData-------------------------//
     const getVendorData = async (vendorCode: string) => {
 
@@ -454,17 +614,610 @@ const loadForexData = async (forexId: string) => {
         setFromDate(`${fyStartYear}-04-01`);
     };
 
-    const getApproversdata = () => {
-        
-    } 
-    const onsubmit = async () => {
+    const getApproversdata = async (): Promise<number[]> => {
         const Sp = await spCrudOps;
-        const checkNextApprovers = nextApprovers.length > 0 ? nextApprovers : getApproversdata();
+
+        try {
+
+            // 🔹 Change this to your actual request title value
+            //  const requestTitle = requestType; // example: "1"
+
+            const res = await Sp.getData(
+                "ForexApprovalMAtrix",
+                "ID,Approver/Id,Approver/Title,Level,Title",
+                "Approver",
+                ``,
+
+                { column: "Level", isAscending: true },
+                5000,
+                props,
+                // 🔹 Expand lookup
+            );
+
+            if (!res || res.length === 0) {
+                console.error("No approvers found in matrix");
+                return [];
+            }
+
+            // 🔹 Define category execution order
+            const categoryOrder = ["Approver", "VouchingApprover", "TreasuryTeam"];
+
+            // 🔹 Sort category first, then level
+            const sorted = res.sort((a: any, b: any) => {
+
+                const catDiff =
+                    categoryOrder.indexOf(a.Level) -
+                    categoryOrder.indexOf(b.Level);
+
+                if (catDiff !== 0) return catDiff;
+
+                return a.Level - b.Level;
+            });
+
+            // 🔹 Return only user IDs
+            return sorted.map((item: any) => item.Approver?.Id);
+
+        } catch (error) {
+            console.error("Error fetching approval matrix:", error);
+            return [];
+        }
+    };
+
+    const validateAndBuildApprovers = async (): Promise<any[]> => {
+
+        const sp = await spCrudOps;
+
+        const approvers: any[] = [];
+
+        // RM
+        if (employee.RMId) {
+
+            approvers.push({
+                Id: employee.RMId,
+                Name: employee.RM,
+                Role: "RM",
+                Level: 1
+            });
+
+        }
+
+        // HOD
+        if (employee.HODId) {
+
+            approvers.push({
+                Id: employee.HODId,
+                Name: employee.HOD,
+                Role: "HOD",
+                Level: 2
+            });
+
+
+        }
+        let requestTypeFilter = "";
+        if (
+            paymentType === "Goods-Advance Payment" ||
+            paymentType === "Service-Advance Payment"
+        ) {
+            requestTypeFilter = "Advance Payment";
+        } else {
+            requestTypeFilter = paymentType; // direct match for Bill types
+        }
+
+        const matrix = await sp.getData(
+            "ForexApprovalMatrix",
+            "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
+            "Approver",
+            `RequestType eq '${requestTypeFilter}'`,
+            { column: "Level", isAscending: true },
+            5000,
+            props
+        );
+
+        matrix.forEach((item: any) => {
+
+            const id = item.Approver?.Id;
+
+            if (!approvers.find(a => a.Id === id)) {
+
+                approvers.push({
+
+                    Id: id,
+                    Name: item.Approver?.Title,
+                    Role: item.Role,
+                    Level: item.Level
+
+                });
+
+            }
+
+        });
+
+        return approvers;
+
+    };
+
+    // const onsubmit = async () => {
+
+    //     const sp = await spCrudOps;
+
+    //     try {
+
+    //         const correctApproversObjects = await validateAndBuildApprovers();
+
+    //         const correctApprovers = correctApproversObjects.map(a => a.Id);
+
+    //         // remove already approved users
+    //         const remainingApprovers = correctApprovers.filter(
+    //             id => !prevApprovers.includes(id)
+    //         );
+
+    //         if (!correctApprovers.length) {
+
+    //             alert("Approval matrix not configured");
+
+    //             return;
+
+    //         }
+
+    //         // compare arrays
+    //         const isSame =
+    //             JSON.stringify(correctApprovers) === JSON.stringify(allApprovers);
+
+    //         // update if changed
+    //         if (!isSame) {
+
+    //             await sp.updateData(
+    //                 "ForexRequest",
+    //                 Number(Id),
+    //                 {
+    //                     AllApprovers: JSON.stringify(correctApproversObjects)
+    //                 },
+    //                 props
+    //             );
+
+    //             setAllApprovers(correctApprovers);
+
+    //         }
+
+    //         // find current approver
+    //         // const currentIndex = remainingApprovers.indexOf(currentUserId);
+    //         const currentApproverObj = correctApproversObjects.find(
+    //             a => a.Id === currentUserId
+    //         );
+    //         // const newCurrentApprover =
+    //         //     currentIndex + 1 < remainingApprovers.length
+    //         //         ? remainingApprovers[currentIndex + 1]
+    //         //         : null;
+
+    //         // const nextApprover =
+    //         //     currentIndex + 2 < remainingApprovers.length
+    //         //         ? remainingApprovers[currentIndex + 2]
+    //         //         : null;
+    //         // if (currentIndex === -1) {
+
+    //         //     alert("You are not authorized to approve");
+
+    //         //     return;
+
+    //         // }
+
+    //         // // const nextApprover =
+    //         // //     currentIndex + 1 < correctApprovers.length
+    //         // //         ? correctApprovers[currentIndex + 1]
+    //         // //         : null;
+
+    //         // const updatedPrev = Array.from(new Set([...prevApprovers, currentUserId]));
+    //         const approvers = correctApproversObjects;
+
+    //         const currentIndex = approvers.findIndex(
+    //             a => a.Id === currentUserId
+    //         );
+
+    //         if (currentIndex === -1) {
+    //             alert("You are not authorized to approve");
+    //             return;
+    //         }
+
+    //         const nextApprover =
+    //             currentIndex + 1 < approvers.length
+    //                 ? approvers[currentIndex + 1]
+    //                 : null;
+
+    //         let status = "Approved";
+
+    //         if (nextApprover) {
+
+    //             if (nextApprover.Role === "HOD")
+    //                 status = "Pending for HOD";
+
+    //             else if (nextApprover.Role === "Vouching")
+    //                 status = "Pending for Vouching";
+
+    //             else if (nextApprover.Role === "TreasuryVerification")
+    //                 status = "Pending for Treasury Verification";
+
+    //             else if (nextApprover.Role === "TreasuryPayment")
+    //                 status = "Pending for Payment";
+
+    //         }
+
+    //         let remarksPayload: any = {};
+
+    //         if (currentApproverObj.Role === "RM") {
+    //             remarksPayload.RMRemark = approverRemarks;
+    //         }
+
+    //         if (currentApproverObj.Role === "HOD") {
+    //             remarksPayload.HODRemarks = approverRemarks;
+    //         }
+
+    //         if (currentApproverObj.Role === "Vouching") {
+
+    //             remarksPayload.ValidationDate = validationDate;
+    //             remarksPayload.VoucherNumber = voucherNumber;
+    //             remarksPayload.VouchingRemarks = vouchingRemarks;
+
+    //         }
+    //         if (currentApproverObj.Role === "TreasuryVerification") {
+    //             remarksPayload.TreasuryRemark = treasuryRemarks;
+    //         }
+
+    //         if (currentApproverObj.Role === "TreasuryPayment") {
+
+    //             remarksPayload.ForeignCurrency = foreignCurrency;
+    //             remarksPayload.ForeignCurrencyAmount = foreignAmount;
+    //             remarksPayload.ExchangeRate = exchangeRate;
+    //             remarksPayload.INRAmount = inrAmount;
+    //             remarksPayload.PaymentDate = paymentDate;
+    //             remarksPayload.PaymentReferenceNumber = paymentReference;
+
+    //         }
+
+    //         if (currentApproverObj.Role === "TreasuryPayment") {
+
+    //             const webUrl = props.context.pageContext.web.absoluteUrl;
+
+    //             if (swiftCopy) {
+
+    //                 const fileName = `SWIFT_${swiftCopy.name}`;
+
+    //                 await props.context.spHttpClient.post(
+    //                     `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+    //                     SPHttpClient.configurations.v1,
+    //                     { body: swiftCopy }
+    //                 );
+
+    //             }
+
+    //             if (form15CA) {
+
+    //                 const fileName = `15CA_${form15CA.name}`;
+
+    //                 await props.context.spHttpClient.post(
+    //                     `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+    //                     SPHttpClient.configurations.v1,
+    //                     { body: form15CA }
+    //                 );
+
+    //             }
+
+    //             if (form15CB) {
+
+    //                 const fileName = `15CB_${form15CB.name}`;
+
+    //                 await props.context.spHttpClient.post(
+    //                     `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+    //                     SPHttpClient.configurations.v1,
+    //                     { body: form15CB }
+    //                 );
+
+    //             }
+
+    //         }
+
+    //         await sp.updateData(
+    //             "ForexRequest",
+    //             Number(Id),
+    //             {
+    //                 CurrentApproverId: nextApprover ? nextApprover.Id : null,
+    //                 Status: status,
+    //                 ...remarksPayload
+    //             },
+    //             props
+    //         );
+    //         // await sp.updateData(
+    //         //     "ForexRequest",
+    //         //     Number(Id),
+    //         //     {
+    //         //         CurrentApproverId: newCurrentApprover,
+
+    //         //         NextApproversId: {
+    //         //             results: nextApprover ? [nextApprover] : []
+    //         //         },
+
+    //         //         PrevApproversId: {
+    //         //             results: updatedPrev
+    //         //         },
+
+    //         //         Status: status,
+    //         //         ...remarksPayload
+    //         //     },
+    //         //     props
+    //         // );
+
+    //         alert(
+    //             "Request has been approved successfully"
+    //         );
+
+    //         history.push("/ApprovalDashboard");
+
+    //     } catch (error) {
+
+    //         console.error(error);
+
+    //         alert("Approval failed");
+
+    //     }
+
+    // };
+    // const onSentBack = () => {
+
+    // }
+
+    const onsubmit = async () => {
+
+        const sp = await spCrudOps;
+
+        try {
+
+            const correctApproversObjects = await validateAndBuildApprovers();
+
+            if (!correctApproversObjects.length) {
+
+                alert("Approval matrix not configured");
+                return;
+
+            }
+
+            // 🔹 Load existing JSON stored in SharePoint
+            let existingApprovers: any[] = [];
+
+            if (allApproversJson) {
+                existingApprovers = JSON.parse(allApproversJson);
+            }
+
+            // 🔹 Build new approver list but preserve old status
+            const approvers = correctApproversObjects.map((newAppr: any) => {
+
+                const existing = existingApprovers.find(
+                    (a: any) => a.Id === newAppr.Id
+                );
+
+                return existing
+                    ? existing
+                    : {
+                        ...newAppr,
+                        Status: "",
+                        ActionDate: "",
+                        Remarks: ""
+                    };
+
+            });
+
+            const currentIndex = approvers.findIndex(
+                (a: any) => a.Id === currentUserId
+            );
+
+            if (currentIndex === -1) {
+
+                alert("You are not authorized to approve");
+                return;
+
+            }
+
+            const currentApproverObj = approvers[currentIndex];
+
+            // ⭐ Update current approver
+            approvers[currentIndex].Status = "Approved";
+            approvers[currentIndex].ActionDate = new Date().toISOString();
+            approvers[currentIndex].Remarks = approverRemarks;
+
+            // 🔹 Find next approver
+            const nextApprover =
+                currentIndex + 1 < approvers.length
+                    ? approvers[currentIndex + 1]
+                    : null;
+
+            if (nextApprover && !nextApprover.Status) {
+                nextApprover.Status = "Pending";
+            }
+
+            let status = "Approved";
+
+            if (nextApprover) {
+
+                if (nextApprover.Role === "HOD")
+                    status = "Pending for HOD";
+
+                else if (nextApprover.Role === "Vouching")
+                    status = "Pending for Vouching";
+
+                else if (nextApprover.Role === "TreasuryVerification")
+                    status = "Pending for Treasury Verification";
+
+                else if (nextApprover.Role === "TreasuryPayment")
+                    status = "Pending for Payment";
+
+            }
+            else {
+
+                // Final approver logic
+                if (currentApproverObj.Role === "TreasuryPayment" && paymentType.includes("Advance")) {
+                    status = "Paid";
+                } else {
+                    status = "Paid & Closed";
+                }
+
+            }
+
+            let remarksPayload: any = {};
+
+            if (currentApproverObj.Role === "RM") {
+                remarksPayload.RMRemark = approverRemarks;
+            }
+
+            if (currentApproverObj.Role === "HOD") {
+                remarksPayload.HODRemarks = approverRemarks;
+            }
+
+            if (currentApproverObj.Role === "Vouching") {
+
+                remarksPayload.ValidationDate = validationDate;
+                remarksPayload.VoucherNumber = voucherNumber;
+                remarksPayload.VouchingRemarks = vouchingRemarks;
+
+            }
+
+            if (currentApproverObj.Role === "TreasuryVerification") {
+                remarksPayload.TreasuryRemark = treasuryRemarks;
+            }
+
+            if (currentApproverObj.Role === "TreasuryPayment") {
+
+                remarksPayload.ForeignCurrency = foreignCurrency;
+                remarksPayload.ForeignCurrencyAmount = foreignAmount;
+                remarksPayload.ExchangeRate = exchangeRate;
+                remarksPayload.INRAmount = inrAmount;
+                remarksPayload.PaymentDate = paymentDate;
+                remarksPayload.PaymentReferenceNumber = paymentReference;
+
+            }
+
+            // 🔹 Upload payment documents
+            if (currentApproverObj.Role === "TreasuryPayment") {
+
+                const webUrl = props.context.pageContext.web.absoluteUrl;
+
+                if (swiftCopy) {
+
+                    const fileName = `SWIFT_${swiftCopy.name}`;
+
+                    await props.context.spHttpClient.post(
+                        `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+                        SPHttpClient.configurations.v1,
+                        { body: swiftCopy }
+                    );
+
+                }
+
+                if (form15CA) {
+
+                    const fileName = `15CA_${form15CA.name}`;
+
+                    await props.context.spHttpClient.post(
+                        `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+                        SPHttpClient.configurations.v1,
+                        { body: form15CA }
+                    );
+
+                }
+
+                if (form15CB) {
+
+                    const fileName = `15CB_${form15CB.name}`;
+
+                    await props.context.spHttpClient.post(
+                        `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+                        SPHttpClient.configurations.v1,
+                        { body: form15CB }
+                    );
+
+                }
+
+            }
+
+            // ⭐ Update SharePoint
+            await sp.updateData(
+                "ForexRequest",
+                Number(Id),
+                {
+                    AllApprovers: JSON.stringify(approvers),
+                    CurrentApproverId: nextApprover ? nextApprover.Id : null,
+                    Status: status,
+                    ...remarksPayload
+                },
+                props
+            );
+
+            alert("Request has been approved successfully");
+
+            history.push("/ApprovalDashboard");
+
+        } catch (error) {
+
+            console.error(error);
+            alert("Approval failed");
+
+        }
+
+    };
+   const onSentBack = async () => {
+
+    const sp = await spCrudOps;
+
+    try {
+
+        // 🔴 Mandatory Remark Check
+        if (!approverRemarks || approverRemarks.trim() === "") {
+            alert("Please enter remarks before Rejecting the request.");
+            return;
+        }
+
+        const correctApproversObjects = await validateAndBuildApprovers();
+
+        const approvers = correctApproversObjects;
+
+        const currentIndex = approvers.findIndex(
+            a => a.Id === currentUserId
+        );
+
+        if (currentIndex === -1) {
+
+            alert("You are not authorized");
+            return;
+
+        }
+
+        // ⭐ Update JSON history
+        approvers[currentIndex].Status = "Rejected";
+        approvers[currentIndex].ActionDate = new Date().toISOString();
+        approvers[currentIndex].Remarks = approverRemarks;
+
+        await sp.updateData(
+            "ForexRequest",
+            Number(Id),
+            {
+                AllApprovers: JSON.stringify(approvers),
+                CurrentApproverId: null,
+                Status: "Rejected"
+            },
+            props
+        );
+
+        alert("Request has been sent back");
+
+        history.push("/ApprovalDashboard");
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Sent back failed");
 
     }
-    const onSentBack = () => {
 
-    }
+};
+    const isServicePayment = paymentType.includes("Service");
+    const isGoodsPayment = paymentType.includes("Goods");
     return (
         <div className="forex-wrapper">
 
@@ -474,7 +1227,29 @@ const loadForexData = async (forexId: string) => {
             </div>
 
             <div className="forex-card">
+                {/* ================= APPROVAL FLOW ================= */}
 
+                <Section title="Approval Flow">
+                    <div className="approval-ribbon">
+
+                        {approvalSteps.map((step, index) => {
+
+                            let className = "pending";
+
+                            if (step.status === "initiator") className = "initiator";
+                            if (step.status === "approved") className = "approved";
+                            if (step.status === "current") className = "current";
+
+                            return (
+                                <div key={index} className={`ribbon-step ${className}`}>
+                                    {step.name}
+                                </div>
+                            );
+
+                        })}
+
+                    </div>
+                </Section>
                 {/* ================= REQUESTOR ================= */}
                 <Section title="Requestor Information">
                     <Grid>
@@ -771,19 +1546,19 @@ const loadForexData = async (forexId: string) => {
 
                 <Section >
                     <Grid>
-                        <Field label="From"><input type="date" value={fromdate} readOnly/></Field>
+                        <Field label="From"><input type="date" value={fromdate} readOnly /></Field>
 
-                        <Field label="To"><input type="date" value={todate} readOnly/></Field>
+                        <Field label="To"><input type="date" value={todate} readOnly /></Field>
                     </Grid>
                     <Grid>
 
                         <Field label="Eligible amount that can be transmitted without WHT">
-                            <input type="number" readOnly/>
+                            <input type="number" readOnly />
                         </Field>
 
 
                         <Field label="Paid Amount">
-                            <input type="number" readOnly/>
+                            <input type="number" readOnly />
                         </Field>
 
                         <Field label="Balance eligible amount(Without with holding Tax)">
@@ -798,11 +1573,11 @@ const loadForexData = async (forexId: string) => {
                 {paymentType === "Goods-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
@@ -822,7 +1597,6 @@ const loadForexData = async (forexId: string) => {
                                     <th>Invoice Amount</th>
                                     <th>Attach Invoice</th>
                                     <th>Attach Other Docs</th>
-                                    <th>Add/Delete Entry</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -856,7 +1630,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "boeNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -866,7 +1640,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "boeDate", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -875,7 +1649,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -884,7 +1658,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "blNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -894,7 +1668,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "blDate", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -904,19 +1678,36 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceAmount", e.target.value)
                                                 }
-                                            readOnly/>
+                                                readOnly />
                                         </td>
 
                                         <td>
-                                            <input type="file" />
-                                        </td>
+                                            <div>
+                                                {invoiceAttachments[index]?.length > 0 ? (
+                                                    invoiceAttachments[index].map((file: any, i: number) => (
+                                                        <div key={i}>
+                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                {file.FileName.replace("INV_", "")}
+                                                            </a>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <span>-</span>
+                                                )}
+                                            </div>                                        </td>
 
                                         <td>
-                                            <input type="file" />
-                                        </td>
+                                            <div>
+                                                {otherAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("DOC_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>                                        </td>
 
-                                        <td style={{ textAlign: "center" }}>
-                                            {/* Show PLUS only on last row */}
+                                        {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -935,7 +1726,6 @@ const loadForexData = async (forexId: string) => {
                                                 </button>
                                             )}
 
-                                            {/* Show DELETE if more than 1 row */}
                                             {rows.length > 1 && (
                                                 <button
                                                     type="button"
@@ -952,7 +1742,7 @@ const loadForexData = async (forexId: string) => {
                                                     ✖
                                                 </button>
                                             )}
-                                        </td>
+                                        </td> */}
 
                                     </tr>
                                 ))}
@@ -989,8 +1779,17 @@ const loadForexData = async (forexId: string) => {
                                             <tr key={index}>
                                                 <td>{boe}</td>
                                                 <td>
-                                                    <input type="file" />
-                                                </td>
+                                                    <div>
+                                                        {boeLibraryFiles
+                                                            .filter(file => file.BOENo === boe)
+                                                            .map((file, i) => (
+                                                                <div key={i}>
+                                                                    <a href={file.FileRef} target="_blank">
+                                                                        {file.FileLeafRef}
+                                                                    </a>
+                                                                </div>
+                                                            ))}
+                                                    </div>                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -1014,8 +1813,17 @@ const loadForexData = async (forexId: string) => {
                                             <tr key={index}>
                                                 <td>{bl}</td>
                                                 <td>
-                                                    <input type="file" />
-                                                </td>
+                                                    <div>
+                                                        {bolLibraryFiles
+                                                            .filter(file => file.BOLNo === bl)
+                                                            .map((file, i) => (
+                                                                <div key={i}>
+                                                                    <a href={file.FileRef} target="_blank">
+                                                                        {file.FileLeafRef}
+                                                                    </a>
+                                                                </div>
+                                                            ))}
+                                                    </div>                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -1030,11 +1838,11 @@ const loadForexData = async (forexId: string) => {
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
                             <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }}readOnly /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
@@ -1051,7 +1859,6 @@ const loadForexData = async (forexId: string) => {
                                     <th>MRN Date</th>
                                     <th>Attach Invoice</th>
                                     <th>Attach Other Document</th>
-                                    <th>Add/Delete Entry</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1065,7 +1872,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1075,7 +1882,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceDate", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1084,7 +1891,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceAmount", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1093,7 +1900,7 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
                                         <td>
                                             <input
@@ -1102,28 +1909,40 @@ const loadForexData = async (forexId: string) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnDate", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
                                         <td>
-                                            <input
-                                                type="file"
-
-
-                                            />
+                                            <div>
+                                                {invoiceAttachments[index]?.length > 0 ? (
+                                                    invoiceAttachments[index].map((file: any, i: number) => (
+                                                        <div key={i}>
+                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                {file.FileName.replace("INV_", "")}
+                                                            </a>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <span>-</span>
+                                                )}
+                                            </div>
                                         </td>
 
                                         <td>
-                                            <input
-                                                type="file"
-
-                                            />
+                                            <div>
+                                                {otherAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("DOC_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </td>
 
 
 
 
-                                        <td style={{ textAlign: "center" }}>
-                                            {/* Show PLUS only on last row */}
+                                        {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1142,7 +1961,6 @@ const loadForexData = async (forexId: string) => {
                                                 </button>
                                             )}
 
-                                            {/* Show DELETE if more than 1 row */}
                                             {rows.length > 1 && (
                                                 <button
                                                     type="button"
@@ -1159,7 +1977,7 @@ const loadForexData = async (forexId: string) => {
                                                     ✖
                                                 </button>
                                             )}
-                                        </td>
+                                        </td> */}
 
                                     </tr>
                                 ))}
@@ -1184,14 +2002,14 @@ const loadForexData = async (forexId: string) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly/></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly/></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly/></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
+                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly /></Field>
+                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly /></Field>
+                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly /></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
@@ -1204,7 +2022,6 @@ const loadForexData = async (forexId: string) => {
                                     <th>Attach PO</th>
                                     <th>Attach PI</th>
                                     <th>Attach Other Document</th>
-                                    <th>Add/Delete Entry</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1245,31 +2062,41 @@ const loadForexData = async (forexId: string) => {
 
 
                                         <td>
-                                            <input
-                                                type="file"
-
-                                            />
-                                        </td>
+                                            <div>
+                                                {poAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("PO_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>                                        </td>
                                         <td>
-                                            <input
-                                                type="file"
-
-
-                                            />
-                                        </td>
+                                            <div>
+                                                {piAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("PI_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>                                        </td>
 
                                         <td>
-                                            <input
-                                                type="file"
+                                            <div>
+                                                {otherAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("DOC_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>                                        </td>
 
-                                            />
-                                        </td>
 
 
 
-
-                                        <td style={{ textAlign: "center" }}>
-                                            {/* Show PLUS only on last row */}
+                                        {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1288,7 +2115,6 @@ const loadForexData = async (forexId: string) => {
                                                 </button>
                                             )}
 
-                                            {/* Show DELETE if more than 1 row */}
                                             {rows.length > 1 && (
                                                 <button
                                                     type="button"
@@ -1305,7 +2131,7 @@ const loadForexData = async (forexId: string) => {
                                                     ✖
                                                 </button>
                                             )}
-                                        </td>
+                                        </td> */}
 
                                     </tr>
                                 ))}
@@ -1328,14 +2154,14 @@ const loadForexData = async (forexId: string) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly/></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly/></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly/></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
+                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly /></Field>
+                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly /></Field>
+                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly /></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
@@ -1348,7 +2174,7 @@ const loadForexData = async (forexId: string) => {
                                     <th>Attach PO</th>
                                     <th>Attach PI</th>
                                     <th>Attach Other Document</th>
-                                    <th>Add/Delete Entry</th>
+                                    {/* <th>Add/Delete Entry</th> */}
                                 </tr>
                             </thead>
                             <tbody>
@@ -1389,31 +2215,41 @@ const loadForexData = async (forexId: string) => {
 
 
                                         <td>
-                                            <input
-                                                type="file"
-
-                                            />
-                                        </td>
+                                            <div>
+                                                {poAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("PO_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>                                        </td>
                                         <td>
-                                            <input
-                                                type="file"
-
-
-                                            />
-                                        </td>
+                                            <div>
+                                                {piAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("PI_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>                                        </td>
 
                                         <td>
-                                            <input
-                                                type="file"
+                                            <div>
+                                                {otherAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("DOC_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>                                        </td>
 
-                                            />
-                                        </td>
 
 
 
-
-                                        <td style={{ textAlign: "center" }}>
-                                            {/* Show PLUS only on last row */}
+                                        {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1432,7 +2268,6 @@ const loadForexData = async (forexId: string) => {
                                                 </button>
                                             )}
 
-                                            {/* Show DELETE if more than 1 row */}
                                             {rows.length > 1 && (
                                                 <button
                                                     type="button"
@@ -1449,7 +2284,7 @@ const loadForexData = async (forexId: string) => {
                                                     ✖
                                                 </button>
                                             )}
-                                        </td>
+                                        </td> */}
 
                                     </tr>
                                 ))}
@@ -1474,16 +2309,192 @@ const loadForexData = async (forexId: string) => {
                 {/* ================= CORRESPONDENT ================= */}
                 <Section title="Correspondent Bank Details">
                     <Grid>
-                        <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} readOnly/></Field>
-                        <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} readOnly/></Field>
-                        <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} readOnly/></Field>
+                        <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} readOnly /></Field>
+                        <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} readOnly /></Field>
+                        <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} readOnly /></Field>
                         <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }} readOnly></textarea></Field>
+                        {currentRole === "RM" && (
+                            <Field label="RM Remarks" full>
+                                <textarea
+                                    value={approverRemarks}
+                                    onChange={(e) => setApproverRemarks(e.target.value)}
+                                />
+                            </Field>
+                        )}
+
+                        {currentRole === "HOD" && (
+                            <Field label="HOD Remarks" full>
+                                <textarea
+                                    value={approverRemarks}
+                                    onChange={(e) => setApproverRemarks(e.target.value)}
+                                />
+                            </Field>
+                        )}
+
+
                     </Grid>
+
                 </Section>
+                {/* ================= VOUCHING DETAILS ================= */}
+
+                {currentRole === "Vouching" && (
+
+                    <Section title="Vouching Details">
+
+                        <Grid>
+
+                            <Field label="Validation Date *">
+                                <input
+                                    type="date"
+                                    value={validationDate}
+                                    onChange={(e) => setValidationDate(e.target.value)}
+                                />
+                            </Field>
+
+                            {/* Hide Voucher Number for Non Advance */}
+                            {(paymentType.includes("Advance")) && (
+                                <Field label="Voucher Number *">
+                                    <input
+                                        value={voucherNumber}
+                                        onChange={(e) => setVoucherNumber(e.target.value)}
+                                    />
+                                </Field>
+                            )}
+
+                            <Field label="Remarks" full>
+                                <textarea
+                                    rows={2}
+                                    value={vouchingRemarks}
+                                    onChange={(e) => setVouchingRemarks(e.target.value)}
+                                />
+                            </Field>
+
+                        </Grid>
+
+                    </Section>
+
+                )}
+                {/* ================= TREASURY VERIFICATION ================= */}
+
+                {currentRole === "TreasuryVerification" && (
+                    <Section title="Treasury Verification">
+                        <Grid>
+
+                            <Field label="Treasury Remarks" full>
+                                <textarea
+                                    rows={2}
+                                    value={treasuryRemarks}
+                                    onChange={(e) => setTreasuryRemarks(e.target.value)}
+                                />
+                            </Field>
+
+                        </Grid>
+                    </Section>
+                )}
+
+                {currentRole === "TreasuryPayment" && (
+
+                    <Section title="Payment Details">
+
+                        <Grid>
+
+                            <Field label="Foreign Currency">
+                                <input
+                                    value={foreignCurrency}
+                                    onChange={(e) => setForeignCurrency(e.target.value)}
+                                />
+                            </Field>
+
+                            <Field label="Foreign Currency Amount">
+                                <input
+                                    type="number"
+                                    value={foreignAmount}
+                                    onChange={(e) => setForeignAmount(e.target.value)}
+                                />
+                            </Field>
+
+                            <Field label="Exchange Rate">
+                                <input
+                                    type="number"
+                                    value={exchangeRate}
+                                    onChange={(e) => setExchangeRate(e.target.value)}
+                                />
+                            </Field>
+
+                            <Field label="INR Amount">
+                                <input
+                                    type="number"
+                                    value={inrAmount}
+                                    onChange={(e) => setInrAmount(e.target.value)}
+                                />
+                            </Field>
+
+                        </Grid>
+
+                        <p style={{ color: "red", fontSize: "12px" }}>
+                            (if difference in foreign currency & Amount system to display alert message only)
+                        </p>
+
+                        <Grid>
+
+                            <Field label="Payment Date">
+                                <input
+                                    type="date"
+                                    value={paymentDate}
+                                    onChange={(e) => setPaymentDate(e.target.value)}
+                                />
+                            </Field>
+
+                            <Field label="Payment reference number">
+                                <input
+                                    value={paymentReference}
+                                    onChange={(e) => setPaymentReference(e.target.value)}
+                                />
+                            </Field>
+
+                            {/* 15CA only for Service */}
+                            {isServicePayment && (
+                                <Field label="Attach 15CA (Applicable only for Service)">
+                                    <input
+                                        type="file"
+                                        onChange={(e) => setForm15CA(e.target.files?.[0] || null)}
+                                    />
+                                </Field>
+                            )}
+
+                            {/* 15CB only for Service */}
+                            {isServicePayment && (
+                                <Field label="Attach 15CB (Applicable only for Service)">
+                                    <input
+                                        type="file"
+                                        onChange={(e) => setForm15CB(e.target.files?.[0] || null)}
+                                    />
+                                </Field>
+                            )}
+
+                        </Grid>
+
+                        <Grid>
+
+                            {/* Swift Copy only for Goods */}
+                            {isGoodsPayment && (
+                                <Field label="Attach Swift Copy (Applicable for Goods)">
+                                    <input
+                                        type="file"
+                                        onChange={(e) => setSwiftCopy(e.target.files?.[0] || null)}
+                                    />
+                                </Field>
+                            )}
+
+                        </Grid>
+
+                    </Section>
+
+                )}
 
                 <div className="button-row">
                     <button className="btn-submit" onClick={onsubmit}>Approve</button>
-                    <button className="btn-exit" onClick={onSentBack}>Sent Back</button>
+                    <button className="btn-exit" onClick={onSentBack}>Reject</button>
                     <button className="btn-exit" onClick={() => history.goBack()}>Exit</button>
                 </div>
 
