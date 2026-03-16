@@ -78,7 +78,7 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
       data = data.filter((item) =>
         Object.values({
           requestNo: item.ForexNumber,
-         // requestDate: formatDate(item.RequestDate),
+          // requestDate: formatDate(item.RequestDate),
           vendorName: item.VendorName,
           EmployeeCode: item.EmployeeCode,
           EmployeeName: item.EmployeeName,
@@ -112,150 +112,145 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
     currentPage * itemsPerPage
   );
 
-return (
-  <div className="dashboard-wrapper">
+  return (
+    <div className="dashboard-wrapper">
 
-    {/* Header (UNCHANGED) */}
-    <div className="header">
-      <div className="left-banner">
-        <div className="logo-text">
-          <h2>Approval Dashboard</h2>
+      {/* Header (UNCHANGED) */}
+      <div className="header">
+        <div className="left-banner">
+          <div className="logo-text">
+            <h2>Approval Dashboard</h2>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="filter-section">
+        <div className="filter-left">
+          <input
+            type="text"
+            placeholder="Search..."
+            className="form-control"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <select
+            className="form-control"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All Status</option>
+            <option value="Draft">Draft</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Approved">Approved</option>
+            <option value="Send back">Send back</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+
+        {/* <Link to="/NewRequest" className="create-button">
+        + New Request
+      </Link> */}
+      </div>
+
+      {/* Table */}
+      <div className="table-section">
+        <div className="table-vert-scroll">
+          <table className="custom-table">
+            <thead>
+              <tr>
+                <th>Request No.</th>
+                <th>EmployeeCode</th>
+                <th>Employee Name</th>
+                <th>Request Date</th>
+                <th>Location</th>
+                <th>Vendor Name</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="text-center">
+                    Loading data...
+                  </td>
+                </tr>
+              ) : paginatedData.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center">
+                    No records found
+                  </td>
+                </tr>
+              ) : (
+                paginatedData.map((item) => (
+                  <tr key={item.ID}>
+                    <td>{item.ForexNumber}</td>
+                    <td>{item.EmployeeCode}</td>
+                    <td>{item.EmployeeName}</td>
+                    <td>{formatDate(item.RequestedOn)}</td>
+                    <td>{item.Location}</td>
+                    <td>{item.VendorName}</td>
+                    <td>₹ {item.TotalAmount || "-"}</td>
+                    <td>
+                      <span
+                        className={`status-badge ${item.Status?.replace(" ", "-")}`}
+                      >
+                        {item.Status}
+                      </span>
+                    </td>
+                    <td>
+                      {item.Status === "Paid and Pending for Settlement" ? (
+                        <Link to={`/TrackerApprovalForm/${item.ID}`}>
+                          <img src={Edit} width={16} alt="Tracker Approval" />
+                        </Link>
+                      ) : (
+                        <Link to={`/ApprovalRequest/${item.ID}`}>
+                          <img src={Edit} width={16} alt="Approval" />
+                        </Link>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="pagination">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <img src={Left} width={14} />
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((page) => Math.abs(page - currentPage) <= 2)
+            .map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={currentPage === page ? "active" : ""}
+              >
+                {page}
+              </button>
+            ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <img src={Right} width={14} />
+          </button>
         </div>
       </div>
     </div>
-
-    {/* Filters */}
-    <div className="filter-section">
-      <div className="filter-left">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="form-control"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <select
-          className="form-control"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="All">All Status</option>
-          <option value="Draft">Draft</option>
-          <option value="Submitted">Submitted</option>
-          <option value="Approved">Approved</option>
-          <option value="Send back">Send back</option>
-          <option value="Rejected">Rejected</option>
-        </select>
-      </div>
-
-      {/* <Link to="/NewRequest" className="create-button">
-        + New Request
-      </Link> */}
-    </div>
-
-    {/* Table */}
-    <div className="table-section">
-      <div className="table-vert-scroll">
-        <table className="custom-table">
-            <thead>
-            <tr>
-              <th>Request No.</th>
-              <th>EmployeeCode</th>
-              <th>Employee Name</th>
-              <th>Request Date</th> 
-              <th>Location</th>
-              <th>Vendor Name</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={8} className="text-center">
-                  Loading data...
-                </td>
-              </tr>
-            ) : paginatedData.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="text-center">
-                  No records found
-                </td>
-              </tr>
-            ) : (
-              paginatedData.map((item) => (
-                <tr key={item.ID}>
-                  <td>{item.ForexNumber}</td>
-                  <td>{item.EmployeeCode}</td>
-                  <td>{item.EmployeeName}</td>
-                  <td>{formatDate(item.RequestedOn)}</td>
-                  <td>{item.Location}</td>
-                  <td>{item.VendorName}</td>
-                  <td>₹ {item.TotalAmount || "-"}</td>
-                  <td>
-                    <span
-                      className={`status-badge ${item.Status?.replace(" ", "-")}`}
-                    >
-                      {item.Status}
-                    </span>
-                  </td>
-                  <td>
-                    {/* {item.Status === "Pending" ||
-                    item.Status === "Pending" ? ( */}
-                      <Link to={`/ApprovalRequest/${item.ID}`}>
-                        <img src={Edit} width={16} alt="Edit" />
-                      </Link>
-                    {/* ) : (
-                      <>
-                        <Link to={`/ApprovalRequest/${item.ID}`}>
-                          <img src={View} width={16} alt="View" />
-                        </Link>
-
-                       
-                      </>
-                    )} */}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="pagination">
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          <img src={Left} width={14} />
-        </button>
-
-        {Array.from({ length: totalPages }, (_, i) => i + 1)
-          .filter((page) => Math.abs(page - currentPage) <= 2)
-          .map((page) => (
-            <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={currentPage === page ? "active" : ""}
-            >
-              {page}
-            </button>
-          ))}
-
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          <img src={Right} width={14} />
-        </button>
-      </div>
-    </div>
-  </div>
-);
+  );
 
 
 };

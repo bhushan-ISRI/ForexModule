@@ -4,7 +4,6 @@ import { IForexModuleProps } from "../IForexModuleProps";
 import { useHistory, useParams } from "react-router-dom";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { SPHttpClient } from "@microsoft/sp-http";
-import { number } from "yup";
 /* ---------- Layout Helpers ---------- */
 
 const Section = ({ title, children }: any) => (
@@ -37,7 +36,7 @@ interface InvoiceRow {
     invoiceAmount: string;
 }
 
-const TrackerForm = (props: IForexModuleProps) => {
+const TrackerApprovalForm = (props: IForexModuleProps) => {
     const { Id } = useParams<{ Id: string }>();
     const history = useHistory();
     const spCrudOps = SPCRUDOPS();
@@ -57,8 +56,9 @@ const TrackerForm = (props: IForexModuleProps) => {
     const [piAttachments, setPiAttachments] = useState<any>({});
     const [boeAttachments, setBoeAttachments] = useState<any>({});
     const [blAttachments, setBlAttachments] = useState<any>({});
+     const [poAttachmentsAdvance, setPoAttachmentsAddvance] = useState<any>({});
+    const [piAttachmentsAddvance, setPiAttachmentsAddvance] = useState<any>({});
 
-    const [otherAttachmentsadvance, setOtherAttachmentsadvance] = useState<any>({});
     const [rows, setRows] = useState<InvoiceRow[]>([
         {
             invoiceNo: "",
@@ -83,6 +83,8 @@ const TrackerForm = (props: IForexModuleProps) => {
             invoiceAmount: "",
         },
     ]);
+
+    const [approverRemark, setApproverRemark] = useState("");
 
     useEffect(() => {
         if (Id) loadForexData(Id);
@@ -174,6 +176,7 @@ const TrackerForm = (props: IForexModuleProps) => {
             //     AccountNumberIBAN: data.BankAccNo,
             // });
             getVendorData(data.VendorCode);
+            await loadTrackerData(Number(id));
 
             // Load child invoice rows
 
@@ -283,132 +286,77 @@ const TrackerForm = (props: IForexModuleProps) => {
         new Set(rows.map((r) => r.blNo).filter(Boolean))
     );
 
-    const getTreasuryPaymentApprover = async () => {
+
+    const loadTrackerData = async (forexId: number) => {
 
         const sp = await spCrudOps;
 
-        const res = await sp.getData(
-            "ForexApprovalMatrix",
-            "*,Approver/Id,Approver/Title",
-            "Approver",
-            `Role eq 'TreasuryPayment' and RequestType eq 'Advance Payment'`,
+        const tracker = await sp.getData(
+            "ForexAdvanceBillPayment",
+            "*,AttachmentFiles",
+            "AttachmentFiles",
+            `ForexIDId eq ${forexId}`,
             { column: "ID", isAscending: true },
-            1,
+            5000,
             props
         );
 
-        if (res.length > 0) {
-            return res[0].ApproverId;
-        }
+        if (tracker.length > 0) {
 
-        return null;
-    };
+            const formattedRows = tracker.map((item: any) => ({
+                invoiceNo: item.InvoiceNumber || "",
+                invoiceDate: item.InvoiceDate?.split("T")[0] || "",
+                invoiceAmount: item.InvoiceAmount || "",
+                mrnNo: item.MRNNumber || "",
+                mrnDate: item.MRNDate?.split("T")[0] || "",
+                blNo: item.BillofLandingNo || "",
+                blDate: item.BillOfLandingdate?.split("T")[0] || "",
+                boeNo: item.BOENo || "",
+                boeDate: item.BOEDate?.split("T")[0] || ""
+            }));
 
-    const onSubmit = async () => {
+            setRows(formattedRows);
 
-        const sp = await spCrudOps;
+            const attachmentMap: any = {};
+            const poAttachmentMap: any = {};
+            const piAttachmentMap: any = {};
+            const otherAttachmentMap: any = {};
+            const boeAttachmentMap: any = {};
+            const blAttachmentMap: any = {};
 
-        try {
+            tracker.forEach((item: any, index: number) => {
 
-            for (let i = 0; i < rows.length; i++) {
+                const files = item.AttachmentFiles || [];
 
-                const row = rows[i];
-
-                const item = await sp.insertData(
-                    "ForexAdvanceBillPayment",
-                    {
-                        ForexIDId: Number(Id),
-                        InvoiceNumber: row.invoiceNo,
-                        InvoiceDate: row.invoiceDate ? row.invoiceDate : null,
-                        InvoiceAmount: '' + row.invoiceAmount,
-                        MRNNumber: '' + row.mrnNo,
-                        MRNDate: row.mrnDate ? row.mrnDate : null,
-                        BOENo: '' + row.boeNo,
-                        BOEDate: row.boeDate ? row.boeDate : null,
-                        BillofLandingNo: row.blNo,
-                        BillOfLandingdate: row.blDate ? row.blDate : null
-                    },
-                    props
+                poAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("PO_")
                 );
 
-                const itemId = item.data.ID;
+                piAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("PI_")
+                );
 
-                const uploadFiles = async (files: any[]) => {
+                otherAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("DOC_")
+                );
 
-                    for (const file of files) {
+                boeAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("BOE_")
+                );
 
-                        const response = await fetch(file.ServerRelativeUrl);
-                        const blob = await response.blob();
+                blAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("BL_")
+                );
 
-                        await props.context.spHttpClient.post(
-                            `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${file.FileName}')`,
-                            SPHttpClient.configurations.v1,
-                            { body: blob }
-                        );
+            });
 
-                    }
-
-                };
-
-                if (poAttachments[i]) await uploadFiles(poAttachments[i]);
-                if (piAttachments[i]) await uploadFiles(piAttachments[i]);
-                if (otherAttachmentsadvance[i]) await uploadFiles(otherAttachmentsadvance[i]);
-                if (boeAttachments[i]) {
-
-                    for (const file of boeAttachments[i]) {
-
-                        const fileName = `BOE_${row.boeNo}_${file.name}`;
-
-                        await props.context.spHttpClient.post(
-                            `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${fileName}')`,
-                            SPHttpClient.configurations.v1,
-                            { body: file }
-                        );
-                    }
-                }
-
-                /* ---------- BL Attachments ---------- */
-
-                if (blAttachments[i]) {
-
-                    for (const file of blAttachments[i]) {
-
-                        const fileName = `BL_${row.blNo}_${file.name}`;
-
-                        await props.context.spHttpClient.post(
-                            `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${fileName}')`,
-                            SPHttpClient.configurations.v1,
-                            { body: file }
-                        );
-                    }
-                }
-
-            }
-            const treasuryUserId = await getTreasuryPaymentApprover();
-            await sp.updateData(
-                "ForexRequest",
-                Number(Id),
-                {
-                    Status: 'Paid and Pending for Settlement',
-                    CurrentApproverId: treasuryUserId 
-                },
-                props
-            );
-
-
-            alert("Tracker saved successfully");
-
-            history.push("/");
-
-        } catch (error) {
-
-            console.error(error);
-            alert("Error saving tracker");
-
+            setPoAttachmentsAddvance(poAttachmentMap);
+            setPiAttachmentsAddvance(piAttachmentMap);
+            setOtherAttachments(otherAttachmentMap);
+            setBoeAttachments(boeAttachmentMap);
+            setBlAttachments(blAttachmentMap);
         }
-
     };
-
 
     const handleInvoiceFile = (index: number, files: FileList | null) => {
         if (!files) return;
@@ -423,7 +371,7 @@ const TrackerForm = (props: IForexModuleProps) => {
 
         const updated = { ...otherAttachments };
         updated[index] = Array.from(files);
-        setOtherAttachmentsadvance(updated);
+        setOtherAttachments(updated);
     };
 
     const handleBoeUpload = (index: number, files: FileList | null) => {
@@ -441,12 +389,50 @@ const TrackerForm = (props: IForexModuleProps) => {
         updated[index] = Array.from(files);
         setBlAttachments(updated);
     };
+    const rejectRequest = async () => {
+
+        const sp = await spCrudOps;
+
+        await sp.updateData(
+            "ForexRequest",
+            Number(Id),
+            {
+                Status: "Rejected",
+                ApproverRemark: approverRemark
+            },
+            props
+        );
+
+        alert("Request Rejected");
+
+        history.push("/");
+
+    };
+    const approveRequest = async () => {
+
+        const sp = await spCrudOps;
+
+        await sp.updateData(
+            "ForexRequest",
+            Number(Id),
+            {
+                Status: "Paid and Closed",
+                TreasuryApproverRemark: approverRemark
+            },
+            props
+        );
+
+        alert("Request Approved");
+
+        history.push("/");
+
+    };
 
     return (
         <div className="forex-wrapper">
 
             <div className="forex-header">
-                <h2>Forex Payment - Advance Payment Tracker</h2>
+                <h2>Forex Payment - Advance Payment Tracker Approval Form</h2>
             </div>
 
             <div className="forex-card">
@@ -613,7 +599,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                         <Section title="Bill Payment Details (For Goods Bill Payment)">
 
                             <p style={{ color: "red", fontSize: "12px" }}>
-                                User will enter manually, multiple invoice can be entered
+                                Tracker data submitted by user
                             </p>
 
                             <table className="data-table">
@@ -631,7 +617,6 @@ const TrackerForm = (props: IForexModuleProps) => {
                                         <th>Invoice Amount</th>
                                         <th>Attach Invoice</th>
                                         <th>Attach Other</th>
-                                        <th>Add/Delete entry</th>
                                     </tr>
                                 </thead>
 
@@ -642,96 +627,84 @@ const TrackerForm = (props: IForexModuleProps) => {
 
                                             <td>{index + 1}</td>
 
-                                            <td>
-                                                <input
-                                                    value={row.invoiceNo}
-                                                    onChange={(e) => handleChange(index, "invoiceNo", e.target.value)}
-                                                />
-                                            </td>
+                                            <td><span>{row.invoiceNo}</span></td>
 
-                                            <td>
-                                                <input
-                                                    type="date"
-                                                    value={row.invoiceDate}
-                                                    onChange={(e) => handleChange(index, "invoiceDate", e.target.value)}
-                                                />
-                                            </td>
+                                            <td><span>{row.invoiceDate}</span></td>
 
-                                            <td>
-                                                <input
-                                                    value={row.boeNo}
-                                                    onChange={(e) => handleChange(index, "boeNo", e.target.value)}
-                                                />
-                                            </td>
+                                            <td><span>{row.boeNo}</span></td>
 
-                                            <td>
-                                                <input
-                                                    type="date"
-                                                    value={row.boeDate}
-                                                    onChange={(e) => handleChange(index, "boeDate", e.target.value)}
-                                                />
-                                            </td>
+                                            <td><span>{row.boeDate}</span></td>
 
-                                            <td>
-                                                <input
-                                                    value={row.mrnNo}
-                                                    onChange={(e) => handleChange(index, "mrnNo", e.target.value)}
-                                                />
-                                            </td>
+                                            <td><span>{row.mrnNo}</span></td>
 
-                                            <td>
-                                                <input
-                                                    value={row.blNo}
-                                                    onChange={(e) => handleChange(index, "blNo", e.target.value)}
-                                                />
-                                            </td>
+                                            <td><span>{row.blNo}</span></td>
 
-                                            <td>
-                                                <input
-                                                    type="date"
-                                                    value={row.blDate}
-                                                    onChange={(e) => handleChange(index, "blDate", e.target.value)}
-                                                />
-                                            </td>
+                                            <td><span>{row.blDate}</span></td>
 
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    value={row.invoiceAmount}
-                                                    onChange={(e) => handleChange(index, "invoiceAmount", e.target.value)}
-                                                />
-                                            </td>
+                                            <td><span>{row.invoiceAmount}</span></td>
 
                                             {/* Invoice Upload */}
                                             <td>
-                                                <input
-                                                    type="file"
-                                                    onChange={(e) => handleInvoiceFile(index, e.target.files)}
-                                                />
+
+                                                {poAttachmentsAdvance[index]?.length > 0 ? (
+
+                                                    poAttachmentsAdvance[index].map((file: any, i: number) => (
+
+                                                        <div key={i}>
+
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                download
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="upload-link"
+                                                            >
+                                                                📥 {file.FileName || file.name}
+                                                            </a>
+
+                                                        </div>
+
+                                                    ))
+
+                                                ) : (
+
+                                                    <span>-</span>
+
+                                                )}
+
                                             </td>
 
                                             {/* Other Upload */}
                                             <td>
-                                                <input
-                                                    type="file"
-                                                    onChange={(e) => handleOtherFile(index, e.target.files)}
-                                                />
-                                            </td>
 
-                                            <td style={{ textAlign: "center" }}>
+                                                {piAttachmentsAddvance[index]?.length > 0 ? (
 
-                                                {index === rows.length - 1 && (
-                                                    <span style={{ cursor: "pointer" }} onClick={addRow}>+</span>
+                                                    piAttachmentsAddvance[index].map((file: any, i: number) => (
+
+                                                        <div key={i}>
+
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                download
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="upload-link"
+                                                            >
+                                                                📥 {file.FileName || file.name}
+                                                            </a>
+
+                                                        </div>
+
+                                                    ))
+
+                                                ) : (
+
+                                                    <span>-</span>
+
                                                 )}
 
-                                                {rows.length > 1 && (
-                                                    <span
-                                                        style={{ cursor: "pointer", marginLeft: "8px" }}
-                                                        onClick={() => deleteRow(index)}
-                                                    >✖</span>
-                                                )}
-
                                             </td>
+
 
                                         </tr>
                                     ))}
@@ -743,7 +716,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                                         <td colSpan={7}></td>
                                         <td style={{ fontWeight: "bold" }}>Total Amount</td>
                                         <td>{totalInvoiceAmount.toFixed(2)}</td>
-                                        <td colSpan={3}></td>
+                                        <td colSpan={2}></td>
                                     </tr>
                                 </tfoot>
 
@@ -751,7 +724,7 @@ const TrackerForm = (props: IForexModuleProps) => {
 
                         </Section>
 
-
+                        {/* BOE + BL DOCUMENTS */}
 
                         <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
 
@@ -760,7 +733,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                             <div>
 
                                 <p style={{ color: "red", fontSize: "12px" }}>
-                                    Unique BOE no will be listed below
+                                    Unique BOE no listed below
                                 </p>
 
                                 <table className="data-table">
@@ -775,28 +748,38 @@ const TrackerForm = (props: IForexModuleProps) => {
                                     <tbody>
 
                                         {uniqueBoeNumbers.map((boe, index) => (
-
                                             <tr key={index}>
 
                                                 <td>{boe}</td>
 
                                                 <td>
 
-                                                    <input
-                                                        type="file"
-                                                        onChange={(e) => handleBoeUpload(index, e.target.files)}
-                                                    />
+                                                    {boeAttachments[index]?.length > 0 ? (
 
-                                                    {boeAttachments[index]?.map((file: any, i: number) => (
-                                                        <div key={i} style={{ fontSize: "12px" }}>
-                                                            {file.name}
-                                                        </div>
-                                                    ))}
+                                                        boeAttachments[index].map((file: any, i: number) => (
+                                                            <div key={i} style={{ fontSize: "12px" }}>
 
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    download
+                                                                    rel="noopener noreferrer"
+                                                                    className="upload-link"
+                                                                >
+                                                                    📄 {file.FileName}
+                                                                </a>
+
+                                                            </div>
+                                                        ))
+
+                                                    ) : (
+
+                                                        <span>-</span>
+
+                                                    )}
                                                 </td>
 
                                             </tr>
-
                                         ))}
 
                                     </tbody>
@@ -806,12 +789,12 @@ const TrackerForm = (props: IForexModuleProps) => {
                             </div>
 
 
-                            {/* BILL OF LADING TABLE */}
+                            {/* BL TABLE */}
 
                             <div>
 
                                 <p style={{ color: "red", fontSize: "12px" }}>
-                                    Unique Bill of lading no will be listed below
+                                    Unique Bill of Lading listed below
                                 </p>
 
                                 <table className="data-table">
@@ -826,14 +809,13 @@ const TrackerForm = (props: IForexModuleProps) => {
                                     <tbody>
 
                                         {uniqueBlNumbers.map((bl, index) => (
-
                                             <tr key={index}>
 
                                                 <td>{bl}</td>
 
                                                 <td>
 
-                                                    <input
+                                                    {/* <input
                                                         type="file"
                                                         onChange={(e) => handleBlUpload(index, e.target.files)}
                                                     />
@@ -842,12 +824,34 @@ const TrackerForm = (props: IForexModuleProps) => {
                                                         <div key={i} style={{ fontSize: "12px" }}>
                                                             {file.name}
                                                         </div>
-                                                    ))}
+                                                    ))} */}
+                                                    {blAttachments[index]?.length > 0 ? (
+
+                                                        blAttachments[index].map((file: any, i: number) => (
+                                                            <div key={i} style={{ fontSize: "12px" }}>
+
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    download
+                                                                    rel="noopener noreferrer"
+                                                                    className="upload-link"
+                                                                >
+                                                                    📄 {file.FileName}
+                                                                </a>
+
+                                                            </div>
+                                                        ))
+
+                                                    ) : (
+
+                                                        <span>-</span>
+
+                                                    )}
 
                                                 </td>
 
                                             </tr>
-
                                         ))}
 
                                     </tbody>
@@ -857,6 +861,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                             </div>
 
                         </div>
+
                     </>
                 )}
 
@@ -866,14 +871,11 @@ const TrackerForm = (props: IForexModuleProps) => {
                     <div style={{ marginTop: "30px" }}>
 
                         {/* <div style={{ background: "#fff8b3", padding: "4px", fontSize: "12px" }}>
-                            <b>Only for Service: Advance Payment from row 65-72</b>
+                            <b>Only for Service: Advance Payment</b>
                         </div> */}
 
                         <p>
                             <b>Bill Payment Details (for Service Bill Payment)</b>
-                            <span style={{ color: "red" }}>
-                                (User will enter manually, multiple invoice can be entered)
-                            </span>
                         </p>
 
                         <table className="data-table">
@@ -886,9 +888,8 @@ const TrackerForm = (props: IForexModuleProps) => {
                                     <th>Invoice Amount</th>
                                     <th>MRN Number</th>
                                     <th>MRN Date</th>
-                                    <th>Attach Invoice</th>
-                                    <th>Attach Other Document</th>
-                                    <th>Add/Delete entry</th>
+                                    <th>Invoice Document</th>
+                                    <th>Other Document</th>
                                 </tr>
                             </thead>
 
@@ -900,64 +901,85 @@ const TrackerForm = (props: IForexModuleProps) => {
                                         <td>{index + 1}</td>
 
                                         <td>
-                                            <input
-                                                value={row.invoiceNo}
-                                                onChange={(e) => handleChange(index, "invoiceNo", e.target.value)}
-                                            />
+                                            <span>{row.invoiceNo}</span>
                                         </td>
 
                                         <td>
-                                            <input
-                                                type="date"
-                                                value={row.invoiceDate}
-                                                onChange={(e) => handleChange(index, "invoiceDate", e.target.value)}
-                                            />
+                                            <span>{row.invoiceDate}</span>
                                         </td>
 
                                         <td>
-                                            <input
-                                                value={row.invoiceAmount}
-                                                onChange={(e) => handleChange(index, "invoiceAmount", e.target.value)}
-                                            />
+                                            <span>{row.invoiceAmount}</span>
                                         </td>
 
                                         <td>
-                                            <input
-                                                value={row.mrnNo}
-                                                onChange={(e) => handleChange(index, "mrnNo", e.target.value)}
-                                            />
+                                            <span>{row.mrnNo}</span>
                                         </td>
 
                                         <td>
-                                            <input
-                                                type="date"
-                                                value={row.mrnDate || ""}
-                                                onChange={(e) => handleChange(index, "mrnDate", e.target.value)}
-                                            />
+                                            <span>{row.mrnDate}</span>
                                         </td>
 
-                                        <td>
-                                            <input
-                                                type="file"
-                                                onChange={(e) => handleInvoiceFile(index, e.target.files)}
-                                            />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="file"
-                                                onChange={(e) => handleOtherFile(index, e.target.files)}
-                                            />
-                                        </td>
+                                        {/* Invoice Attachments */}
 
                                         <td>
 
-                                            {rows.length > 1 && (
-                                                <span onClick={() => deleteRow(index)}>✖</span>
+                                            {poAttachmentsAdvance[index]?.length > 0 ? (
+
+                                                poAttachmentsAdvance[index].map((file: any, i: number) => (
+
+                                                    <div key={i}>
+
+                                                        <a
+                                                            href={file.ServerRelativeUrl}
+                                                            download
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="upload-link"
+                                                        >
+                                                            📥 {file.FileName || file.name}
+                                                        </a>
+
+                                                    </div>
+
+                                                ))
+
+                                            ) : (
+
+                                                <span>-</span>
+
                                             )}
 
-                                            {index === rows.length - 1 && (
-                                                <span style={{ marginLeft: "8px" }} onClick={addRow}>+</span>
+                                        </td>
+
+                                        {/* Other Attachments */}
+
+                                        <td>
+
+                                            {piAttachmentsAddvance[index]?.length > 0 ? (
+
+                                                piAttachmentsAddvance[index].map((file: any, i: number) => (
+
+                                                    <div key={i}>
+
+                                                        <a
+                                                            href={file.ServerRelativeUrl}
+                                                            download
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="upload-link"
+                                                        >
+                                                            📥 {file.FileName || file.name}
+                                                        </a>
+
+                                                    </div>
+
+                                                ))
+
+                                            ) : (
+
+                                                <span>-</span>
+
                                             )}
 
                                         </td>
@@ -966,6 +988,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                                 ))}
 
                             </tbody>
+
                         </table>
 
                     </div>
@@ -985,8 +1008,28 @@ const TrackerForm = (props: IForexModuleProps) => {
                 </div>
 
                 <div className="button-row">
-                    <button className="btn-submit" onClick={onSubmit}>Submit</button>
-                    <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
+
+                    <button
+                        className="btn-submit"
+                        onClick={approveRequest}
+                    >
+                        Approve
+                    </button>
+
+                    <button
+                        className="btn-Reject"
+                        onClick={rejectRequest}
+                        style={{ background: "#d9534f !important" }}
+                    >
+                        Reject
+                    </button>
+
+                    <button
+                        className="btn-exit"
+                        onClick={() => history.push("/")}>
+                        Exit
+                    </button>
+
                 </div>
 
             </div>
@@ -994,4 +1037,4 @@ const TrackerForm = (props: IForexModuleProps) => {
     );
 };
 
-export default TrackerForm;
+export default TrackerApprovalForm;
