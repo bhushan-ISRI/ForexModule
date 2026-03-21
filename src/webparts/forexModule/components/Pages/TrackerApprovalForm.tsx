@@ -56,8 +56,10 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
     const [piAttachments, setPiAttachments] = useState<any>({});
     const [boeAttachments, setBoeAttachments] = useState<any>({});
     const [blAttachments, setBlAttachments] = useState<any>({});
-     const [poAttachmentsAdvance, setPoAttachmentsAddvance] = useState<any>({});
+    const [poAttachmentsAdvance, setPoAttachmentsAddvance] = useState<any>({});
     const [piAttachmentsAddvance, setPiAttachmentsAddvance] = useState<any>({});
+    const [isClosedWithAD, setIsClosedWithAD] = useState(false);
+    const [referenceNumber, setReferenceNumber] = useState("");
 
     const [rows, setRows] = useState<InvoiceRow[]>([
         {
@@ -417,7 +419,9 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
             Number(Id),
             {
                 Status: "Paid and Closed",
-                TreasuryApproverRemark: approverRemark
+                TreasuryApproverRemark: approverRemark,
+                ClosedWithADBank: isClosedWithAD,       
+                ReferenceNumber: referenceNumber
             },
             props
         );
@@ -1006,6 +1010,35 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                     />
 
                 </div>
+                <Section title="Bank Closure Details">
+                    <Grid>
+
+                        <Field label="Closed with AD bank">
+                            <input
+                                type="checkbox"
+                                checked={isClosedWithAD}
+                                onChange={(e) => {
+                                    setIsClosedWithAD(e.target.checked);
+
+                                    // Clear reference if unchecked
+                                    if (!e.target.checked) {
+                                        setReferenceNumber("");
+                                    }
+                                }}
+                            />
+                        </Field>
+
+                        <Field label="Reference Number (on selection of checkbox)">
+                            <input
+                                type="text"
+                                value={referenceNumber}
+                                disabled={!isClosedWithAD}
+                                onChange={(e) => setReferenceNumber(e.target.value)}
+                            />
+                        </Field>
+
+                    </Grid>
+                </Section>
 
                 <div className="button-row">
 

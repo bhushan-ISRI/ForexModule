@@ -367,7 +367,7 @@ const Editrequest = (props: IForexModuleProps) => {
                 "ForexApprovalMatrix",
                 "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
                 "Approver",
-                `RequestType eq '${requestTypeFilter}'`,
+                `RequestType eq '${requestTypeFilter}' and Status eq 'Active'`,
                 { column: "Level", isAscending: true },
                 5000,
                 props
@@ -1831,14 +1831,14 @@ const Editrequest = (props: IForexModuleProps) => {
 
 
                 {/* ================= CORRESPONDENT ================= */}
-                <Section title="Correspondent Bank Details">
+                {/* <Section title="Correspondent Bank Details">
                     <Grid>
                         <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} /></Field>
                         <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} /></Field>
                         <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} /></Field>
                         <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
                     </Grid>
-                </Section>
+                </Section> */}
 
                 <div className="button-row">
                     <button className="btn-submit" onClick={onsubmit}>Submit</button>

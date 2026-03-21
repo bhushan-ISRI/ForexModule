@@ -291,7 +291,7 @@ const TrackerForm = (props: IForexModuleProps) => {
             "ForexApprovalMatrix",
             "*,Approver/Id,Approver/Title",
             "Approver",
-            `Role eq 'TreasuryPayment' and RequestType eq 'Advance Payment'`,
+            `Role eq 'TreasuryPayment' and RequestType eq 'Advance Payment' and Status eq 'Active'`,
             { column: "ID", isAscending: true },
             1,
             props

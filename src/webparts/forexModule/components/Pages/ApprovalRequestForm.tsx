@@ -707,7 +707,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             "ForexApprovalMatrix",
             "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
             "Approver",
-            `RequestType eq '${requestTypeFilter}'`,
+            `RequestType eq '${requestTypeFilter}' and Status eq 'Active'`,
             { column: "Level", isAscending: true },
             5000,
             props
@@ -1161,63 +1161,77 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
         }
 
     };
-   const onSentBack = async () => {
+    const onSentBack = async () => {
 
-    const sp = await spCrudOps;
+        const sp = await spCrudOps;
 
-    try {
+        try {
 
-        // 🔴 Mandatory Remark Check
-        if (!approverRemarks || approverRemarks.trim() === "") {
-            alert("Please enter remarks before Rejecting the request.");
-            return;
+            // 🔴 Mandatory Remark Check
+            if (!approverRemarks || approverRemarks.trim() === "") {
+                alert("Please enter remarks before Rejecting the request.");
+                return;
+            }
+
+            const correctApproversObjects = await validateAndBuildApprovers();
+
+            const approvers = correctApproversObjects;
+
+            const currentIndex = approvers.findIndex(
+                a => a.Id === currentUserId
+            );
+
+            if (currentIndex === -1) {
+
+                alert("You are not authorized");
+                return;
+
+            }
+
+            // ⭐ Update JSON history
+            approvers[currentIndex].Status = "Rejected";
+            approvers[currentIndex].ActionDate = new Date().toISOString();
+            approvers[currentIndex].Remarks = approverRemarks;
+
+            await sp.updateData(
+                "ForexRequest",
+                Number(Id),
+                {
+                    AllApprovers: JSON.stringify(approvers),
+                    CurrentApproverId: null,
+                    Status: "Rejected"
+                },
+                props
+            );
+
+            alert("Request has been sent back");
+
+            history.push("/ApprovalDashboard");
+
+        } catch (error) {
+
+            console.error(error);
+            alert("Sent back failed");
+
         }
 
-        const correctApproversObjects = await validateAndBuildApprovers();
-
-        const approvers = correctApproversObjects;
-
-        const currentIndex = approvers.findIndex(
-            a => a.Id === currentUserId
-        );
-
-        if (currentIndex === -1) {
-
-            alert("You are not authorized");
-            return;
-
-        }
-
-        // ⭐ Update JSON history
-        approvers[currentIndex].Status = "Rejected";
-        approvers[currentIndex].ActionDate = new Date().toISOString();
-        approvers[currentIndex].Remarks = approverRemarks;
-
-        await sp.updateData(
-            "ForexRequest",
-            Number(Id),
-            {
-                AllApprovers: JSON.stringify(approvers),
-                CurrentApproverId: null,
-                Status: "Rejected"
-            },
-            props
-        );
-
-        alert("Request has been sent back");
-
-        history.push("/ApprovalDashboard");
-
-    } catch (error) {
-
-        console.error(error);
-        alert("Sent back failed");
-
-    }
-
-};
+    };
     const isServicePayment = paymentType.includes("Service");
     const isGoodsPayment = paymentType.includes("Goods");
+
+    const getApproveButtonText = () => {
+        switch (currentRole) {
+            case "Vouching":
+                return "Vouch";
+            case "TreasuryVerification":
+                return "Verify";
+            case "TreasuryPayment":
+                return "Pay & Close";
+            default:
+                return "Approve";
+        }
+    };
+
     return (
         <div className="forex-wrapper">
 
@@ -2307,7 +2321,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
 
                 {/* ================= CORRESPONDENT ================= */}
-                <Section title="Correspondent Bank Details">
+                {/* <Section title="Correspondent Bank Details">
                     <Grid>
                         <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} readOnly /></Field>
                         <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} readOnly /></Field>
@@ -2334,7 +2348,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                     </Grid>
 
-                </Section>
+                </Section> */}
                 {/* ================= VOUCHING DETAILS ================= */}
 
                 {currentRole === "Vouching" && (
@@ -2493,7 +2507,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 )}
 
                 <div className="button-row">
-                    <button className="btn-submit" onClick={onsubmit}>Approve</button>
+                    <button className="btn-submit" onClick={onsubmit}>
+                        {getApproveButtonText()}
+                    </button>     
                     <button className="btn-exit" onClick={onSentBack}>Reject</button>
                     <button className="btn-exit" onClick={() => history.goBack()}>Exit</button>
                 </div>

@@ -150,14 +150,14 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
           className={activeTab === "All" ? "active" : ""}
           onClick={() => setActiveTab("All")}
         >
-          All Requests
+          Forex Payment Request
         </button>
 
         <button
           className={activeTab === "Advance" ? "active" : ""}
           onClick={() => setActiveTab("Advance")}
         >
-          Advance Payment
+          Advance Payment Tracker
         </button>
 
       </div>
@@ -191,9 +191,11 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
 
         </div>
 
-        <Link to="/NewRequest" className="create-button">
-          + New Request
-        </Link>
+        {activeTab !== "Advance" && (
+          <Link to="/NewRequest" className="create-button">
+            + New Request
+          </Link>
+        )}
 
       </div>
 
