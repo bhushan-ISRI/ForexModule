@@ -238,3 +238,33 @@ background:#bdbdbd;
 background:#28a745;
 color:white;
 }
+
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: #f5f7fb;
+  padding: 12px 15px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.section-header:hover {
+  background: #e6ecf5;
+}
+
+.section-body {
+  padding: 15px;
+  border-top: 1px solid #eee;
+}
+
+.arrow {
+  transition: transform 0.3s ease;
+  font-size: 14px;
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}

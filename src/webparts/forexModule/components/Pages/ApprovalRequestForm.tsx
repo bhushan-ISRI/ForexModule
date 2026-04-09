@@ -43,6 +43,24 @@ const Field = ({ label, children, full }: any) => (
         {children}
     </div>
 );
+
+const CollapsibleSection = ({ title, children }: any) => {
+    const [isExpanded, setIsExpanded] = useState(true);
+    return (
+        <div className="collapsible-section">
+            <button
+                className="collapsible-header"
+                onClick={() => setIsExpanded(!isExpanded)}
+                type="button"
+            >
+                <span className="collapsible-title">{title}</span>
+                <span className="collapsible-icon">{isExpanded ? "▼" : "▶"}</span>
+            </button>
+            {isExpanded && <div className="collapsible-content">{children}</div>}
+        </div>
+    );
+};
+
 const ApprovalRequestForm = (props: IForexModuleProps) => {
     const { Id } = useParams<{ Id: string }>();
     const history = useHistory();
@@ -1661,7 +1679,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                         </Section>
 
                         {/* 🔹 Form 10F */}
-                        <Section title="Form 10F">
+                        <CollapsibleSection title="Form 10F">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -1718,7 +1736,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </Section>
+                        </CollapsibleSection>
                     </>
                 )}
 
