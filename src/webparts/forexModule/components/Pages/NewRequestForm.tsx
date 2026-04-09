@@ -96,7 +96,7 @@ const NewRequest = (props: IForexModuleProps) => {
     const [advanceOtherFiles, setAdvanceOtherFiles] = useState<{ [key: number]: File[] }>({});
 
     const [loading, setLoading] = useState(false);
-
+    const [workflowHistoryData, setWorkflowHistoryData] = useState<any[]>([]);
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
         EmployeeName: "",
@@ -511,6 +511,10 @@ const NewRequest = (props: IForexModuleProps) => {
                         VendorAddress: v.VendorAddress || ""
                     });
                     getTaxDeclarationdata(v.VendorCode);
+                    setBankAccountNo(v.AccountNumberIBAN || "");
+                    setBankName(v.BankName || "");
+                    setBankSwiftCode(v.SWIFTBICCode || "");
+
 
                 } else {
                     //alert("Vendor not found");
@@ -750,7 +754,7 @@ const NewRequest = (props: IForexModuleProps) => {
         }
 
         // Bank Details
-        if (!bankname) {
+        if (!vendor.BankName ) {
             alert("Bank Name is required");
             return false;
         }
@@ -829,8 +833,15 @@ const NewRequest = (props: IForexModuleProps) => {
 
             const now = new Date().toLocaleString();
 
-            const initialWorkflow =
-                `Request created by ${employee.EmployeeName} on ${now}`;
+           const workflowHistory = [
+    {
+        CurrentApprover: employee.EmployeeName,
+        ActionTaken: "Request Created",
+        Comment: remarks || "",
+        Date: new Date().toISOString(),
+        CurrentStatus: "Submitted"
+    }
+];
 
             const initialComment =
                 `${employee.EmployeeName}: ${remarks || "Request initiated"} [${now}]`;
@@ -874,7 +885,7 @@ const NewRequest = (props: IForexModuleProps) => {
                     EligibleAmountWithWHT: "" + eligibleAmountWithWHT,
                     CurrencyId: currency || 0,
                     CommentHistory: initialComment,
-                    WorkFlowHistory: initialWorkflow,
+                    WorkFlowHistory:JSON.stringify(workflowHistory),
 
                 },
                 props

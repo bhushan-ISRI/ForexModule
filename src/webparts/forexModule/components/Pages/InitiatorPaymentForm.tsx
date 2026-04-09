@@ -83,6 +83,7 @@ const TrackerForm = (props: IForexModuleProps) => {
             invoiceAmount: "",
         },
     ]);
+    const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
 
     useEffect(() => {
         if (Id) loadForexData(Id);
@@ -140,6 +141,14 @@ const TrackerForm = (props: IForexModuleProps) => {
 
         if (parent.length > 0) {
             const data = parent[0];
+            if (data.WorkFlowHistory) {
+                try {
+                    const parsed = JSON.parse(data.WorkFlowHistory);
+                    setWorkflowHistory(parsed);
+                } catch {
+                    setWorkflowHistory([]);
+                }
+            }
 
             setPaymentType(data.ForexType);
             setRequestNumber(data.ForexNumber);
@@ -385,12 +394,44 @@ const TrackerForm = (props: IForexModuleProps) => {
 
             }
             const treasuryUserId = await getTreasuryPaymentApprover();
+
+            // 🔥 FETCH EXISTING WORKFLOW HISTORY
+            const existingItem = await sp.getData(
+                "ForexRequest",
+                "WorkFlowHistory",
+                "",
+                `ID eq ${Id}`,
+                { column: "ID", isAscending: true },
+                1,
+                props
+            );
+
+            let existingHistory: any[] = [];
+
+            if (existingItem.length > 0 && existingItem[0].WorkFlowHistory) {
+                try {
+                    existingHistory = JSON.parse(existingItem[0].WorkFlowHistory);
+                } catch {
+                    existingHistory = [];
+                }
+            }
+            let updatedHistory = [...existingHistory];
+
+            updatedHistory.push({
+                CurrentApprover: props.context.pageContext.user.displayName,   // or logged-in user
+                Role: "",
+                ActionTaken: "Tracker Submitted",
+                Comment: "",
+                Date: new Date().toISOString(),
+                CurrentStatus: "Paid and Pending for Settlement"
+            });
             await sp.updateData(
                 "ForexRequest",
                 Number(Id),
                 {
                     Status: 'Paid and Pending for Settlement',
-                    CurrentApproverId: treasuryUserId 
+                    WorkFlowHistory: JSON.stringify(updatedHistory),
+                    CurrentApproverId: treasuryUserId
                 },
                 props
             );
@@ -860,6 +901,43 @@ const TrackerForm = (props: IForexModuleProps) => {
                     </>
                 )}
 
+                <Section title="Workflow History">
+
+                    {workflowHistory.length > 0 ? (
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Action By</th>
+                                    <th>Role</th>
+                                    <th>Action</th>
+                                    <th>Remark</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {workflowHistory.map((item: any, index: number) => (
+                                    <tr key={index}>
+                                        <td>{item.CurrentApprover}</td>
+                                        <td>{item.Role || "-"}</td>
+                                        <td>{item.ActionTaken}</td>
+                                        <td>{item.Comment || "-"}</td>
+                                        <td>
+                                            {item.Date
+                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                : ""}
+                                        </td>
+                                        <td>{item.CurrentStatus}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No workflow history available</p>
+                    )}
+
+                </Section>
 
                 {paymentType === "Service-Advance Payment" && (
 
@@ -974,7 +1052,7 @@ const TrackerForm = (props: IForexModuleProps) => {
 
                 {/* Approver Remarks */}
 
-                <div style={{ marginTop: "20px" }}>
+                {/* <div style={{ marginTop: "20px" }}>
 
                     <label><b>Approver's Remarks:</b></label>
 
@@ -982,7 +1060,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                         style={{ width: "70%", height: "40px", marginLeft: "10px" }}
                     />
 
-                </div>
+                </div> */}
 
                 <div className="button-row">
                     <button className="btn-submit" onClick={onSubmit}>Submit</button>

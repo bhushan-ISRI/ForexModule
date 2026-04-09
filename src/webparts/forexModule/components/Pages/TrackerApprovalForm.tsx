@@ -85,7 +85,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
             invoiceAmount: "",
         },
     ]);
-
+    const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
     const [approverRemark, setApproverRemark] = useState("");
 
     useEffect(() => {
@@ -145,6 +145,14 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
         if (parent.length > 0) {
             const data = parent[0];
 
+            if (data.WorkFlowHistory) {
+                try {
+                    const parsed = JSON.parse(data.WorkFlowHistory);
+                    setWorkflowHistory(parsed);
+                } catch {
+                    setWorkflowHistory([]);
+                }
+            }
             setPaymentType(data.ForexType);
             setRequestNumber(data.ForexNumber);
             setRequestedOn(data.RequestedOn?.split("T")[0]);
@@ -395,12 +403,51 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
 
         const sp = await spCrudOps;
 
+        if (!approverRemark || approverRemark.trim() === "") {
+            alert("Please enter remark before rejecting");
+            return;
+        }
+
+        const existingItem = await sp.getData(
+            "ForexRequest",
+            "WorkFlowHistory",
+            "",
+            `ID eq ${Id}`,
+            { column: "ID", isAscending: true },
+            1,
+            props
+        );
+
+        let existingHistory: any[] = [];
+
+        if (existingItem.length > 0 && existingItem[0].WorkFlowHistory) {
+            try {
+                existingHistory = JSON.parse(existingItem[0].WorkFlowHistory);
+            } catch {
+                existingHistory = [];
+            }
+        }
+
+        const user = props.context.pageContext.user;
+
+        let updatedHistory = [...existingHistory];
+
+        updatedHistory.push({
+            CurrentApprover: user.displayName,
+            Role: "TreasuryApproval",
+            ActionTaken: "Rejected",
+            Comment: approverRemark,
+            Date: new Date().toISOString(),
+            CurrentStatus: "Rejected"
+        });
+
         await sp.updateData(
             "ForexRequest",
             Number(Id),
             {
                 Status: "Rejected",
-                ApproverRemark: approverRemark
+                ApproverRemark: approverRemark,
+                WorkFlowHistory: JSON.stringify(updatedHistory) // 🔥 IMPORTANT
             },
             props
         );
@@ -408,11 +455,49 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
         alert("Request Rejected");
 
         history.push("/");
-
     };
     const approveRequest = async () => {
 
         const sp = await spCrudOps;
+
+        if (!approverRemark || approverRemark.trim() === "") {
+            alert("Please enter remark before approving");
+            return;
+        }
+
+        // 🔥 Fetch latest history
+        const existingItem = await sp.getData(
+            "ForexRequest",
+            "WorkFlowHistory",
+            "",
+            `ID eq ${Id}`,
+            { column: "ID", isAscending: true },
+            1,
+            props
+        );
+
+        let existingHistory: any[] = [];
+
+        if (existingItem.length > 0 && existingItem[0].WorkFlowHistory) {
+            try {
+                existingHistory = JSON.parse(existingItem[0].WorkFlowHistory);
+            } catch {
+                existingHistory = [];
+            }
+        }
+
+        const user = props.context.pageContext.user;
+
+        let updatedHistory = [...existingHistory];
+
+        updatedHistory.push({
+            CurrentApprover: user.displayName,
+            Role: "TreasuryApproval",
+            ActionTaken: "Approved",
+            Comment: approverRemark,
+            Date: new Date().toISOString(),
+            CurrentStatus: "Paid and Closed"
+        });
 
         await sp.updateData(
             "ForexRequest",
@@ -420,8 +505,10 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
             {
                 Status: "Paid and Closed",
                 TreasuryApproverRemark: approverRemark,
-                ClosedWithADBank: isClosedWithAD,       
-                ReferenceNumber: referenceNumber
+               ClosedWithADBank: isClosedWithAD ? "Yes" : "No",
+                ReferenceNumber: referenceNumber,
+                WorkFlowHistory: JSON.stringify(updatedHistory), // 🔥 IMPORTANT
+                CurrentApproverId: null
             },
             props
         );
@@ -429,7 +516,6 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
         alert("Request Approved");
 
         history.push("/");
-
     };
 
     return (
@@ -999,6 +1085,43 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
 
                 )}
 
+                <Section title="Workflow History">
+
+                    {workflowHistory.length > 0 ? (
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Action By</th>
+                                    <th>Role</th>
+                                    <th>Action</th>
+                                    <th>Remark</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {workflowHistory.map((item: any, index: number) => (
+                                    <tr key={index}>
+                                        <td>{item.CurrentApprover}</td>
+                                        <td>{item.Role || "-"}</td>
+                                        <td>{item.ActionTaken}</td>
+                                        <td>{item.Comment || "-"}</td>
+                                        <td>
+                                            {item.Date
+                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                : ""}
+                                        </td>
+                                        <td>{item.CurrentStatus}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No workflow history available</p>
+                    )}
+
+                </Section>
                 {/* Approver Remarks */}
 
                 <div style={{ marginTop: "20px" }}>
@@ -1007,6 +1130,8 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
 
                     <textarea
                         style={{ width: "70%", height: "40px", marginLeft: "10px" }}
+                        value={approverRemark}
+                        onChange={(e) => setApproverRemark(e.target.value)}
                     />
 
                 </div>

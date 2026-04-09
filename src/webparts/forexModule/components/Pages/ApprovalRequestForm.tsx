@@ -99,7 +99,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
     const [form15CA, setForm15CA] = useState<File | null>(null);
     const [form15CB, setForm15CB] = useState<File | null>(null);
     const [allApproversJson, setAllApproversJson] = useState<string>("");
-
+    const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
         EmployeeName: "",
@@ -370,6 +370,14 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 });
 
                 setApprovalSteps(steps);
+                if (data.WorkFlowHistory) {
+                    try {
+                        const parsed = JSON.parse(data.WorkFlowHistory);
+                        setWorkflowHistory(parsed);
+                    } catch {
+                        setWorkflowHistory([]);
+                    }
+                }
 
             }
 
@@ -1022,6 +1030,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             approvers[currentIndex].ActionDate = new Date().toISOString();
             approvers[currentIndex].Remarks = approverRemarks;
 
+
             // 🔹 Find next approver
             const nextApprover =
                 currentIndex + 1 < approvers.length
@@ -1059,8 +1068,81 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 }
 
             }
+            // 🔥 ALWAYS GET LATEST FROM SP
+            const existingItem = await sp.getData(
+                "ForexRequest",
+                "WorkFlowHistory",
+                "",
+                `ID eq ${Id}`,
+                { column: "ID", isAscending: true },
+                1,
+                props
+            );
+
+            let existingHistory: any[] = [];
+
+            if (existingItem.length > 0 && existingItem[0].WorkFlowHistory) {
+                try {
+                    existingHistory = JSON.parse(existingItem[0].WorkFlowHistory);
+                } catch {
+                    existingHistory = [];
+                }
+            }
+            // ⭐ Workflow history update
+
 
             let remarksPayload: any = {};
+            let finalRemark = "";
+            if (currentApproverObj.Role === "RM" || currentApproverObj.Role === "HOD") {
+
+                if (!approverRemarks || approverRemarks.trim() === "") {
+                    alert("Please enter remark before approving");
+                    return;
+                }
+
+                finalRemark = approverRemarks;
+            }
+
+            else if (currentApproverObj.Role === "Vouching") {
+
+                if (!vouchingRemarks || vouchingRemarks.trim() === "") {
+                    alert("Please enter vouching remark");
+                    return;
+                }
+
+                finalRemark = vouchingRemarks;
+            }
+
+            else if (currentApproverObj.Role === "TreasuryVerification") {
+
+                if (!treasuryRemarks || treasuryRemarks.trim() === "") {
+                    alert("Please enter treasury remark");
+                    return;
+                }
+
+                finalRemark = treasuryRemarks;
+            }
+
+            else if (currentApproverObj.Role === "TreasuryPayment") {
+
+                if (!paymentReference || paymentReference.trim() === "") {
+                    alert("Please enter payment reference");
+                    return;
+                }
+
+                finalRemark = paymentReference; // or treasuryRemarks if you want
+            }
+
+
+            let updatedHistory = [...existingHistory];
+            updatedHistory.push({
+                CurrentApprover: currentApproverObj.Name,
+                ActionTaken: "Approved",
+                Comment: finalRemark,
+                Date: new Date().toISOString(),
+                CurrentStatus: status
+            });
+
 
             if (currentApproverObj.Role === "RM") {
                 remarksPayload.RMRemark = approverRemarks;
@@ -1142,6 +1224,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 Number(Id),
                 {
                     AllApprovers: JSON.stringify(approvers),
+                    WorkFlowHistory: JSON.stringify(updatedHistory),
                     CurrentApproverId: nextApprover ? nextApprover.Id : null,
                     Status: status,
                     ...remarksPayload
@@ -1187,17 +1270,98 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 return;
 
             }
-
+            const currentApproverObj = approvers[currentIndex];
             // ⭐ Update JSON history
             approvers[currentIndex].Status = "Rejected";
             approvers[currentIndex].ActionDate = new Date().toISOString();
             approvers[currentIndex].Remarks = approverRemarks;
+            const existingItem = await sp.getData(
+                "ForexRequest",
+                "WorkFlowHistory",
+                "",
+                `ID eq ${Id}`,
+                { column: "ID", isAscending: true },
+                1,
+                props
+            );
+
+            let existingHistory: any[] = [];
+
+            if (existingItem.length > 0 && existingItem[0].WorkFlowHistory) {
+                try {
+                    existingHistory = JSON.parse(existingItem[0].WorkFlowHistory);
+                } catch {
+                    existingHistory = [];
+                }
+            }
+
+            let finalRemark = "";
+            if (currentApproverObj.Role === "RM" || currentApproverObj.Role === "HOD") {
+
+                if (!approverRemarks || approverRemarks.trim() === "") {
+                    alert("Please enter remark before approving");
+                    return;
+                }
+
+                finalRemark = approverRemarks;
+            }
+
+            else if (currentApproverObj.Role === "Vouching") {
+
+                if (!vouchingRemarks || vouchingRemarks.trim() === "") {
+                    alert("Please enter vouching remark");
+                    return;
+                }
+
+                finalRemark = vouchingRemarks;
+            }
+
+            else if (currentApproverObj.Role === "TreasuryVerification") {
+
+                if (!treasuryRemarks || treasuryRemarks.trim() === "") {
+                    alert("Please enter treasury remark");
+                    return;
+                }
+
+                finalRemark = treasuryRemarks;
+            }
+
+            else if (currentApproverObj.Role === "TreasuryPayment") {
+
+                if (!paymentReference || paymentReference.trim() === "") {
+                    alert("Please enter payment reference");
+                    return;
+                }
+
+                finalRemark = paymentReference; // or treasuryRemarks if you want
+            }
+
+
+            let updatedHistory = [...existingHistory];
+            updatedHistory.push({
+                CurrentApprover: approvers[currentIndex].Name,
+                ActionTaken: "Rejected",
+                Comment: finalRemark,
+                Date: new Date().toISOString(),
+                CurrentStatus: "Rejected"
+            });
+
+            // let updatedHistory = [...existingHistory];
+
+            // updatedHistory.push({
+            //     CurrentApprover: approvers[currentIndex].Name,
+            //     ActionTaken: "Rejected",
+            //     Comment: approverRemarks,
+            //     Date: new Date().toISOString(),
+            //     CurrentStatus: "Rejected"
+            // });
 
             await sp.updateData(
                 "ForexRequest",
                 Number(Id),
                 {
                     AllApprovers: JSON.stringify(approvers),
+                    WorkFlowHistory: JSON.stringify(updatedHistory),
                     CurrentApproverId: null,
                     Status: "Rejected"
                 },
@@ -2349,6 +2513,40 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     </Grid>
 
                 </Section> */}
+                <Section title="Workflow History">
+                    {workflowHistory.length > 0 ? (
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Action By</th>
+                                    <th>Role</th>
+                                    <th>Action</th>
+                                    <th>Remark</th> {/* ✅ NEW COLUMN */}
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {workflowHistory.map((item, index) => (
+                                    <tr key={index}>
+                                        <td>{item.CurrentApprover}</td>   {/* ✅ FIX */}
+                                        <td>{item.Role || "-"}</td>       {/* optional */}
+                                        <td>{item.ActionTaken}</td>       {/* ✅ FIX */}
+                                        <td>{item.Comment}</td>           {/* ✅ FIX */}
+                                        <td>
+                                            {item.Date
+                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                : ""}
+                                        </td>
+                                        <td>{item.CurrentStatus}</td>     {/* ✅ FIX */}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No workflow history available</p>
+                    )}
+                </Section>
                 {/* ================= VOUCHING DETAILS ================= */}
 
                 {currentRole === "Vouching" && (
@@ -2505,16 +2703,31 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     </Section>
 
                 )}
+                {(currentRole === "RM" || currentRole === "HOD") && (
+                    <Section title=" Remarks Section ">
+                        <Grid>
 
+                            <Field label="Approver Remarks" full>
+                                <textarea
+                                    rows={2}
+                                    value={approverRemarks}
+                                    onChange={(e) => setApproverRemarks(e.target.value)}
+                                />
+                            </Field>
+
+                        </Grid>
+                    </Section>
+                )}
                 <div className="button-row">
                     <button className="btn-submit" onClick={onsubmit}>
                         {getApproveButtonText()}
-                    </button>     
+                    </button>
                     <button className="btn-exit" onClick={onSentBack}>Reject</button>
                     <button className="btn-exit" onClick={() => history.goBack()}>Exit</button>
                 </div>
 
             </div>
+
             {showVendorPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box">
@@ -2548,6 +2761,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 };
 
 export default ApprovalRequestForm;
+
 
 
 
