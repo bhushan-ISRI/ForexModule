@@ -468,7 +468,7 @@ const NewRequest = (props: IForexModuleProps) => {
 
         (await spCrudOps).getData(
             "VendorMaster",
-            "VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,State/Title,Country/Title,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress",
+            "VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,State/Title,Country/Title,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
             "NatureOfPayment,City,State,Country,Currency",
             `VendorCode eq '${vendorCode}'`,
             { column: "ID", isAscending: true },
@@ -514,6 +514,11 @@ const NewRequest = (props: IForexModuleProps) => {
                     setBankAccountNo(v.AccountNumberIBAN || "");
                     setBankName(v.BankName || "");
                     setBankSwiftCode(v.SWIFTBICCode || "");
+                    setBallenceEligibleAmount(v.BalanceEligibleAmount || "");
+                    setPaidAmount(v.ApprovedAmountPaidAmount || "");
+                    setEligibleAmountWithWHT(v.EligibleAmountWithoutWHT || "");
+                    setDTAAApplicable(v.DTAAApplicable || "");
+                    setTaxDocumentView(v.TaxDocumentAvailable || "");
 
 
                 } else {
@@ -726,54 +731,10 @@ const NewRequest = (props: IForexModuleProps) => {
 
 
     const validateForm = () => {
-
-        // Employee & Vendor
-        if (!vendor.VendorCode) {
-            alert("Vendor Code is required");
-            return false;
-        }
-
-        if (!requestedOn) {
-            alert("Requested On is required");
-            return false;
-        }
-
-        if (!currency) {
-            alert("Currency is required");
-            return false;
-        }
-
-        if (!totalAmount) {
-            alert("Total Amount is required");
-            return false;
-        }
-
-        if (!foreignBankCharges) {
-            alert("Foreign Bank Charges is required");
-            return false;
-        }
-
-        // Bank Details
-        if (!vendor.BankName ) {
-            alert("Bank Name is required");
-            return false;
-        }
-
-        if (!bankswiftcode) {
-            alert("Bank Swift Code is required");
-            return false;
-        }
-
-        if (!bankaccountno) {
-            alert("Bank Account No is required");
-            return false;
-        }
-
-        // Invoice rows validation
         for (let i = 0; i < rows.length; i++) {
-
             const row = rows[i];
 
+            // COMMON
             if (!row.invoiceNo) {
                 alert(`Invoice No required in row ${i + 1}`);
                 return false;
@@ -789,7 +750,86 @@ const NewRequest = (props: IForexModuleProps) => {
                 return false;
             }
 
+            // ✅ INVOICE FILE (COMMON REQUIRED)
+            if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
+                alert(`Invoice attachment required in row ${i + 1}`);
+                return false;
+            }
+
+            // ================= GOODS BILL =================
+            if (paymentType === "Goods-Bill Payment") {
+
+                if (!row.boeNo) {
+                    alert(`BOE No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.boeDate) {
+                    alert(`BOE Date required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.blNo) {
+                    alert(`BL No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.blDate) {
+                    alert(`BL Date required in row ${i + 1}`);
+                    return false;
+                }
+            }
+
+            // ================= SERVICE BILL =================
+            if (paymentType === "Service-Bill Payment") {
+
+                if (!row.mrnNo) {
+                    alert(`MRN No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.mrnDate) {
+                    alert(`MRN Date required in row ${i + 1}`);
+                    return false;
+                }
+            }
+
+            // ================= ADVANCE =================
+            if (
+                paymentType === "Service-Advance Payment" ||
+                paymentType === "Goods-Advance Payment"
+            ) {
+                // ✅ PO FILE
+                if (!poFiles[i] || poFiles[i].length === 0) {
+                    alert(`PO attachment required in row ${i + 1}`);
+                    return false;
+                }
+
+                // ✅ PI FILE
+                if (!piFiles[i] || piFiles[i].length === 0) {
+                    alert(`PI attachment required in row ${i + 1}`);
+                    return false;
+                }
+            }
         }
+
+        // ================= UNIQUE BOE FILES =================
+        if (paymentType === "Goods-Bill Payment") {
+            for (let boe of uniqueBoeNumbers) {
+                if (!boeFiles[boe] || boeFiles[boe].length === 0) {
+                    alert(`BOE document required for BOE No: ${boe}`);
+                    return false;
+                }
+            }
+
+            for (let bl of uniqueBlNumbers) {
+                if (!blFiles[bl] || blFiles[bl].length === 0) {
+                    alert(`BL document required for BL No: ${bl}`);
+                    return false;
+                }
+            }
+        }
+
 
         return true;
     };
@@ -833,15 +873,15 @@ const NewRequest = (props: IForexModuleProps) => {
 
             const now = new Date().toLocaleString();
 
-           const workflowHistory = [
-    {
-        CurrentApprover: employee.EmployeeName,
-        ActionTaken: "Request Created",
-        Comment: remarks || "",
-        Date: new Date().toISOString(),
-        CurrentStatus: "Submitted"
-    }
-];
+            const workflowHistory = [
+                {
+                    CurrentApprover: employee.EmployeeName,
+                    ActionTaken: "Request Created",
+                    Comment: remarks || "",
+                    Date: new Date().toISOString(),
+                    CurrentStatus: "Submitted"
+                }
+            ];
 
             const initialComment =
                 `${employee.EmployeeName}: ${remarks || "Request initiated"} [${now}]`;
@@ -885,7 +925,7 @@ const NewRequest = (props: IForexModuleProps) => {
                     EligibleAmountWithWHT: "" + eligibleAmountWithWHT,
                     CurrencyId: currency || 0,
                     CommentHistory: initialComment,
-                    WorkFlowHistory:JSON.stringify(workflowHistory),
+                    WorkFlowHistory: JSON.stringify(workflowHistory),
 
                 },
                 props
@@ -1117,35 +1157,35 @@ const NewRequest = (props: IForexModuleProps) => {
                             <input type="text" value={employee.EmployeeCode} readOnly />
                         </Field>
 
-                        <Field label="Employee Name" required>
+                        <Field label="Employee Name">
                             <input type="text" value={employee.EmployeeName} readOnly />
                         </Field>
 
-                        <Field label="Division" required>
+                        <Field label="Division">
                             <input type="text" value={employee.Division} readOnly />
                         </Field>
 
-                        <Field label="Location" required>
+                        <Field label="Location">
                             <input type="text" value={employee.Location} readOnly />
                         </Field>
 
-                        <Field label="RM" required>
+                        <Field label="RM">
                             <input type="text" value={employee.RM} readOnly />
                         </Field>
 
-                        <Field label="HOD" required>
+                        <Field label="HOD">
                             <input type="text" value={employee.HOD} readOnly />
                         </Field>
 
-                        <Field label="Contact No" required >
+                        <Field label="Contact No" >
                             <input type="text" value={employee.ContactNo} readOnly />
                         </Field>
 
-                        <Field label="Employee Status" required>
+                        <Field label="Employee Status">
                             <input type="text" value={employee.EmployeeStatus} readOnly />
                         </Field>
 
-                        <Field label="Email" full required>
+                        <Field label="Email" full>
                             <input type="email" value={employee.Email} readOnly />
                         </Field>
                     </Grid>
@@ -1183,25 +1223,25 @@ const NewRequest = (props: IForexModuleProps) => {
                             />
 
                         </Field>
-                        <Field label="Vendor Name" required>
+                        <Field label="Vendor Name" >
                             <input value={vendor.VendorName} readOnly />
                         </Field>
-                        <Field label="Address" full required><input value={vendor.VendorAddress} readOnly /></Field>
-                        <Field label="City" required>
+                        <Field label="Address" full ><input value={vendor.VendorAddress} readOnly /></Field>
+                        <Field label="City" >
                             <input value={vendor.City} readOnly />
                         </Field>
 
-                        <Field label="Country" required>
+                        <Field label="Country" >
                             <input value={vendor.Country} readOnly />
                         </Field>
-                        <Field label="Pincode" required><input value={vendor.PostalCode} readOnly /></Field>
+                        <Field label="Pincode" ><input value={vendor.PostalCode} readOnly /></Field>
                         <Field label="Bank Name" required>
                             <input value={vendor.BankName} readOnly />
                         </Field>
-                        <Field label="Bank Country" required><input value={vendor.BankCountry} readOnly /></Field>
-                        <Field label="Bank Swift Code" required><input value={vendor.SWIFTBICCode} readOnly /></Field>
-                        <Field label="Bank Branch Address" required><input value={vendor.BankAddress} readOnly /></Field>
-                        <Field label="Bank IBAN / Account No" full required><input value={vendor.AccountNumberIBAN} readOnly /></Field>
+                        <Field label="Bank Country" ><input value={vendor.BankCountry} readOnly /></Field>
+                        <Field label="Bank Swift Code" ><input value={vendor.SWIFTBICCode} readOnly /></Field>
+                        <Field label="Bank Branch Address" ><input value={vendor.BankAddress} readOnly /></Field>
+                        <Field label="Bank IBAN / Account No" full ><input value={vendor.AccountNumberIBAN} readOnly /></Field>
                     </Grid>
                 </Section>
 
@@ -1209,8 +1249,14 @@ const NewRequest = (props: IForexModuleProps) => {
                 <Section title="Tax & Regulatory Information">
                     <Grid>
                         <Field label="Nature of Payment" required><input value={paymentType} readOnly /></Field>
-                        <Field label="Tax Document Available?" required>
-                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }}>
+                        <Field label="Tax Document Available?" >
+                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled
+                                style={{
+                                    color: "black",
+                                    backgroundColor: "white",
+                                    opacity: 1,
+                                    WebkitTextFillColor: "black" // important for Chrome
+                                }}>
                                 <option>Yes</option>
                                 <option>No</option>
                             </select>
@@ -1224,8 +1270,14 @@ const NewRequest = (props: IForexModuleProps) => {
                         )}
 
                         {taxDocumentView === "Yes" && (
-                            <Field label="DTAA Applicable?" required>
-                                <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)}>
+                            <Field label="DTAA Applicable?">
+                                <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)} disabled
+                                    style={{
+                                        color: "black",
+                                        backgroundColor: "white",
+                                        opacity: 1,
+                                        WebkitTextFillColor: "black" // important for Chrome
+                                    }} >
                                     <option value="">Select</option>
                                     <option value="Yes">Yes</option>
                                     <option value="No">No</option>
@@ -1240,7 +1292,7 @@ const NewRequest = (props: IForexModuleProps) => {
                         <Section title="Permanent Establishment Declaration">
                             <Grid>
 
-                                <Field label="Document Available" required>
+                                <Field label="Document Available" >
                                     <select
                                         value={permanentEstablishmentDeclaration.DocumentAvailable || ""}
                                         disabled
@@ -1251,14 +1303,14 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </select>
                                 </Field>
 
-                                <Field label="Document Number" required>
+                                <Field label="Document Number" >
                                     <input
                                         value={permanentEstablishmentDeclaration.DocumentNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Document Date" required>
+                                <Field label="Document Date" >
                                     <input
                                         type="date"
                                         value={permanentEstablishmentDeclaration.DocumentDate || ""}
@@ -1266,7 +1318,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity Start Date" required>
+                                <Field label="Validity Start Date" >
                                     <input
                                         type="date"
                                         value={permanentEstablishmentDeclaration.ValidityStartDate || ""}
@@ -1274,7 +1326,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity End Date" required>
+                                <Field label="Validity End Date" >
                                     <input
                                         type="date"
                                         value={permanentEstablishmentDeclaration.ValidityEndDate || ""}
@@ -1282,7 +1334,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="View Document" required>
+                                <Field label="View Document" >
                                     <span><a href={permanentEstablishmentDeclaration.Attachmenturl || "#"} target="_blank">{permanentEstablishmentDeclaration.Attachmentfilename || "No Document Available"}</a></span>
                                 </Field>
 
@@ -1293,7 +1345,7 @@ const NewRequest = (props: IForexModuleProps) => {
                         <Section title="Tax Residency Certificate">
                             <Grid>
 
-                                <Field label="Document Available" required>
+                                <Field label="Document Available" >
                                     <select
                                         value={taxResidencyCertificate.DocumentAvailable || ""}
                                         disabled
@@ -1304,28 +1356,28 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </select>
                                 </Field>
 
-                                <Field label="Document Number" required>
+                                <Field label="Document Number" >
                                     <input
                                         value={taxResidencyCertificate.DocumentNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Country of Tax Residence" required>
+                                <Field label="Country of Tax Residence" >
                                     <input
                                         value={taxResidencyCertificate.CountryOfTaxResidence || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Tax Identification Number" required>
+                                <Field label="Tax Identification Number" >
                                     <input
                                         value={taxResidencyCertificate.TaxIdentificationNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Validity Start Date" required>
+                                <Field label="Validity Start Date" >
                                     <input
                                         type="date"
                                         value={taxResidencyCertificate.ValidityStartDate || ""}
@@ -1333,7 +1385,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity End Date" required>
+                                <Field label="Validity End Date" >
                                     <input
                                         type="date"
                                         value={taxResidencyCertificate.ValidityEndDate || ""}
@@ -1341,7 +1393,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="View Document" required>
+                                <Field label="View Document" >
                                     <span><a href={taxResidencyCertificate.Attachmenturl || "#"} target="_blank">{taxResidencyCertificate.Attachmentfilename || "No Document Available"}</a></span>
                                 </Field>
 
@@ -1352,7 +1404,7 @@ const NewRequest = (props: IForexModuleProps) => {
                         <Section title="Form 10F">
                             <Grid>
 
-                                <Field label="Document Available" required>
+                                <Field label="Document Available" >
                                     <select
                                         value={form10F.DocumentAvailable || ""}
                                         disabled
@@ -1363,21 +1415,21 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </select>
                                 </Field>
 
-                                <Field label="Document Number" required>
+                                <Field label="Document Number">
                                     <input
                                         value={form10F.DocumentNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Acknowledgment Number" required>
+                                <Field label="Acknowledgment Number">
                                     <input
                                         value={form10F.AcknowledgmentNumber || ""}
                                         readOnly
                                     />
                                 </Field>
 
-                                <Field label="Document Date" required>
+                                <Field label="Document Date">
                                     <input
                                         type="date"
                                         value={form10F.DocumentDate || ""}
@@ -1385,7 +1437,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity Start Date" required>
+                                <Field label="Validity Start Date">
                                     <input
                                         type="date"
                                         value={form10F.ValidityStartDate || ""}
@@ -1393,7 +1445,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="Validity End Date" required>
+                                <Field label="Validity End Date">
                                     <input
                                         type="date"
                                         value={form10F.ValidityEndDate || ""}
@@ -1401,7 +1453,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     />
                                 </Field>
 
-                                <Field label="View Document" required>
+                                <Field label="View Document">
                                     <span><a href={form10F.Attachmenturl || "#"} target="_blank">{form10F.Attachmentfilename || "No Document Available"}</a></span>
                                 </Field>
 
@@ -1410,18 +1462,19 @@ const NewRequest = (props: IForexModuleProps) => {
                     </>
                 )}
 
-                <Section>
+                <Section title="Other Details">
 
 
 
                     <Grid>
-                        <Field>
-                            <span><b>From Date:</b> <b>{fromdate}</b></span>
-                        </Field>
+                        <div className="date-summary">
+                            <span className="label">From Date:</span>
+                            <span className="value">{fromdate}</span>
+                            <span className="label">,</span>
+                            <span className="label">To Date:</span>
+                            <span className="value">{todate}</span>
+                        </div>
 
-                        <Field>
-                            <span><b>To Date:</b> <b>{todate}</b></span>
-                        </Field>
                     </Grid>
 
 
@@ -1430,28 +1483,31 @@ const NewRequest = (props: IForexModuleProps) => {
                     <Grid>
                         {paymentType !== "Service-Bill Payment" &&
                             paymentType !== "Service-Advance Payment" && (
-                                <Field label="Eligible amount that can be transmitted without WHT" required>
+                                <Field label="Eligible amount that can be transmitted without WHT">
                                     <input
                                         type="number"
                                         value={eligibleAmountWithWHT}
                                         onChange={(e) => setEligibleAmountWithWHT(e.target.value)}
+                                        readOnly
                                     />
                                 </Field>
                             )}
 
-                        <Field label="Paid Amount" required>
+                        <Field label="Paid Amount">
                             <input
                                 type="number"
                                 value={paidAmount}
                                 onChange={(e) => setPaidAmount(e.target.value)}
+                                readOnly
                             />
                         </Field>
 
-                        <Field label="Balance eligible amount (Without withholding Tax)" required>
+                        <Field label="Balance eligible amount (Without withholding Tax)">
                             <input
                                 type="number"
                                 value={ballenceEligibleAmount}
                                 onChange={(e) => setBallenceEligibleAmount(e.target.value)}
+                                readOnly
                             />
                         </Field>
                     </Grid>
@@ -1462,9 +1518,9 @@ const NewRequest = (props: IForexModuleProps) => {
                 {paymentType === "Goods-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency">
+                            <Field label="Request Number" required><input value={requestNumber} readOnly /></Field>
+                            <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
+                            <Field label="Currency" required>
                                 <Dropdown
                                     options={currencyOptions}
                                     selectedKey={currency}
@@ -1475,9 +1531,18 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            {/* <Field label="PO/Contract No"><input /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Foreign Bank Charges" required>
+                                <select
+                                    className="form-control"
+                                    value={foreignBankCharges}
+                                    onChange={(e) => setForeignBankCharges(e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Beneficiary">Beneficiary</option>
+                                    <option value="Ours">Hours</option>
+                                </select>
+                            </Field>                            {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
                         </Grid>
@@ -1486,15 +1551,15 @@ const NewRequest = (props: IForexModuleProps) => {
                             <thead>
                                 <tr>
                                     <th>Sr.No</th>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>BOE No</th>
-                                    <th>BOE Date</th>
-                                    <th>MRN No</th>
-                                    <th>Bill of Lading No</th>
-                                    <th>Bill of Lading Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>Attach Invoice</th>
+                                    <th>Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>BOE No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>BOE Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>MRN No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Bill of Lading No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Bill of Lading Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Docs</th>
                                     <th>Add/Delete Entry</th>
                                 </tr>
@@ -1679,7 +1744,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                 <table className="data-table">
                                     <thead>
                                         <tr>
-                                            <th>BOE No</th>
+                                            <th>BOE No </th>
                                             <th>Attach Documents</th>
                                         </tr>
                                     </thead>
@@ -1755,9 +1820,9 @@ const NewRequest = (props: IForexModuleProps) => {
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency">
+                            <Field label="Request Number" required><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
+                            <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
+                            <Field label="Currency" required>
                                 <Dropdown
                                     options={currencyOptions}
                                     selectedKey={currency}
@@ -1768,8 +1833,8 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Foreign Bank Charges" required><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
@@ -1779,12 +1844,12 @@ const NewRequest = (props: IForexModuleProps) => {
                             <thead>
                                 <tr>
                                     <th>Sr No</th>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>MRN No</th>
-                                    <th>MRN Date</th>
-                                    <th>Attach Invoice</th>
+                                    <th>Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>MRN No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Document</th>
                                     <th>Add/Delete Entry</th>
                                 </tr>
@@ -1938,9 +2003,9 @@ const NewRequest = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency">
+                            <Field label="Request Number" required><input value={requestNumber} /></Field>
+                            <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
+                            <Field label="Currency" required>
                                 <Dropdown
                                     options={currencyOptions}
                                     selectedKey={currency}
@@ -1951,8 +2016,8 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Foreign Bank Charges" required><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
                             <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
                             <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
@@ -1962,11 +2027,11 @@ const NewRequest = (props: IForexModuleProps) => {
                             <thead>
                                 <tr>
                                     <th>Sr No</th>
-                                    <th>Performa Invoice No</th>
-                                    <th>Performa Invoice Date</th>
-                                    <th>Performa Invoice Amount</th>
-                                    <th>Attach PO</th>
-                                    <th>Attach PI</th>
+                                    <th>Performa Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Performa Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Performa Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach PO <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach PI <span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Document</th>
                                     <th>Add/Delete Entry</th>
                                 </tr>
@@ -2118,9 +2183,9 @@ const NewRequest = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency">
+                            <Field label="Request Number" required><input value={requestNumber} /></Field>
+                            <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
+                            <Field label="Currency" required>
                                 <Dropdown
                                     options={currencyOptions}
                                     selectedKey={currency}
@@ -2131,8 +2196,8 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Foreign Bank Charges" required><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
                             <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
                             <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
@@ -2142,11 +2207,11 @@ const NewRequest = (props: IForexModuleProps) => {
                             <thead>
                                 <tr>
                                     <th>Sr No</th>
-                                    <th>Performa Invoice No</th>
-                                    <th>Performa Invoice Date</th>
-                                    <th>Performa Invoice Amount</th>
-                                    <th>Attach PO</th>
-                                    <th>Attach PI</th>
+                                    <th>Performa Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Performa Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Performa Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach PO <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach PI <span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Document</th>
                                     <th>Add/Delete Entry</th>
                                 </tr>
@@ -2305,8 +2370,12 @@ const NewRequest = (props: IForexModuleProps) => {
                         <Field label="Bank Account No" required><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} /></Field>
                         <Field label="Remarks" full required><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
                     </Grid>
-                </Section> */}
-
+                 */}
+                <Section title="">
+                    <Grid>
+                        <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
+                    </Grid>
+                </Section>
                 <div className="button-row">
                     <button
                         className="btn-submit"

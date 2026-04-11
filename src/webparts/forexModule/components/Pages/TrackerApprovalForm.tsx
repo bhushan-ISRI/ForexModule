@@ -35,6 +35,39 @@ interface InvoiceRow {
     blDate: string;
     invoiceAmount: string;
 }
+interface InvoiceRownew {
+    invoiceNo: string;
+    invoiceDate: string;
+    boeNo: string;
+    boeDate: string;
+    mrnNo: string;
+    mrnDate?: string;
+    blNo: string;
+    blDate: string;
+    invoiceAmountnew?: string;
+}
+
+const CollapsibleSection = ({ title, children }: any) => {
+    const [open, setOpen] = React.useState(false);
+
+    return (
+        <div className="form-section collapsible">
+            <div
+                className="form-section-header"
+                onClick={() => setOpen(!open)}
+            >
+                <span>{title}</span>
+                <i className={`fas fa-chevron-${open ? "up" : "down"}`}></i>
+            </div>
+
+            {open && (
+                <div className="form-section-body">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const TrackerApprovalForm = (props: IForexModuleProps) => {
     const { Id } = useParams<{ Id: string }>();
@@ -73,7 +106,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
             invoiceAmount: "",
         },
     ]);
-    const [ShowInvoiceData, serShowInvoiceData] = useState<InvoiceRow[]>([
+    const [ShowInvoiceData, serShowInvoiceData] = useState<InvoiceRownew[]>([
         {
             invoiceNo: "",
             invoiceDate: "",
@@ -82,7 +115,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
             mrnNo: "",
             blNo: "",
             blDate: "",
-            invoiceAmount: "",
+            invoiceAmountnew: "",
         },
     ]);
     const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
@@ -205,7 +238,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                 const formattedRows = child.map((item: any) => ({
                     invoiceNo: item.InvoiceNumber || "",
                     invoiceDate: item.InvoiceDate?.split("T")[0] || "",
-                    invoiceAmount: item.InvoiceAmount || "",
+                    invoiceAmountnew: item.InvoiceAmount || "",
                     mrnNo: item.MRNNumber || "",
                     mrnDate: item.MRNDate?.split("T")[0] || "",
                     blNo: item.BillofLandingNo || "",
@@ -285,6 +318,10 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
 
     const totalInvoiceAmount = rows.reduce(
         (sum, r) => sum + (parseFloat(r.invoiceAmount) || 0),
+        0
+    );
+     const totalInvoiceAmountnew = ShowInvoiceData.reduce(
+        (sum, r) => sum + (parseFloat(r.invoiceAmountnew) || 0),
         0
     );
 
@@ -546,7 +583,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
 
                 {/* Vendor */}
 
-                <Section title="Vendor - Beneficiary Details">
+                <CollapsibleSection title="Vendor - Beneficiary Details">
                     <Grid>
                         <Field label="Vendor Code"><input value={vendor.VendorCode} readOnly /></Field>
                         <Field label="Vendor Name"><input value={vendor.VendorName} readOnly /></Field>
@@ -562,7 +599,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                             <input value={vendor.AccountNumberIBAN} readOnly />
                         </Field>
                     </Grid>
-                </Section>
+                </CollapsibleSection>
 
                 {/* Advance Payment */}
 
@@ -600,7 +637,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
 
                                 <td>{row.invoiceDate}</td>
 
-                                <td>{row.invoiceAmount}</td>
+                                <td>{row.invoiceAmountnew}</td>
 
                                 {/* PO Attachments */}
                                 <td>
@@ -674,7 +711,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
 
                             <td style={{ fontWeight: "bold" }}>Total Amount</td>
 
-                            <td>{totalInvoiceAmount.toFixed(2)}</td>
+                            <td>{totalInvoiceAmountnew.toFixed(2)}</td>
 
                             <td colSpan={3}></td>
 
@@ -1078,21 +1115,28 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                 ))}
 
                             </tbody>
-
+                                 <tfoot>
+                                    <tr>
+                                        <td colSpan={2}></td>
+                                        <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                        <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                        <td colSpan={5}></td>
+                                    </tr>
+                                </tfoot>
                         </table>
 
                     </div>
 
                 )}
 
-                <Section title="Workflow History">
+                <CollapsibleSection title="Workflow History">
 
                     {workflowHistory.length > 0 ? (
                         <table className="data-table">
                             <thead>
                                 <tr>
                                     <th>Action By</th>
-                                    <th>Role</th>
+                                    {/* <th>Role</th> */}
                                     <th>Action</th>
                                     <th>Remark</th>
                                     <th>Date</th>
@@ -1104,7 +1148,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                 {workflowHistory.map((item: any, index: number) => (
                                     <tr key={index}>
                                         <td>{item.CurrentApprover}</td>
-                                        <td>{item.Role || "-"}</td>
+                                        {/* <td>{item.Role || "-"}</td> */}
                                         <td>{item.ActionTaken}</td>
                                         <td>{item.Comment || "-"}</td>
                                         <td>
@@ -1121,7 +1165,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                         <p>No workflow history available</p>
                     )}
 
-                </Section>
+                </CollapsibleSection>
                 {/* Approver Remarks */}
 
                 <div style={{ marginTop: "20px" }}>

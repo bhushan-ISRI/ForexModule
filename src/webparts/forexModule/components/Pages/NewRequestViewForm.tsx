@@ -46,6 +46,27 @@ interface IApproverDetails {
     Status?: string;
     Comment?: string;
 }
+const CollapsibleSection = ({ title, children }: any) => {
+    const [open, setOpen] = React.useState(false);
+
+    return (
+        <div className="form-section collapsible">
+            <div
+                className="form-section-header"
+                onClick={() => setOpen(!open)}
+            >
+                <span>{title}</span>
+                <i className={`fas fa-chevron-${open ? "up" : "down"}`}></i>
+            </div>
+
+            {open && (
+                <div className="form-section-body">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const ViewRequestForm = (props: IForexModuleProps) => {
     const { Id } = useParams<{ Id: string }>();
@@ -92,6 +113,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
     const [inrAmount, setInrAmount] = useState("");
     const [paymentDate, setPaymentDate] = useState("");
     const [paymentReferenceNumber, setPaymentReferenceNumber] = useState("");
+    const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
 
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
@@ -280,7 +302,15 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 setInrAmount(data.INRAmount || "");
                 setPaymentDate(data.PaymentDate?.split("T")[0] || "");
                 setPaymentReferenceNumber(data.PaymentReferenceNumber || "");
-
+                // 🔥 LOAD WORKFLOW HISTORY
+                if (data.WorkFlowHistory) {
+                    try {
+                        const parsed = JSON.parse(data.WorkFlowHistory);
+                        setWorkflowHistory(parsed);
+                    } catch {
+                        setWorkflowHistory([]);
+                    }
+                }
                 setVendor({
                     ...vendor,
                     VendorCode: data.VendorCode,
@@ -619,7 +649,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 <Section title="Requestor Information">
                     <Grid>
                         <Field label="Type">
-                            <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)}>
+                            <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} disabled>
                                 <option value="Goods-Bill Payment">Goods-Bill Payment</option>
                                 <option value="Service-Bill Payment">Service-Bill Payment</option>
                                 <option value="Goods-Advance Payment">Goods-Advance Payment</option>
@@ -668,7 +698,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 </Section>
 
                 {/* ================= VENDOR ================= */}
-                <Section title="Vendor / Beneficiary Details">
+                <CollapsibleSection title="Vendor / Beneficiary Details">
                     <Grid>
                         <Field label="Vendor Code">
                             <input
@@ -678,7 +708,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     setVendor({ ...vendor, VendorCode: code });
                                 }}
                                 onBlur={(e) => getVendorData(e.target.value)}   // fetch when user leaves field
-                            />
+                            disabled/>
                         </Field>
                         <Field label="Vendor Name">
                             <input value={vendor.VendorName} readOnly />
@@ -700,14 +730,14 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                         <Field label="Bank Branch Address"><input value={vendor.BankAddress} readOnly /></Field>
                         <Field label="Bank IBAN / Account No" full><input value={vendor.AccountNumberIBAN} readOnly /></Field>
                     </Grid>
-                </Section>
+                </CollapsibleSection>
 
                 {/* ================= TAX INFO ================= */}
-                <Section title="Tax & Regulatory Information">
+                <CollapsibleSection title="Tax & Regulatory Information">
                     <Grid>
                         <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
-                        <Field label="Tax Document Available?">
-                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }}>
+                        <Field label="Tax Document Available?" >
+                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled>
                                 <option>Yes</option>
                                 <option>No</option>
                             </select>
@@ -722,7 +752,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                         {taxDocumentView === "Yes" && (
                             <Field label="DTAA Applicable?">
-                                <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)}>
+                                <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)} disabled>
                                     <option value="">Select</option>
                                     <option value="Yes">Yes</option>
                                     <option value="No">No</option>
@@ -730,11 +760,11 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                             </Field>
                         )}
                     </Grid>
-                </Section>
+                </CollapsibleSection>
                 {taxDocumentView === "Yes" && (
                     <>
                         {/* 🔹 Permanent Establishment Declaration */}
-                        <Section title="Permanent Establishment Declaration">
+                        <CollapsibleSection title="Permanent Establishment Declaration">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -784,10 +814,10 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </Section>
+                        </CollapsibleSection>
 
                         {/* 🔹 Tax Residency Certificate */}
-                        <Section title="Tax Residency Certificate">
+                        <CollapsibleSection title="Tax Residency Certificate">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -843,10 +873,10 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </Section>
+                        </CollapsibleSection>
 
                         {/* 🔹 Form 10F */}
-                        <Section title="Form 10F">
+                        <CollapsibleSection title="Form 10F">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -903,15 +933,19 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </Section>
+                        </CollapsibleSection>
                     </>
                 )}
 
-                <Section >
+                <CollapsibleSection title="Other Details" >
                     <Grid>
-                        <Field label="From"><input type="date" value={fromdate} /></Field>
-
-                        <Field label="To"><input type="date" value={todate} /></Field>
+                        <div className="date-summary">
+                            <span className="label">From Date:</span>
+                            <span className="value">{fromdate}</span>
+                        <span className="label"> , </span>
+                            <span className="label">To Date:</span>
+                            <span className="value">{todate}</span>
+                        </div>
                     </Grid>
                     <Grid>
 
@@ -929,18 +963,18 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                         </Field>
                     </Grid>
 
-                </Section>
+                </CollapsibleSection>
 
                 {/* ================= FOREX DETAILS ================= */}
                 {/* ==============================Goods-Bill Payment============================== */}
                 {paymentType === "Goods-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} readOnly /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
@@ -974,7 +1008,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceNo", e.target.value)
                                                 }
-                                            />
+                                            readOnly/>
                                         </td>
 
                                         <td>
@@ -984,7 +1018,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceDate", e.target.value)
                                                 }
-                                            />
+                                            readOnly/>
                                         </td>
 
                                         <td>
@@ -993,7 +1027,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "boeNo", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
 
                                         <td>
@@ -1003,7 +1037,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "boeDate", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
 
                                         <td>
@@ -1012,7 +1046,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnNo", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
 
                                         <td>
@@ -1021,7 +1055,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "blNo", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
 
                                         <td>
@@ -1031,7 +1065,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "blDate", e.target.value)
                                                 }
-                                            />
+                                            readOnly/>
                                         </td>
 
                                         <td>
@@ -1041,7 +1075,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceAmount", e.target.value)
                                                 }
-                                            />
+                                            readOnly/>
                                         </td>
 
                                         <td>
@@ -1202,11 +1236,11 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
@@ -1237,7 +1271,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceNo", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
 
                                         <td>
@@ -1247,7 +1281,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceDate", e.target.value)
                                                 }
-                                            />
+                                            readOnly/>
                                         </td>
 
                                         <td>
@@ -1256,7 +1290,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceAmount", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
 
                                         <td>
@@ -1265,7 +1299,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnNo", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
                                         <td>
                                             <input
@@ -1274,7 +1308,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnDate", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
                                         <td>
                                             {invoiceAttachments[index]?.map((file: any, i: number) => (
@@ -1361,14 +1395,14 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
+                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
+                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly/></Field>
+                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly/></Field>
+                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly/></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
@@ -1395,7 +1429,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceNo", e.target.value)
                                                 }
-                                            />
+                                           readOnly />
                                         </td>
 
                                         <td>
@@ -1405,7 +1439,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceDate", e.target.value)
                                                 }
-                                            />
+                                            readOnly/>
                                         </td>
 
                                         <td>
@@ -1414,7 +1448,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceAmount", e.target.value)
                                                 }
-                                            />
+                                            readOnly/>
                                         </td>
 
 
@@ -1505,14 +1539,14 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
+                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
+                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly/></Field>
+                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly/></Field>
+                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly/></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
@@ -1649,15 +1683,15 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
                 {/* ================= CORRESPONDENT ================= */}
-                <Section title="Correspondent Bank Details">
+                <CollapsibleSection title="Correspondent Bank Details">
                     <Grid>
-                        <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} /></Field>
-                        <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} /></Field>
-                        <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} /></Field>
-                        <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
+                        <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} readOnly/></Field>
+                        <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} readOnly/></Field>
+                        <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} readOnly/></Field>
+                        <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }} readOnly></textarea></Field>
                     </Grid>
-                </Section>
-                <Section title="Approval Remarks">
+                </CollapsibleSection>
+                {/* <Section title="Approval Remarks">
 
                     <Grid>
 
@@ -1673,8 +1707,8 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                     </Grid>
 
-                </Section>
-                <Section title="Payment Details">
+                </Section> */}
+                <CollapsibleSection title="Payment Details">
 
                     <Grid>
 
@@ -1704,13 +1738,52 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                     </Grid>
 
-                </Section>
+                </CollapsibleSection>
+                <CollapsibleSection title="Workflow History">
+
+                    {workflowHistory.length > 0 ? (
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Action By</th>
+                                    {/* <th>Role</th> */}
+                                    <th>Action</th>
+                                    <th>Remark</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {workflowHistory.map((item: any, index: number) => (
+                                    <tr key={index}>
+                                        <td>{item.CurrentApprover}</td>
+                                        {/* <td>{item.Role || "-"}</td> */}
+                                        <td>{item.ActionTaken}</td>
+                                        <td>{item.Comment || "-"}</td>
+                                        <td>
+                                            {item.Date
+                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                : ""}
+                                        </td>
+                                        <td>{item.CurrentStatus}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No workflow history available</p>
+                    )}
+
+                </CollapsibleSection>
                 <div className="button-row">
                     {/* <button className="btn-submit" onClick={onsubmit}>Submit</button> */}
                     <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
                 </div>
 
+
             </div>
+
             {showVendorPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box">

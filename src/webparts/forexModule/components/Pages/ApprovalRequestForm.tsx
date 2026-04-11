@@ -45,18 +45,23 @@ const Field = ({ label, children, full }: any) => (
 );
 
 const CollapsibleSection = ({ title, children }: any) => {
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [open, setOpen] = React.useState(false);
+
     return (
-        <div className="collapsible-section">
-            <button
-                className="collapsible-header"
-                onClick={() => setIsExpanded(!isExpanded)}
-                type="button"
+        <div className="form-section collapsible">
+            <div
+                className="form-section-header"
+                onClick={() => setOpen(!open)}
             >
-                <span className="collapsible-title">{title}</span>
-                <span className="collapsible-icon">{isExpanded ? "▼" : "▶"}</span>
-            </button>
-            {isExpanded && <div className="collapsible-content">{children}</div>}
+                <span>{title}</span>
+                <i className={`fas fa-chevron-${open ? "up" : "down"}`}></i>
+            </div>
+
+            {open && (
+                <div className="form-section-body">
+                    {children}
+                </div>
+            )}
         </div>
     );
 };
@@ -118,6 +123,11 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
     const [form15CB, setForm15CB] = useState<File | null>(null);
     const [allApproversJson, setAllApproversJson] = useState<string>("");
     const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
+    const [eligibleAmountWithWHT, setEligibleAmountWithWHT] = useState("");
+    const [paidAmount, setPaidAmount] = useState("");
+    const [ballenceEligibleAmount, setBallenceEligibleAmount] = useState("");
+    const [foreignCurrencyOptions, setforeignCurrencyOptions] = useState<IDropdownOption[]>([]);
+
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
         EmployeeName: "",
@@ -266,7 +276,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
     useEffect(() => {
         getFinancialYearStart();
-
+        getCurrencyData();
         if (Id) {
             loadForexData(Id);
         }
@@ -307,7 +317,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 setTaxDocumentView(data.DocumentIsAvailable || "");
                 setBankSwiftCode(data.BankSwiftCode || "");
                 setNextApprovers(data.NextApprovers?.map((approver: any) => approver.Id) || []);
-
+                setEligibleAmountWithWHT(data.EligibleAmountWithWHT || "");
+                setPaidAmount(data.PaidAmount || "");
+                setBallenceEligibleAmount(data.BallenceEligibleAmount || "");
 
                 if (data.AllApprovers) {
 
@@ -990,6 +1002,28 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
     // }
 
+    const getCurrencyData = async () => {
+        try {
+            const sp = await spCrudOps;
+            await sp.getData(
+                "Currency",
+                "Title,Id",
+                "",
+                "",
+                { column: "Title", isAscending: true },
+                5000,
+                props
+            ).then((res: any[]) => {
+                const options = res.map((c: any) => ({
+                    key: c.Title,
+                    text: c.Title
+                }));
+                setforeignCurrencyOptions(options);
+            });
+        } catch (error) { console.error("Error fetching currency data:", error); }
+    }
+
+
     const onsubmit = async () => {
 
         const sp = await spCrudOps;
@@ -1128,6 +1162,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     return;
                 }
 
+
                 finalRemark = vouchingRemarks;
             }
 
@@ -1176,6 +1211,18 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 remarksPayload.VoucherNumber = voucherNumber;
                 remarksPayload.VouchingRemarks = vouchingRemarks;
 
+                if (!validationDate) {
+                    alert("Please enter validation date");
+                    return;
+                }
+                if (paymentType.includes("Advance")) {
+                    if (!voucherNumber || voucherNumber.trim() === "") {
+                        alert("Please enter voucher number");
+                        return;
+                    }
+                }
+
+
             }
 
             if (currentApproverObj.Role === "TreasuryVerification") {
@@ -1183,6 +1230,30 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             }
 
             if (currentApproverObj.Role === "TreasuryPayment") {
+                if (!foreignCurrency) {
+                    alert("Please select foreign currency");
+                    return;
+                }
+                if (!foreignAmount || isNaN(Number(foreignAmount))) {
+                    alert("Please enter a valid foreign amount");
+                    return;
+                }
+                if (!exchangeRate || isNaN(Number(exchangeRate))) {
+                    alert("Please enter a valid exchange rate");
+                    return;
+                }
+                if (!inrAmount || isNaN(Number(inrAmount))) {
+                    alert("Please enter a valid INR amount");
+                    return;
+                }
+                if (!paymentDate) {
+                    alert("Please enter payment date");
+                    return;
+                }
+                if (!paymentReference || paymentReference.trim() === "") {
+                    alert("Please enter payment reference");
+                    return;
+                }
 
                 remarksPayload.ForeignCurrency = foreignCurrency;
                 remarksPayload.ForeignCurrencyAmount = foreignAmount;
@@ -1249,9 +1320,15 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 },
                 props
             );
-
-            alert("Request has been approved successfully");
-
+            if (currentApproverObj.Role === "Vouching") {
+                alert("Request has been vouched");
+            } else if (currentApproverObj.Role === "TreasuryVerification") {
+                alert("Request has been verified");
+            } else if (currentApproverObj.Role === "TreasuryPayment") {
+                alert("Request has been processed successfully”");
+            } else {
+                alert("Request has been approved successfully");
+            }
             history.push("/ApprovalDashboard");
 
         } catch (error) {
@@ -1499,7 +1576,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 </Section>
 
                 {/* ================= VENDOR ================= */}
-                <Section title="Vendor / Beneficiary Details">
+                <CollapsibleSection title="Vendor / Beneficiary Details">
                     <Grid>
                         <Field label="Vendor Code">
                             <input
@@ -1533,10 +1610,10 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                         <Field label="Bank Branch Address"><input value={vendor.BankAddress} readOnly /></Field>
                         <Field label="Bank IBAN / Account No" full><input value={vendor.AccountNumberIBAN} readOnly /></Field>
                     </Grid>
-                </Section>
+                </CollapsibleSection>
 
                 {/* ================= TAX INFO ================= */}
-                <Section title="Tax & Regulatory Information">
+                <CollapsibleSection title="Tax & Regulatory Information">
                     <Grid>
                         <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
                         <Field label="Tax Document Available?">
@@ -1563,11 +1640,11 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                             </Field>
                         )}
                     </Grid>
-                </Section>
+                </CollapsibleSection>
                 {taxDocumentView === "Yes" && (
                     <>
                         {/* 🔹 Permanent Establishment Declaration */}
-                        <Section title="Permanent Establishment Declaration">
+                        <CollapsibleSection title="Permanent Establishment Declaration">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -1617,10 +1694,10 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </Section>
+                        </CollapsibleSection>
 
                         {/* 🔹 Tax Residency Certificate */}
-                        <Section title="Tax Residency Certificate">
+                        <CollapsibleSection title="Tax Residency Certificate">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -1676,7 +1753,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </Section>
+                        </CollapsibleSection>
 
                         {/* 🔹 Form 10F */}
                         <CollapsibleSection title="Form 10F">
@@ -1740,29 +1817,31 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     </>
                 )}
 
-                <Section >
-                    <Grid>
-                        <Field label="From"><input type="date" value={fromdate} readOnly /></Field>
-
-                        <Field label="To"><input type="date" value={todate} readOnly /></Field>
-                    </Grid>
+                <CollapsibleSection title="Other Details" >
+                    <div className="date-summary">
+                        <span className="label">From Date:</span>
+                        <span className="value">{fromdate}</span>
+                        <span className="label"> , </span>
+                        <span className="label">To Date:</span>
+                        <span className="value">{todate}</span>
+                    </div>
                     <Grid>
 
                         <Field label="Eligible amount that can be transmitted without WHT">
-                            <input type="number" readOnly />
+                            <input type="number" value={eligibleAmountWithWHT || ""} readOnly />
                         </Field>
 
 
                         <Field label="Paid Amount">
-                            <input type="number" readOnly />
+                            <input type="number" value={paidAmount || ""} readOnly />
                         </Field>
 
                         <Field label="Balance eligible amount(Without with holding Tax)">
-                            <input type="number" />
+                            <input type="number" value={ballenceEligibleAmount || ""} readOnly />
                         </Field>
                     </Grid>
 
-                </Section>
+                </CollapsibleSection>
 
                 {/* ================= FOREX DETAILS ================= */}
                 {/* ==============================Goods-Bill Payment============================== */}
@@ -1773,7 +1852,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
                             <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
@@ -2531,13 +2610,13 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     </Grid>
 
                 </Section> */}
-                <Section title="Workflow History">
+                <CollapsibleSection title="Workflow History">
                     {workflowHistory.length > 0 ? (
                         <table className="data-table">
                             <thead>
                                 <tr>
                                     <th>Action By</th>
-                                    <th>Role</th>
+                                    {/* <th>Role</th> */}
                                     <th>Action</th>
                                     <th>Remark</th> {/* ✅ NEW COLUMN */}
                                     <th>Date</th>
@@ -2548,7 +2627,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 {workflowHistory.map((item, index) => (
                                     <tr key={index}>
                                         <td>{item.CurrentApprover}</td>   {/* ✅ FIX */}
-                                        <td>{item.Role || "-"}</td>       {/* optional */}
+                                        {/* <td>{item.Role || "-"}</td>       optional */}
                                         <td>{item.ActionTaken}</td>       {/* ✅ FIX */}
                                         <td>{item.Comment}</td>           {/* ✅ FIX */}
                                         <td>
@@ -2564,7 +2643,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     ) : (
                         <p>No workflow history available</p>
                     )}
-                </Section>
+                </CollapsibleSection>
                 {/* ================= VOUCHING DETAILS ================= */}
 
                 {currentRole === "Vouching" && (
@@ -2628,14 +2707,19 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                         <Grid>
 
-                            <Field label="Foreign Currency">
-                                <input
-                                    value={foreignCurrency}
-                                    onChange={(e) => setForeignCurrency(e.target.value)}
+                            <Field label="Foreign Currency *">
+                                <Dropdown
+                                    options={foreignCurrencyOptions}
+                                    selectedKey={foreignCurrency}
+                                    onChange={(e, option) => {
+                                        if (option) {
+                                            setForeignCurrency(option.key as string);
+                                        }
+                                    }}
                                 />
                             </Field>
 
-                            <Field label="Foreign Currency Amount">
+                            <Field label="Foreign Currency Amount *">
                                 <input
                                     type="number"
                                     value={foreignAmount}
@@ -2643,7 +2727,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 />
                             </Field>
 
-                            <Field label="Exchange Rate">
+                            <Field label="Exchange Rate *">
                                 <input
                                     type="number"
                                     value={exchangeRate}
@@ -2651,7 +2735,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 />
                             </Field>
 
-                            <Field label="INR Amount">
+                            <Field label="INR Amount *">
                                 <input
                                     type="number"
                                     value={inrAmount}
@@ -2667,7 +2751,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                         <Grid>
 
-                            <Field label="Payment Date">
+                            <Field label="Payment Date *">
                                 <input
                                     type="date"
                                     value={paymentDate}
@@ -2675,7 +2759,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 />
                             </Field>
 
-                            <Field label="Payment reference number">
+                            <Field label="Payment reference number *">
                                 <input
                                     value={paymentReference}
                                     onChange={(e) => setPaymentReference(e.target.value)}

@@ -1,16 +1,8 @@
-
-
-
-
-
-
-
-
-
 import * as React from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import '../../components/Pages/Css/Sidebar.scss';
 import { IForexModuleProps } from '../IForexModuleProps';
+//@ts-ignore
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import logo from "../../assets/SonaPNGLogo.png";
 import { sp } from '@pnp/sp';
