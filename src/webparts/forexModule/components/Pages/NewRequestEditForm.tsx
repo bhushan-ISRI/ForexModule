@@ -6,7 +6,7 @@ import { Dropdown, IDropdownOption } from '@fluentui/react';
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { Attachment } from "@pnp/sp/attachments";
 import { useParams } from "react-router-dom";
-
+import { sp } from "@pnp/sp/presets/all";
 //import USESPCRUD from "../../service/BAL/spcrud";
 
 interface InvoiceRow {
@@ -19,6 +19,7 @@ interface InvoiceRow {
     blDate: string;
     invoiceAmount: string;
     mrnDate?: string; // Added for Service-Bill Payment
+    attachments?: any[];
 }
 
 
@@ -157,7 +158,7 @@ const Editrequest = (props: IForexModuleProps) => {
         Attachmentfilename: ""
     });
 
-    const [rows, setRows] = React.useState([
+    const [rows, setRows] = React.useState<InvoiceRow[]>([
         {
             invoiceNo: "",
             invoiceDate: "",
@@ -167,9 +168,13 @@ const Editrequest = (props: IForexModuleProps) => {
             blNo: "",
             blDate: "",
             invoiceAmount: "",
-            mrnDate: "" // Added for Service-Bill Payment
+            mrnDate: "",
+            attachments: []
         }
     ]);
+
+    const [wfHistory, setWfHistory] = useState<any[]>([]);
+    const [currentApproverId, setCurrentApproverId] = useState<number | null>(null);
     const addRow = () => {
         setRows([
             ...rows,
@@ -182,7 +187,8 @@ const Editrequest = (props: IForexModuleProps) => {
                 blNo: "",
                 blDate: "",
                 invoiceAmount: "",
-                mrnDate: "" // Added for Service-Bill Payment
+                mrnDate: "",
+                attachments: []
             }
         ]);
     };
@@ -195,10 +201,10 @@ const Editrequest = (props: IForexModuleProps) => {
     const handleChange = (
         index: number,
         field: keyof InvoiceRow,
-        value: string
+        value: string | any[]
     ) => {
         const updatedRows = [...rows];
-        updatedRows[index][field] = value;
+        updatedRows[index][field] = value as any;
         setRows(updatedRows);
     };
 
@@ -248,6 +254,9 @@ const Editrequest = (props: IForexModuleProps) => {
         } catch (error) { console.error("Error fetching currency data:", error); }
     }
     //----------------------- load data for edit------------------------//
+    sp.setup({
+        spfxContext: props.context
+    });
     const loadForexData = async (forexId: string) => {
         const sp = await spCrudOps;
 
@@ -293,6 +302,23 @@ const Editrequest = (props: IForexModuleProps) => {
                 });
 
                 getVendorData(data.VendorCode);
+                try {
+                    let history: any[] = [];
+
+                    if (data.WorkFlowHistory) {
+                        history =
+                            typeof data.WorkFlowHistory === "string"
+                                ? JSON.parse(data.WorkFlowHistory)
+                                : data.WorkFlowHistory;
+                    }
+
+                    setWfHistory(history || []);
+
+                    console.log("🔥 WFHistory:", history);
+
+                } catch (e) {
+                    console.error("WFHistory error", e);
+                }
             }
 
             // 🔹 Load Child Rows
@@ -305,7 +331,28 @@ const Editrequest = (props: IForexModuleProps) => {
                 5000,
                 props
             );
+         const childWithAttachments = await Promise.all(
+    child.map(async (item: any) => {
+        try {
+            const attachments = await sp.web.lists
+                .getByTitle("ForexServicesBillPayment")
+                .items.getById(item.ID)
+                .attachmentFiles();
 
+            return {
+                ...item,
+                attachments: attachments || []
+            };
+        } catch (e) {
+            console.error("Attachment error for item:", item.ID, e);
+
+            return {
+                ...item,
+                attachments: []
+            };
+        }
+    })
+);
             if (child.length > 0) {
                 const formattedRows = child.map((item: any) => ({
                     invoiceNo: item.InvoiceNumber || "",
@@ -316,7 +363,8 @@ const Editrequest = (props: IForexModuleProps) => {
                     blNo: item.BillofLandingNo || "",
                     blDate: item.BillOfLandingdate?.split("T")[0] || "",
                     boeNo: item.BOENo || "",
-                    boeDate: item.BOEDate?.split("T")[0] || ""
+                    boeDate: item.BOEDate?.split("T")[0] || "",
+                    attachments: item.attachments || []
                 }));
 
                 setRows(formattedRows);
@@ -351,17 +399,10 @@ const Editrequest = (props: IForexModuleProps) => {
                 });
             }
 
-            // 🔥 Map UI type to Backend RequestType
-            let requestTypeFilter = "";
-
-            if (
-                selectedType === "Goods-Advance Payment" ||
-                selectedType === "Service-Advance Payment"
-            ) {
-                requestTypeFilter = "Advance Payment";
-            } else {
-                requestTypeFilter = selectedType; // direct match for Bill types
-            }
+            let requestTypeFilter =
+                selectedType.includes("Advance")
+                    ? "Advance Payment"
+                    : selectedType;
 
             const matrixData = await sp.getData(
                 "ForexApprovalMatrix",
@@ -383,15 +424,19 @@ const Editrequest = (props: IForexModuleProps) => {
             const fullFlow = [...baseApprovers, ...matrixApprovers];
 
             const uniqueFlow = fullFlow.filter(
-                (value, index, self) =>
-                    self.findIndex(v => v.Id === value.Id) === index
+                (v, i, self) => self.findIndex(x => x.Id === v.Id) === i
             );
 
+            // ✅ UI
             setApproverDetails(uniqueFlow);
             setApprovers(uniqueFlow.map(a => a.Id));
 
+            // ✅ RETURN (IMPORTANT)
+            return uniqueFlow;
+
         } catch (error) {
             console.error("Error building approval flow:", error);
+            return [];
         }
     };
 
@@ -636,7 +681,7 @@ const Editrequest = (props: IForexModuleProps) => {
         const sp = await spCrudOps;
 
         const res = await sp.getData(
-            "ForexApproverMatrix",
+            "ForexApprovalMAtrix",
             "ID,Approver/Id,Approver/Title,Level",
             "Approver",
             "",
@@ -654,6 +699,137 @@ const Editrequest = (props: IForexModuleProps) => {
         setApproverDetails(approverList);
     };
 
+    const validateForm = () => {
+
+        // 🔴 Basic validations
+        if (!vendor.VendorCode) {
+            alert("Vendor is required");
+            return false;
+        }
+
+        if (!paymentType) {
+            alert("Please select payment type");
+            return false;
+        }
+
+        if (!requestNumber) {
+            alert("Request Number is required");
+            return false;
+        }
+
+        if (!requestedOn) {
+            alert("Requested date is required");
+            return false;
+        }
+
+        if (!currency) {
+            alert("Currency is required");
+            return false;
+        }
+
+        if (!foreignBankCharges) {
+            alert("Please select Foreign Bank Charges");
+            return false;
+        }
+
+        // 🔴 Must have at least one valid row
+        const validRows = rows.filter(r => r.invoiceNo);
+        if (validRows.length === 0) {
+            alert("Please add at least one valid invoice row");
+            return false;
+        }
+
+        // 🔥 LOOP ALL ROWS
+        for (let i = 0; i < rows.length; i++) {
+
+            const row = rows[i];
+
+            // 👉 Skip completely empty rows
+            if (!row.invoiceNo &&
+                !row.invoiceDate &&
+                !row.invoiceAmount &&
+                !row.boeNo &&
+                !row.mrnNo) {
+                continue;
+            }
+
+            // 🔴 Mandatory fields
+            if (!row.invoiceNo) {
+                alert(`Invoice No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.invoiceDate) {
+                alert(`Invoice Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.invoiceAmount) {
+                alert(`Invoice Amount required in row ${i + 1}`);
+                return false;
+            }
+
+            if (parseFloat(row.invoiceAmount) <= 0) {
+                alert(`Invoice Amount must be greater than 0 in row ${i + 1}`);
+                return false;
+            }
+
+            // 🔴 Goods validation
+            if (paymentType === "Goods-Bill Payment") {
+
+                if (!row.boeNo) {
+                    alert(`BOE No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.boeDate) {
+                    alert(`BOE Date required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.blNo) {
+                    alert(`BL No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.blDate) {
+                    alert(`BL Date required in row ${i + 1}`);
+                    return false;
+                }
+            }
+
+            // 🔴 Service validation
+            if (paymentType === "Service-Bill Payment") {
+
+                if (!row.mrnNo) {
+                    alert(`MRN No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.mrnDate) {
+                    alert(`MRN Date required in row ${i + 1}`);
+                    return false;
+                }
+            }
+
+            // 🔴 Attachment validation (VERY IMPORTANT for multi rows)
+            if (
+                (!files[i] || files[i].length === 0) &&
+                (!row.attachments || row.attachments.length === 0)
+            ) {
+                alert(`Attachment required in row ${i + 1}`);
+                return false;
+            }
+        }
+
+        // 🔴 Total validation
+        if (parseFloat(totalAmount) !== totalInvoiceAmount) {
+            alert("Total Amount must match sum of invoice amounts");
+            return false;
+        }
+
+        return true;
+    };
 
     const onsubmit = async () => {
 
@@ -662,15 +838,52 @@ const Editrequest = (props: IForexModuleProps) => {
             const sp = await spCrudOps;
 
             // 🔹 1️⃣ Validate Before Saving
-            if (!vendor.VendorCode) {
-                alert("Vendor is required.");
-                return;
-            }
+            if (!validateForm()) return;
 
             if (rows.length === 0) {
                 alert("Please add at least one invoice row.");
                 return;
             }
+            // ===============================
+            // 🔥 WF HISTORY UPDATE
+            // ===============================
+            let prevHistory: any[] = [];
+
+            try {
+                prevHistory =
+                    typeof wfHistory === "string"
+                        ? JSON.parse(wfHistory)
+                        : wfHistory || [];
+            } catch {
+                prevHistory = [];
+            }
+
+            const currentUser =
+                props.context?.pageContext?.user?.displayName || "User";
+
+            const newEntry = {
+                CurrentApprover: currentUser,
+                ActionTaken: "Request Reupdated",
+                Comment: remarks || "",
+                Date: new Date().toISOString()
+            };
+
+            prevHistory.push(newEntry);
+            const flow = await buildApprovalFlow(
+                {
+                    RMId: employee.RMId,
+                    HODId: employee.HODId,
+                    RM: employee.RM,
+                    HOD: employee.HOD
+                },
+                paymentType
+            );
+
+            // 🔥 derive values
+            const currentApprover = flow.length > 0 ? flow[0].Id : null;
+            const nextApprover = flow.length > 1 ? flow[1].Id : null;
+
+            const wfHistoryPayload = JSON.stringify(prevHistory);
             if (Id) {
                 // 🔹 2️⃣ Insert Parent
                 const parentResponse = await sp.updateData(
@@ -690,7 +903,7 @@ const Editrequest = (props: IForexModuleProps) => {
                         BankName: bankname || "",
                         BankAccNo: bankaccountno || "",
                         Remarks: remarks || "",
-                        Status: "Draft",
+                        Status: "Pending",
                         NatureOfPayment: paymentType,
                         DocumentIsAvailable: taxDocumentView,
                         DTAAApplicable: dTAAApplicable,
@@ -710,7 +923,10 @@ const Editrequest = (props: IForexModuleProps) => {
                         BankSwiftCode: bankswiftcode || "",
                         BallenceEligibleAmount: "" + ballenceEligibleAmount,
                         PaidAmount: "" + paidAmount,
-                        EligibleAmountWithWHT: "" + eligibleAmountWithWHT
+                        EligibleAmountWithWHT: "" + eligibleAmountWithWHT,
+                        WorkFlowHistory: wfHistoryPayload,
+                        CurrentApproverId: currentApprover,
+                        AllApprovers: JSON.stringify(flow)
                     },
                     props
                 );
@@ -778,7 +994,16 @@ const Editrequest = (props: IForexModuleProps) => {
         }
     };
 
+    const [files, setFiles] = useState<any>({});
 
+    const handleFileChange = (index: number, e: any) => {
+        const selectedFiles = e.target.files;
+
+        setFiles((prev: any) => ({
+            ...prev,
+            [index]: selectedFiles
+        }));
+    };
     return (
         <div className="forex-wrapper">
 
@@ -1114,14 +1339,15 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 <Section >
                     <Grid>
-                        <Field>
-                            <span><b>From Date:</b> <b>{fromdate}</b></span>
-                        </Field>
-
-                        <Field>
-                            <span><b>To Date:</b> <b>{todate}</b></span>
-                        </Field>
+                        <div className="date-summary">
+                            <span className="label">From Date:</span>
+                            <span className="value">{fromdate}</span>
+                            <span className="label">,</span>
+                            <span className="label">To Date:</span>
+                            <span className="value">{todate}</span>
+                        </div>
                     </Grid>
+
                     <Grid>
 
                         <Field label="Eligible amount that can be transmitted without WHT">
@@ -1159,8 +1385,17 @@ const Editrequest = (props: IForexModuleProps) => {
                                 />
                             </Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            {/* <Field label="PO/Contract No"><input /></Field>
+                            <Field label="Foreign Bank Charges" required>
+                                <select
+                                    className="form-control"
+                                    value={foreignBankCharges}
+                                    onChange={(e) => setForeignBankCharges(e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Beneficiary">Beneficiary</option>
+                                    <option value="Ours">Hours</option>
+                                </select>
+                            </Field>                             {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
                         </Grid>
@@ -1264,8 +1499,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                         </td>
 
                                         <td>
-                                            <input type="file" />
-                                        </td>
+                                            <td>
+                                                {/* Existing Files */}
+                                                {row.attachments?.length > 0 && (
+                                                    <div>
+                                                        {row.attachments.map((file: any, i: number) => (
+                                                            <div key={i}>
+                                                                <a href={file.ServerRelativeUrl} target="_blank">
+                                                                    {file.FileName}
+                                                                </a>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Upload New */}
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => handleFileChange(index, e)}
+                                                />
+                                            </td>                                        </td>
 
                                         <td>
                                             <input type="file" />
@@ -1399,8 +1652,17 @@ const Editrequest = (props: IForexModuleProps) => {
                                     }}
                                 /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            {/* <Field label="PO/Contract No"><input /></Field>
+                            <Field label="Foreign Bank Charges" required>
+                                <select
+                                    className="form-control"
+                                    value={foreignBankCharges}
+                                    onChange={(e) => setForeignBankCharges(e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Beneficiary">Beneficiary</option>
+                                    <option value="Ours">Hours</option>
+                                </select>
+                            </Field>                             {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
                         </Grid>
@@ -1553,8 +1815,17 @@ const Editrequest = (props: IForexModuleProps) => {
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
+                            <Field label="Foreign Bank Charges" required>
+                                <select
+                                    className="form-control"
+                                    value={foreignBankCharges}
+                                    onChange={(e) => setForeignBankCharges(e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Beneficiary">Beneficiary</option>
+                                    <option value="Ours">Hours</option>
+                                </select>
+                            </Field>                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
                             <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
                             <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
                         </Grid>
@@ -1694,8 +1965,17 @@ const Editrequest = (props: IForexModuleProps) => {
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
+                            <Field label="Foreign Bank Charges" required>
+                                <select
+                                    className="form-control"
+                                    value={foreignBankCharges}
+                                    onChange={(e) => setForeignBankCharges(e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Beneficiary">Beneficiary</option>
+                                    <option value="Ours">Hours</option>
+                                </select>
+                            </Field>                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
                             <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
                             <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
                         </Grid>
@@ -1836,10 +2116,75 @@ const Editrequest = (props: IForexModuleProps) => {
                         <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} /></Field>
                         <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} /></Field>
                         <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} /></Field>
-                        <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
                     </Grid>
                 </Section> */}
-
+                {/* <Section title="Workflow History">
+                    <table className="wfTable">
+                        <thead>
+                            <tr>
+                                <th>Action By</th>
+                                <th>Action</th>
+                                <th>Date</th>
+                                <th>Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {wfHistory.length > 0 ? (
+                                wfHistory.map((h, i) => (
+                                    <tr key={i}>
+                                        <td>{h.CurrentApprover}</td>
+                                        <td>{h.ActionTaken}</td>
+                                        <td>{new Date(h.Date).toLocaleString()}</td>
+                                        <td>{h.Comment}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={4}>No history</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </Section> */}
+                <Section title="Workflow History">
+                    {wfHistory.length > 0 ? (
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Action By</th>
+                                    {/* <th>Role</th> */}
+                                    <th>Action</th>
+                                    <th>Remark</th> {/* ✅ NEW COLUMN */}
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {wfHistory.map((item, index) => (
+                                    <tr key={index}>
+                                        <td>{item.CurrentApprover}</td>   {/* ✅ FIX */}
+                                        {/* <td>{item.Role || "-"}</td>       optional */}
+                                        <td>{item.ActionTaken}</td>       {/* ✅ FIX */}
+                                        <td>{item.Comment}</td>           {/* ✅ FIX */}
+                                        <td>
+                                            {item.Date
+                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                : ""}
+                                        </td>
+                                        <td>{item.CurrentStatus}</td>     {/* ✅ FIX */}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No workflow history available</p>
+                    )}
+                </Section>
+                <Section title="">
+                    <Grid>
+                        <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }}></textarea></Field>
+                    </Grid>
+                </Section>
                 <div className="button-row">
                     <button className="btn-submit" onClick={onsubmit}>Submit</button>
                     <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>

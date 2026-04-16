@@ -274,7 +274,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
                             <img src={Edit} width={16} alt="Edit" />
                           </Link>
 
-                        ) : item.Status === "Send back" || item.Status === "Draft" ? (
+                        ) : item.Status === "Sent Back" || item.Status === "Draft" ? (
 
                           <Link to={`/EditRequest/${item.ID}`}>
                             <img src={Edit} width={16} alt="Edit" />

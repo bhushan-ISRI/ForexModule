@@ -1339,7 +1339,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
         }
 
     };
-    const onSentBack = async () => {
+    const onReject = async () => {
 
         const sp = await spCrudOps;
 
@@ -1463,7 +1463,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 props
             );
 
-            alert("Request has been sent back");
+            alert("Request has been Rejeqcted successfully");
 
             history.push("/ApprovalDashboard");
 
@@ -1474,6 +1474,109 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
         }
 
+    };
+
+    const onSentBack = async () => {
+
+        const sp = await spCrudOps;
+
+        try {
+
+            // 🔴 Mandatory Remark
+            if (!approverRemarks || approverRemarks.trim() === "") {
+                alert("Please enter remarks before sending back.");
+                return;
+            }
+
+            // 🔹 1. Get latest item from SP
+            const existingItem = await sp.getData(
+                "ForexRequest",
+                "AllApprovers,WorkFlowHistory",
+                "",
+                `ID eq ${Id}`,
+                { column: "ID", isAscending: true },
+                1,
+                props
+            );
+
+            if (!existingItem.length) {
+                alert("Item not found");
+                return;
+            }
+
+            // 🔹 2. Parse approvers JSON
+            let approvers: any[] = [];
+            if (existingItem[0].AllApprovers) {
+                approvers = JSON.parse(existingItem[0].AllApprovers);
+            }
+
+            // 🔹 3. Find current approver index
+            const currentIndex = approvers.findIndex(
+                (a: any) => a.Id === currentUserId
+            );
+
+            if (currentIndex === -1) {
+                alert("You are not authorized");
+                return;
+            }
+
+            const currentApproverObj = approvers[currentIndex];
+
+            // 🔹 4. Mark current as Sent Back
+            approvers[currentIndex].Status = "Sent Back";
+            approvers[currentIndex].ActionDate = new Date().toISOString();
+            approvers[currentIndex].Remarks = approverRemarks;
+
+            // 🔹 5. Move to previous approver
+            const previousApprover =
+                currentIndex - 1 >= 0 ? approvers[currentIndex - 1] : null;
+
+            if (previousApprover) {
+                previousApprover.Status = "Pending";
+            }
+
+            // 🔹 6. Workflow History
+            let existingHistory: any[] = [];
+
+            if (existingItem[0].WorkFlowHistory) {
+                try {
+                    existingHistory = JSON.parse(existingItem[0].WorkFlowHistory);
+                } catch {
+                    existingHistory = [];
+                }
+            }
+
+            existingHistory.push({
+                CurrentApprover: currentApproverObj.Name,
+                ActionTaken: "Sent Back",
+                Comment: approverRemarks,
+                Date: new Date().toISOString(),
+                CurrentStatus: "Sent Back"
+            });
+
+            // 🔹 7. Update SharePoint
+            await sp.updateData(
+                "ForexRequest",
+                Number(Id),
+                {
+                    AllApprovers: JSON.stringify(approvers),
+                    WorkFlowHistory: JSON.stringify(existingHistory),
+                    CurrentApproverId: previousApprover ? previousApprover.Id : null,
+                    Status: "Sent Back"
+                },
+                props
+            );
+
+            alert("Request sent back successfully");
+
+            history.push("/ApprovalDashboard");
+
+        } catch (error) {
+
+            console.error(error);
+            alert("Send back failed");
+
+        }
     };
     const isServicePayment = paymentType.includes("Service");
     const isGoodsPayment = paymentType.includes("Goods");
@@ -2824,7 +2927,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     <button className="btn-submit" onClick={onsubmit}>
                         {getApproveButtonText()}
                     </button>
-                    <button className="btn-exit" onClick={onSentBack}>Reject</button>
+                    <button className="btn-exit" onClick={onSentBack}>Send Back</button>
+
+                    <button className="btn-Reject" onClick={onReject}>Reject</button>
                     <button className="btn-exit" onClick={() => history.goBack()}>Exit</button>
                 </div>
 
