@@ -8,8 +8,9 @@ import { Attachment } from "@pnp/sp/attachments";
 import { useParams } from "react-router-dom";
 import { sp } from "@pnp/sp/presets/all";
 //import USESPCRUD from "../../service/BAL/spcrud";
-
+import { SPHttpClient, ISPHttpClientOptions } from '@microsoft/sp-http';
 interface InvoiceRow {
+    id?: number;
     invoiceNo: string;
     invoiceDate: string;
     boeNo: string;
@@ -172,9 +173,18 @@ const Editrequest = (props: IForexModuleProps) => {
             attachments: []
         }
     ]);
-
+    const [poFiles, setPoFiles] = useState<any>({});
+    const [piFiles, setPiFiles] = useState<any>({});
+    //const [otherFiles, setOtherFiles] = useState<any>({});
     const [wfHistory, setWfHistory] = useState<any[]>([]);
     const [currentApproverId, setCurrentApproverId] = useState<number | null>(null);
+    const [invoiceFiles, setInvoiceFiles] = useState<any>({});
+    const [otherFiles, setOtherFiles] = useState<any>({});
+    const [otherFilesAdv, setOtherFilesAdv] = useState<any>({});
+    const [boeFiles, setBoeFiles] = useState<any>({});
+    const [blFiles, setBlFiles] = useState<any>({});
+    const [boeLibraryFiles, setBoeLibraryFiles] = useState<any[]>([]);
+    const [bolLibraryFiles, setBolLibraryFiles] = useState<any[]>([]);
     const addRow = () => {
         setRows([
             ...rows,
@@ -204,7 +214,8 @@ const Editrequest = (props: IForexModuleProps) => {
         value: string | any[]
     ) => {
         const updatedRows = [...rows];
-        updatedRows[index][field] = value as any;
+        // updatedRows[index][field] = value as any;
+        updatedRows[index] = { ...updatedRows[index], [field]: value };
         setRows(updatedRows);
     };
 
@@ -331,30 +342,38 @@ const Editrequest = (props: IForexModuleProps) => {
                 5000,
                 props
             );
-         const childWithAttachments = await Promise.all(
-    child.map(async (item: any) => {
-        try {
-            const attachments = await sp.web.lists
-                .getByTitle("ForexServicesBillPayment")
-                .items.getById(item.ID)
-                .attachmentFiles();
+            const webUrl = props.context.pageContext.web.absoluteUrl;
+            const childWithAttachments = await Promise.all(
+                child.map(async (item: any) => {
+                    try {
 
-            return {
-                ...item,
-                attachments: attachments || []
-            };
-        } catch (e) {
-            console.error("Attachment error for item:", item.ID, e);
+                        const url = `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${item.ID})/AttachmentFiles`;
 
-            return {
-                ...item,
-                attachments: []
-            };
-        }
-    })
-);
+                        const response = await props.context.spHttpClient.get(
+                            url,
+                            SPHttpClient.configurations.v1
+                        );
+
+                        const data = await response.json();
+
+                        return {
+                            ...item,
+                            attachments: data.value || data.d?.results || []
+                        };
+
+                    } catch (e) {
+                        console.error("❌ Attachment error for item:", item.ID, e);
+
+                        return {
+                            ...item,
+                            attachments: []
+                        };
+                    }
+                })
+            );
             if (child.length > 0) {
-                const formattedRows = child.map((item: any) => ({
+                const formattedRows = childWithAttachments.map((item: any) => ({
+                    id: item.ID,
                     invoiceNo: item.InvoiceNumber || "",
                     invoiceDate: item.InvoiceDate?.split("T")[0] || "",
                     invoiceAmount: item.InvoiceAmount || "",
@@ -369,6 +388,30 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 setRows(formattedRows);
             }
+            // 🔥 LOAD BOE FILES
+            const boeFiles = await sp.getData(
+                "BOEAttachments",
+                "FileLeafRef,FileRef,BOENo,ReqeuestId",
+                "",
+                `ReqeuestId eq '${forexId}'`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            // 🔥 LOAD BOL FILES
+            const bolFiles = await sp.getData(
+                "BillOfLandingAttachment",
+                "FileLeafRef,FileRef,BOLNo,ReqeuestId",
+                "",
+                `ReqeuestId eq '${forexId}'`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            setBoeLibraryFiles(boeFiles);
+            setBolLibraryFiles(bolFiles);
 
         } catch (error) {
             console.error("Error loading edit data:", error);
@@ -699,26 +742,11 @@ const Editrequest = (props: IForexModuleProps) => {
         setApproverDetails(approverList);
     };
 
-    const validateForm = () => {
+     const validateForm = () => {
 
-        // 🔴 Basic validations
-        if (!vendor.VendorCode) {
-            alert("Vendor is required");
-            return false;
-        }
-
-        if (!paymentType) {
-            alert("Please select payment type");
-            return false;
-        }
-
-        if (!requestNumber) {
-            alert("Request Number is required");
-            return false;
-        }
-
-        if (!requestedOn) {
-            alert("Requested date is required");
+    // ================= HEADER VALIDATION =================
+       if (!requestedOn) {
+            alert("Requested On is required");
             return false;
         }
 
@@ -728,108 +756,148 @@ const Editrequest = (props: IForexModuleProps) => {
         }
 
         if (!foreignBankCharges) {
-            alert("Please select Foreign Bank Charges");
+            alert("Foreign Bank Charges is required");
+            return false;
+        }
+    if (paymentType.includes("Advance Payment") ) {
+
+        if (!poContractNo) {
+            alert("PO/Contract No is required");
             return false;
         }
 
-        // 🔴 Must have at least one valid row
-        const validRows = rows.filter(r => r.invoiceNo);
-        if (validRows.length === 0) {
-            alert("Please add at least one valid invoice row");
+        if (!poDate) {
+            alert("PO Date is required");
             return false;
         }
 
-        // 🔥 LOOP ALL ROWS
-        for (let i = 0; i < rows.length; i++) {
-
-            const row = rows[i];
-
-            // 👉 Skip completely empty rows
-            if (!row.invoiceNo &&
-                !row.invoiceDate &&
-                !row.invoiceAmount &&
-                !row.boeNo &&
-                !row.mrnNo) {
-                continue;
-            }
-
-            // 🔴 Mandatory fields
-            if (!row.invoiceNo) {
-                alert(`Invoice No required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!row.invoiceDate) {
-                alert(`Invoice Date required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!row.invoiceAmount) {
-                alert(`Invoice Amount required in row ${i + 1}`);
-                return false;
-            }
-
-            if (parseFloat(row.invoiceAmount) <= 0) {
-                alert(`Invoice Amount must be greater than 0 in row ${i + 1}`);
-                return false;
-            }
-
-            // 🔴 Goods validation
-            if (paymentType === "Goods-Bill Payment") {
-
-                if (!row.boeNo) {
-                    alert(`BOE No required in row ${i + 1}`);
-                    return false;
-                }
-
-                if (!row.boeDate) {
-                    alert(`BOE Date required in row ${i + 1}`);
-                    return false;
-                }
-
-                if (!row.blNo) {
-                    alert(`BL No required in row ${i + 1}`);
-                    return false;
-                }
-
-                if (!row.blDate) {
-                    alert(`BL Date required in row ${i + 1}`);
-                    return false;
-                }
-            }
-
-            // 🔴 Service validation
-            if (paymentType === "Service-Bill Payment") {
-
-                if (!row.mrnNo) {
-                    alert(`MRN No required in row ${i + 1}`);
-                    return false;
-                }
-
-                if (!row.mrnDate) {
-                    alert(`MRN Date required in row ${i + 1}`);
-                    return false;
-                }
-            }
-
-            // 🔴 Attachment validation (VERY IMPORTANT for multi rows)
-            if (
-                (!files[i] || files[i].length === 0) &&
-                (!row.attachments || row.attachments.length === 0)
-            ) {
-                alert(`Attachment required in row ${i + 1}`);
-                return false;
-            }
-        }
-
-        // 🔴 Total validation
-        if (parseFloat(totalAmount) !== totalInvoiceAmount) {
-            alert("Total Amount must match sum of invoice amounts");
+        if (!expectedSettlementDate) {
+            alert("Expected Settlement Date is required");
             return false;
         }
 
-        return true;
-    };
+        if (!requestedOn) {
+            alert("Requested On is required");
+            return false;
+        }
+
+        if (!currency) {
+            alert("Currency is required");
+            return false;
+        }
+
+        if (!foreignBankCharges) {
+            alert("Foreign Bank Charges is required");
+            return false;
+        }
+    }
+
+    // ================= ROW VALIDATION =================
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+
+        // COMMON
+        if (!row.invoiceNo) {
+            alert(`Invoice No required in row ${i + 1}`);
+            return false;
+        }
+
+        if (!row.invoiceDate) {
+            alert(`Invoice Date required in row ${i + 1}`);
+            return false;
+        }
+
+        if (!row.invoiceAmount) {
+            alert(`Invoice Amount required in row ${i + 1}`);
+            return false;
+        }
+
+        // ================= GOODS BILL =================
+        if (paymentType === "Goods-Bill Payment") {
+
+            if (!row.boeNo) {
+                alert(`BOE No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.boeDate) {
+                alert(`BOE Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.blNo) {
+                alert(`BL No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.blDate) {
+                alert(`BL Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
+                alert(`Invoice attachment required in row ${i + 1}`);
+                return false;
+            }
+        }
+
+        // ================= SERVICE BILL =================
+        if (paymentType === "Service-Bill Payment") {
+
+            if (!row.mrnNo) {
+                alert(`MRN No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.mrnDate) {
+                alert(`MRN Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
+                alert(`Invoice attachment required in row ${i + 1}`);
+                return false;
+            }
+        }
+
+        // ================= ADVANCE =================
+        if (
+            paymentType === "Service-Advance Payment" ||
+            paymentType === "Goods-Advance Payment"
+        ) {
+            if (!poFiles[i] || poFiles[i].length === 0) {
+                alert(`PO attachment required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!piFiles[i] || piFiles[i].length === 0) {
+                alert(`PI attachment required in row ${i + 1}`);
+                return false;
+            }
+        }
+    }
+
+    // ================= UNIQUE BOE FILES =================
+    if (paymentType === "Goods-Bill Payment") {
+
+        for (let boe of uniqueBoeNumbers) {
+            if (!boeFiles[boe] || boeFiles[boe].length === 0) {
+                alert(`BOE document required for BOE No: ${boe}`);
+                return false;
+            }
+        }
+
+        for (let bl of uniqueBlNumbers) {
+            if (!blFiles[bl] || blFiles[bl].length === 0) {
+                alert(`BL document required for BL No: ${bl}`);
+                return false;
+            }
+        }
+    }
+
+    return true;
+};
+
 
     const onsubmit = async () => {
 
@@ -863,7 +931,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
             const newEntry = {
                 CurrentApprover: currentUser,
-                ActionTaken: "Request Reupdated",
+                ActionTaken: "Request resubmitted",
                 Comment: remarks || "",
                 Date: new Date().toISOString()
             };
@@ -942,46 +1010,145 @@ const Editrequest = (props: IForexModuleProps) => {
                 props
             );
 
-            await Promise.all(
-                oldRows.map((item: any) =>
-                    sp.deleteData("ForexServicesBillPayment", item.ID, props)
-                )
-            );
+            // await Promise.all(
+            //     oldRows.map((item: any) =>
+            //         sp.deleteData("ForexServicesBillPayment", item.ID, props)
+            //     )
+            // );
 
+            // 🔥 REMOVE DELETE BLOCK COMPLETELY ❌
+
+            // 🔹 Prepare request ID
             const requestId = Id;
 
             console.log("✅ Parent Saved ID:", requestId);
 
+            // 🔥 INSERT + UPDATE + ATTACHMENTS
             await Promise.all(
-
                 rows
                     .filter(row => row.invoiceNo)
-                    .map((row, index) =>
-                        sp.insertData(
-                            "ForexServicesBillPayment",
-                            {
-                                ForexIDId: requestId,
+                    .map(async (row, index) => {
 
-                                SrNo: "" + (index + 1),
+                        let itemId = row.id;
 
-                                InvoiceNumber: row.invoiceNo || "",
-                                InvoiceDate: row.invoiceDate || null,
-                                InvoiceAmount: (row.invoiceAmount) || "",
+                        // =========================
+                        // 🔹 UPDATE EXISTING ROW
+                        // =========================
+                        if (itemId) {
+                            await sp.updateData(
+                                "ForexServicesBillPayment",
+                                itemId,
+                                {
+                                    SrNo: "" + (index + 1),
+                                    InvoiceNumber: row.invoiceNo || "",
+                                    InvoiceDate: row.invoiceDate || null,
+                                    InvoiceAmount: row.invoiceAmount || "",
+                                    MRNNumber: row.mrnNo || "",
+                                    MRNDate: row.mrnDate || null,
+                                    BillofLandingNo: row.blNo || "",
+                                    BillOfLandingdate: row.blDate || null,
+                                    BOENo: row.boeNo || "",
+                                    BOEDate: row.boeDate || null
+                                },
+                                props
+                            );
+                        } else {
+                            const inserted = await sp.insertData(
+                                "ForexServicesBillPayment",
+                                {
+                                    ForexIDId: requestId,
+                                    SrNo: "" + (index + 1),
+                                    InvoiceNumber: row.invoiceNo || "",
+                                    InvoiceDate: row.invoiceDate || null,
+                                    InvoiceAmount: row.invoiceAmount || "",
+                                    MRNNumber: row.mrnNo || "",
+                                    MRNDate: row.mrnDate || null,
+                                    BillofLandingNo: row.blNo || "",
+                                    BillOfLandingdate: row.blDate || null,
+                                    BOENo: row.boeNo || "",
+                                    BOEDate: row.boeDate || null
+                                },
+                                props
+                            );
 
-                                MRNNumber: row.mrnNo || "",
-                                MRNDate: row.mrnDate || null,
+                            itemId = inserted.data.Id;
+                        }
 
-                                BillofLandingNo: row.blNo || "",
-                                BillOfLandingdate: row.blDate || null,
+                        // =========================
+                        // 🔥 UPLOAD FILES (RIGHT PLACE ✅)
+                        // =========================
+                        const webUrl = props.context.pageContext.web.absoluteUrl;
 
-                                BOENo: row.boeNo || "",
-                                BOEDate: row.boeDate || null
-                            },
-                            props
-                        )
-                    )
+                        // 🔹 Invoice
+                        for (const file of (invoiceFiles[index] || [])) {
+
+                            // if (!childItemId) {
+                            //     console.error("❌ childItemId missing for row:", index);
+                            //     continue;
+                            // }
+
+
+                            const fileName = `INV_${row.invoiceNo || "ROW" + index}_${file.name}`;
+
+                            const uploadUrl = `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${encodeURIComponent(fileName)}')`;
+
+                            await props.context.spHttpClient.post(
+                                uploadUrl,
+                                SPHttpClient.configurations.v1,
+                                {
+                                    headers: {
+                                        "Accept": "application/json;odata=nometadata"
+                                    },
+                                    body: file
+                                }
+                            );
+                        }
+
+                        // 🔹 Other
+                        for (const file of (otherFiles[index] || [])) {
+
+                            const fileName = `DOC_${row.invoiceNo || "ROW" + index}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${encodeURIComponent(fileName)}')`,
+                                SPHttpClient.configurations.v1,
+                                {
+                                    headers: { "Accept": "application/json;odata=nometadata" },
+                                    body: file
+                                }
+                            );
+                        }
+
+                        // 🔹 ADVANCE (PO / PI)
+                        for (const file of (poFiles[index] || [])) {
+
+                            const fileName = `PO_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${encodeURIComponent(fileName)}')`,
+                                SPHttpClient.configurations.v1,
+                                {
+                                    headers: { "Accept": "application/json;odata=nometadata" },
+                                    body: file
+                                }
+                            );
+                        }
+
+                        for (const file of (piFiles[index] || [])) {
+
+                            const fileName = `PI_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${encodeURIComponent(fileName)}')`,
+                                SPHttpClient.configurations.v1,
+                                {
+                                    headers: { "Accept": "application/json;odata=nometadata" },
+                                    body: file
+                                }
+                            );
+                        }
+                    })
             );
-
             alert("✅ Data Updated successfully!");
             history.push("/");
 
@@ -994,15 +1161,53 @@ const Editrequest = (props: IForexModuleProps) => {
         }
     };
 
-    const [files, setFiles] = useState<any>({});
 
-    const handleFileChange = (index: number, e: any) => {
+    const handleAdvanceFileChange = (
+        index: number,
+        e: any,
+        type: "po" | "pi" | "other"
+    ) => {
+        const files = e.target.files;
+
+        if (type === "po") {
+            setPoFiles(prev => ({ ...prev, [index]: files }));
+        } else if (type === "pi") {
+            setPiFiles(prev => ({ ...prev, [index]: files }));
+        } else {
+            setOtherFilesAdv(prev => ({ ...prev, [index]: files }));
+        }
+    };
+    const handleFileChange = (
+        index: number,
+        e: any,
+        type: "invoice" | "other"
+    ) => {
         const selectedFiles = e.target.files;
 
-        setFiles((prev: any) => ({
-            ...prev,
-            [index]: selectedFiles
-        }));
+        if (type === "invoice") {
+            setInvoiceFiles((prev: any) => ({
+                ...prev,
+                [index]: selectedFiles
+            }));
+        } else {
+            setOtherFiles((prev: any) => ({
+                ...prev,
+                [index]: selectedFiles
+            }));
+        }
+    };
+    const handleBoeBlFileChange = (
+        key: string,
+        e: any,
+        type: "boe" | "bl"
+    ) => {
+        const files = e.target.files;
+
+        if (type === "boe") {
+            setBoeFiles((prev: any) => ({ ...prev, [key]: files }));
+        } else {
+            setBlFiles((prev: any) => ({ ...prev, [key]: files }));
+        }
     };
     return (
         <div className="forex-wrapper">
@@ -1385,7 +1590,7 @@ const Editrequest = (props: IForexModuleProps) => {
                                 />
                             </Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges" required>
+                              <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
                                     value={foreignBankCharges}
@@ -1393,9 +1598,10 @@ const Editrequest = (props: IForexModuleProps) => {
                                 >
                                     <option value="">Select</option>
                                     <option value="Beneficiary">Beneficiary</option>
-                                    <option value="Ours">Hours</option>
+                                    <option value="Our">Our</option>
+                                    <option value="Shared">Shared</option>
                                 </select>
-                            </Field>                             {/* <Field label="PO/Contract No"><input /></Field>
+                            </Field>                            {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
                         </Grid>
@@ -1499,29 +1705,41 @@ const Editrequest = (props: IForexModuleProps) => {
                                         </td>
 
                                         <td>
-                                            <td>
-                                                {/* Existing Files */}
-                                                {row.attachments?.length > 0 && (
-                                                    <div>
-                                                        {row.attachments.map((file: any, i: number) => (
-                                                            <div key={i}>
-                                                                <a href={file.ServerRelativeUrl} target="_blank">
-                                                                    {file.FileName}
-                                                                </a>
-                                                            </div>
-                                                        ))}
+                                            {/* Invoice Files */}
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("INV_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("INV_", "")}
+                                                        </a>
                                                     </div>
-                                                )}
+                                                ))}
 
-                                                {/* Upload New */}
-                                                <input
-                                                    type="file"
-                                                    onChange={(e) => handleFileChange(index, e)}
-                                                />
-                                            </td>                                        </td>
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={(e) => handleFileChange(index, e, "invoice")}
+                                            />
+                                        </td>
 
                                         <td>
-                                            <input type="file" />
+                                            {/* Other Docs */}
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("DOC_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("DOC_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={(e) => handleFileChange(index, e, "other")}
+                                            />
                                         </td>
 
                                         <td style={{ textAlign: "center" }}>
@@ -1598,7 +1816,21 @@ const Editrequest = (props: IForexModuleProps) => {
                                             <tr key={index}>
                                                 <td>{boe}</td>
                                                 <td>
-                                                    <input type="file" />
+                                                    {boeLibraryFiles
+                                                        .filter(file => file.BOENo?.trim() === boe?.trim())
+                                                        .map((file, i) => (
+                                                            <div key={i}>
+                                                                <a href={file.FileRef} target="_blank">
+                                                                    {file.FileLeafRef}
+                                                                </a>
+                                                            </div>
+                                                        ))}
+
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        onChange={(e) => handleBoeBlFileChange(boe, e, "boe")}
+                                                    />
                                                 </td>
                                             </tr>
                                         ))}
@@ -1623,7 +1855,21 @@ const Editrequest = (props: IForexModuleProps) => {
                                             <tr key={index}>
                                                 <td>{bl}</td>
                                                 <td>
-                                                    <input type="file" />
+                                                    {bolLibraryFiles
+                                                        .filter(file => file.BOLNo?.trim() === bl?.trim())
+                                                        .map((file, i) => (
+                                                            <div key={i}>
+                                                                <a href={file.FileRef} target="_blank">
+                                                                    {file.FileLeafRef}
+                                                                </a>
+                                                            </div>
+                                                        ))}
+
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        onChange={(e) => handleBoeBlFileChange(bl, e, "bl")}
+                                                    />
                                                 </td>
                                             </tr>
                                         ))}
@@ -1652,7 +1898,7 @@ const Editrequest = (props: IForexModuleProps) => {
                                     }}
                                 /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges" required>
+                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
                                     value={foreignBankCharges}
@@ -1660,9 +1906,10 @@ const Editrequest = (props: IForexModuleProps) => {
                                 >
                                     <option value="">Select</option>
                                     <option value="Beneficiary">Beneficiary</option>
-                                    <option value="Ours">Hours</option>
+                                    <option value="Our">Our</option>
+                                    <option value="Shared">Shared</option>
                                 </select>
-                            </Field>                             {/* <Field label="PO/Contract No"><input /></Field>
+                            </Field>                                 {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
                         </Grid>
@@ -1732,17 +1979,40 @@ const Editrequest = (props: IForexModuleProps) => {
                                             />
                                         </td>
                                         <td>
+                                            {/* Invoice Files */}
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("INV_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("INV_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
                                             <input
                                                 type="file"
-
-
+                                                multiple
+                                                onChange={(e) => handleFileChange(index, e, "invoice")}
                                             />
                                         </td>
 
                                         <td>
+                                            {/* Other Docs */}
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("DOC_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("DOC_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
                                             <input
                                                 type="file"
-
+                                                multiple
+                                                onChange={(e) => handleFileChange(index, e, "other")}
                                             />
                                         </td>
 
@@ -1815,7 +2085,7 @@ const Editrequest = (props: IForexModuleProps) => {
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges" required>
+                              <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
                                     value={foreignBankCharges}
@@ -1823,9 +2093,10 @@ const Editrequest = (props: IForexModuleProps) => {
                                 >
                                     <option value="">Select</option>
                                     <option value="Beneficiary">Beneficiary</option>
-                                    <option value="Ours">Hours</option>
+                                    <option value="Our">Our</option>
+                                    <option value="Shared">Shared</option>
                                 </select>
-                            </Field>                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
+                            </Field>                                <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
                             <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
                             <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
                         </Grid>
@@ -1878,23 +2149,57 @@ const Editrequest = (props: IForexModuleProps) => {
 
 
                                         <td>
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("PO_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("PO_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
                                             <input
                                                 type="file"
-
+                                                multiple
+                                                onChange={(e) => handleAdvanceFileChange(index, e, "po")}
                                             />
                                         </td>
                                         <td>
-                                            <input
-                                                type="file"
+                                            <td>
+                                                {row.attachments
+                                                    ?.filter((f: any) => f.FileName.startsWith("PI_"))
+                                                    .map((file: any, i: number) => (
+                                                        <div key={i}>
+                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                {file.FileName.replace("PI_", "")}
+                                                            </a>
+                                                        </div>
+                                                    ))}
 
-
-                                            />
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    onChange={(e) => handleAdvanceFileChange(index, e, "pi")}
+                                                />
+                                            </td>
                                         </td>
 
                                         <td>
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("DOC_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("DOC_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
                                             <input
                                                 type="file"
-
+                                                multiple
+                                                onChange={(e) => handleAdvanceFileChange(index, e, "other")}
                                             />
                                         </td>
 
@@ -1973,9 +2278,10 @@ const Editrequest = (props: IForexModuleProps) => {
                                 >
                                     <option value="">Select</option>
                                     <option value="Beneficiary">Beneficiary</option>
-                                    <option value="Ours">Hours</option>
+                                    <option value="Our">Our</option>
+                                    <option value="Shared">Shared</option>
                                 </select>
-                            </Field>                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
+                            </Field>                                 <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
                             <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
                             <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
                         </Grid>
@@ -2028,23 +2334,55 @@ const Editrequest = (props: IForexModuleProps) => {
 
 
                                         <td>
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("PO_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("PO_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
                                             <input
                                                 type="file"
-
+                                                multiple
+                                                onChange={(e) => handleAdvanceFileChange(index, e, "po")}
                                             />
                                         </td>
                                         <td>
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("PI_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("PI_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
                                             <input
                                                 type="file"
-
-
+                                                multiple
+                                                onChange={(e) => handleAdvanceFileChange(index, e, "pi")}
                                             />
                                         </td>
 
                                         <td>
+                                            {row.attachments
+                                                ?.filter((f: any) => f.FileName.startsWith("DOC_"))
+                                                .map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName.replace("DOC_", "")}
+                                                        </a>
+                                                    </div>
+                                                ))}
+
                                             <input
                                                 type="file"
-
+                                                multiple
+                                                onChange={(e) => handleAdvanceFileChange(index, e, "other")}
                                             />
                                         </td>
 

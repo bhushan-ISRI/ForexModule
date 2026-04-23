@@ -349,12 +349,104 @@ const TrackerForm = (props: IForexModuleProps) => {
 
         return null;
     };
+const validateForm = () => {
 
+    for (let i = 0; i < rows.length; i++) {
+
+        const row = rows[i];
+
+        // COMMON
+        if (!row.invoiceNo) {
+            alert(`Invoice No required in row ${i + 1}`);
+            return false;
+        }
+
+        if (!row.invoiceDate) {
+            alert(`Invoice Date required in row ${i + 1}`);
+            return false;
+        }
+
+        if (!row.invoiceAmount) {
+            alert(`Invoice Amount required in row ${i + 1}`);
+            return false;
+        }
+
+        // ================= GOODS ADVANCE =================
+        if (paymentType === "Goods-Advance Payment") {
+
+            if (!row.boeNo) {
+                alert(`BOE No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.boeDate) {
+                alert(`BOE Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.blNo) {
+                alert(`Bill of Lading No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.blDate) {
+                alert(`Bill of Lading Date required in row ${i + 1}`);
+                return false;
+            }
+
+            // Invoice file
+            if (!invoiceAttachments[i] || invoiceAttachments[i].length === 0) {
+                alert(`Invoice attachment required in row ${i + 1}`);
+                return false;
+            }
+        }
+
+        // ================= SERVICE ADVANCE =================
+        if (paymentType === "Service-Advance Payment") {
+
+            if (!row.mrnNo) {
+                alert(`MRN No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.mrnDate) {
+                alert(`MRN Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!invoiceAttachments[i] || invoiceAttachments[i].length === 0) {
+                alert(`Invoice attachment required in row ${i + 1}`);
+                return false;
+            }
+        }
+    }
+
+    // ================= GOODS ADVANCE UNIQUE FILES =================
+    if (paymentType === "Goods-Advance Payment") {
+
+        for (let i = 0; i < uniqueBoeNumbers.length; i++) {
+            if (!boeAttachments[i] || boeAttachments[i].length === 0) {
+                alert(`BOE document required for BOE No: ${uniqueBoeNumbers[i]}`);
+                return false;
+            }
+        }
+
+        for (let i = 0; i < uniqueBlNumbers.length; i++) {
+            if (!blAttachments[i] || blAttachments[i].length === 0) {
+                alert(`BL document required for Bill of Lading: ${uniqueBlNumbers[i]}`);
+                return false;
+            }
+        }
+    }
+
+    return true;
+};
     const onSubmit = async () => {
 
         const sp = await spCrudOps;
 
         try {
+            if (!validateForm()) return;
 
             for (let i = 0; i < rows.length; i++) {
 
@@ -727,25 +819,25 @@ const TrackerForm = (props: IForexModuleProps) => {
                     <>
                         <Section title="Bill Payment Details (For Goods Bill Payment)">
 
-                            <p style={{ color: "red", fontSize: "12px" }}>
+                            {/* <p style={{ color: "red", fontSize: "12px" }}>
                                 User will enter manually, multiple invoice can be entered
-                            </p>
+                            </p> */}
 
                             <table className="data-table">
 
                                 <thead>
                                     <tr>
-                                        <th>Sr.No.</th>
-                                        <th>Invoice Number</th>
-                                        <th>Invoice Date</th>
-                                        <th>BOE Number</th>
-                                        <th>BOE Date</th>
-                                        <th>MRN Number</th>
-                                        <th>Bill of Lading Number</th>
-                                        <th>Bill of Lading Date</th>
-                                        <th>Invoice Amount</th>
-                                        <th>Attach Invoice</th>
-                                        <th>Attach Other</th>
+                                        <th>Sr.No. </th>
+                                        <th>Invoice Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>BOE Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>BOE Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>MRN Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>Bill of Lading Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>Bill of Lading Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
+                                        <th>Attach Other </th>
                                         <th>Add/Delete entry</th>
                                     </tr>
                                 </thead>
@@ -987,9 +1079,9 @@ const TrackerForm = (props: IForexModuleProps) => {
 
                         <p>
                             <b>Bill Payment Details (for Service Bill Payment)</b>
-                            <span style={{ color: "red" }}>
+                            {/* <span style={{ color: "red" }}>
                                 (User will enter manually, multiple invoice can be entered)
-                            </span>
+                            </span> */}
                         </p>
 
                         <table className="data-table">
@@ -997,12 +1089,12 @@ const TrackerForm = (props: IForexModuleProps) => {
                             <thead>
                                 <tr>
                                     <th>Sr.No.</th>
-                                    <th>Invoice Number</th>
-                                    <th>Invoice Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>MRN Number</th>
-                                    <th>MRN Date</th>
-                                    <th>Attach Invoice</th>
+                                    <th>Invoice Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>MRN Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Document</th>
                                     <th>Add/Delete entry</th>
                                 </tr>

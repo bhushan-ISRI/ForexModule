@@ -730,109 +730,161 @@ const NewRequest = (props: IForexModuleProps) => {
     };
 
 
-    const validateForm = () => {
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
+  const validateForm = () => {
 
-            // COMMON
-            if (!row.invoiceNo) {
-                alert(`Invoice No required in row ${i + 1}`);
+    // ================= HEADER VALIDATION =================
+       if (!requestedOn) {
+            alert("Requested On is required");
+            return false;
+        }
+
+        if (!currency) {
+            alert("Currency is required");
+            return false;
+        }
+
+        if (!foreignBankCharges) {
+            alert("Foreign Bank Charges is required");
+            return false;
+        }
+    if (paymentType.includes("Advance Payment") ) {
+
+        if (!poContractNo) {
+            alert("PO/Contract No is required");
+            return false;
+        }
+
+        if (!poDate) {
+            alert("PO Date is required");
+            return false;
+        }
+
+        if (!expectedSettlementDate) {
+            alert("Expected Settlement Date is required");
+            return false;
+        }
+
+        if (!requestedOn) {
+            alert("Requested On is required");
+            return false;
+        }
+
+        if (!currency) {
+            alert("Currency is required");
+            return false;
+        }
+
+        if (!foreignBankCharges) {
+            alert("Foreign Bank Charges is required");
+            return false;
+        }
+    }
+
+    // ================= ROW VALIDATION =================
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+
+        // COMMON
+        if (!row.invoiceNo) {
+            alert(`Invoice No required in row ${i + 1}`);
+            return false;
+        }
+
+        if (!row.invoiceDate) {
+            alert(`Invoice Date required in row ${i + 1}`);
+            return false;
+        }
+
+        if (!row.invoiceAmount) {
+            alert(`Invoice Amount required in row ${i + 1}`);
+            return false;
+        }
+
+        // ================= GOODS BILL =================
+        if (paymentType === "Goods-Bill Payment") {
+
+            if (!row.boeNo) {
+                alert(`BOE No required in row ${i + 1}`);
                 return false;
             }
 
-            if (!row.invoiceDate) {
-                alert(`Invoice Date required in row ${i + 1}`);
+            if (!row.boeDate) {
+                alert(`BOE Date required in row ${i + 1}`);
                 return false;
             }
 
-            if (!row.invoiceAmount) {
-                alert(`Invoice Amount required in row ${i + 1}`);
+            if (!row.blNo) {
+                alert(`BL No required in row ${i + 1}`);
                 return false;
             }
 
-            // ✅ INVOICE FILE (COMMON REQUIRED)
+            if (!row.blDate) {
+                alert(`BL Date required in row ${i + 1}`);
+                return false;
+            }
+
             if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
                 alert(`Invoice attachment required in row ${i + 1}`);
                 return false;
             }
+        }
 
-            // ================= GOODS BILL =================
-            if (paymentType === "Goods-Bill Payment") {
+        // ================= SERVICE BILL =================
+        if (paymentType === "Service-Bill Payment") {
 
-                if (!row.boeNo) {
-                    alert(`BOE No required in row ${i + 1}`);
-                    return false;
-                }
-
-                if (!row.boeDate) {
-                    alert(`BOE Date required in row ${i + 1}`);
-                    return false;
-                }
-
-                if (!row.blNo) {
-                    alert(`BL No required in row ${i + 1}`);
-                    return false;
-                }
-
-                if (!row.blDate) {
-                    alert(`BL Date required in row ${i + 1}`);
-                    return false;
-                }
+            if (!row.mrnNo) {
+                alert(`MRN No required in row ${i + 1}`);
+                return false;
             }
 
-            // ================= SERVICE BILL =================
-            if (paymentType === "Service-Bill Payment") {
-
-                if (!row.mrnNo) {
-                    alert(`MRN No required in row ${i + 1}`);
-                    return false;
-                }
-
-                if (!row.mrnDate) {
-                    alert(`MRN Date required in row ${i + 1}`);
-                    return false;
-                }
+            if (!row.mrnDate) {
+                alert(`MRN Date required in row ${i + 1}`);
+                return false;
             }
 
-            // ================= ADVANCE =================
-            if (
-                paymentType === "Service-Advance Payment" ||
-                paymentType === "Goods-Advance Payment"
-            ) {
-                // ✅ PO FILE
-                if (!poFiles[i] || poFiles[i].length === 0) {
-                    alert(`PO attachment required in row ${i + 1}`);
-                    return false;
-                }
-
-                // ✅ PI FILE
-                if (!piFiles[i] || piFiles[i].length === 0) {
-                    alert(`PI attachment required in row ${i + 1}`);
-                    return false;
-                }
+            if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
+                alert(`Invoice attachment required in row ${i + 1}`);
+                return false;
             }
         }
 
-        // ================= UNIQUE BOE FILES =================
-        if (paymentType === "Goods-Bill Payment") {
-            for (let boe of uniqueBoeNumbers) {
-                if (!boeFiles[boe] || boeFiles[boe].length === 0) {
-                    alert(`BOE document required for BOE No: ${boe}`);
-                    return false;
-                }
+        // ================= ADVANCE =================
+        if (
+            paymentType === "Service-Advance Payment" ||
+            paymentType === "Goods-Advance Payment"
+        ) {
+            if (!poFiles[i] || poFiles[i].length === 0) {
+                alert(`PO attachment required in row ${i + 1}`);
+                return false;
             }
 
-            for (let bl of uniqueBlNumbers) {
-                if (!blFiles[bl] || blFiles[bl].length === 0) {
-                    alert(`BL document required for BL No: ${bl}`);
-                    return false;
-                }
+            if (!piFiles[i] || piFiles[i].length === 0) {
+                alert(`PI attachment required in row ${i + 1}`);
+                return false;
+            }
+        }
+    }
+
+    // ================= UNIQUE BOE FILES =================
+    if (paymentType === "Goods-Bill Payment") {
+
+        for (let boe of uniqueBoeNumbers) {
+            if (!boeFiles[boe] || boeFiles[boe].length === 0) {
+                alert(`BOE document required for BOE No: ${boe}`);
+                return false;
             }
         }
 
+        for (let bl of uniqueBlNumbers) {
+            if (!blFiles[bl] || blFiles[bl].length === 0) {
+                alert(`BL document required for BL No: ${bl}`);
+                return false;
+            }
+        }
+    }
 
-        return true;
-    };
+    return true;
+};
 
     const onsubmit = async () => {
 
@@ -855,6 +907,10 @@ const NewRequest = (props: IForexModuleProps) => {
 
             if (rows.length === 0) {
                 alert("Please add at least one invoice row.");
+                return;
+            }
+            if(totalAmount === "" || isNaN(Number(totalAmount)) || Number(totalAmount) <= 0){
+                alert("Please enter a valid Total Amount.");
                 return;
             }
 
@@ -1540,7 +1596,8 @@ const NewRequest = (props: IForexModuleProps) => {
                                 >
                                     <option value="">Select</option>
                                     <option value="Beneficiary">Beneficiary</option>
-                                    <option value="Ours">Hours</option>
+                                    <option value="Our">Our</option>
+                                    <option value="Shared">Shared</option>
                                 </select>
                             </Field>                            {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
@@ -1834,8 +1891,18 @@ const NewRequest = (props: IForexModuleProps) => {
                                 />
                             </Field>
                             <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges" required><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            {/* <Field label="PO/Contract No"><input /></Field>
+                            <Field label="Foreign Bank Charges" required>
+                                <select
+                                    className="form-control"
+                                    value={foreignBankCharges}
+                                    onChange={(e) => setForeignBankCharges(e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Beneficiary">Beneficiary</option>
+                                    <option value="Our">Our</option>
+                                    <option value="Shared">Shared</option>
+                                </select>
+                            </Field>                                {/* <Field label="PO/Contract No"><input /></Field>
                             <Field label="PO Date"><input type="date" /></Field>
                             <Field label="Expected Settlement Date"><input type="date" /></Field> */}
                         </Grid>
@@ -2017,10 +2084,20 @@ const NewRequest = (props: IForexModuleProps) => {
                                 />
                             </Field>
                             <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges" required><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
+                            <Field label="Foreign Bank Charges" required>
+                                <select
+                                    className="form-control"
+                                    value={foreignBankCharges}
+                                    onChange={(e) => setForeignBankCharges(e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Beneficiary">Beneficiary</option>
+                                    <option value="Our">Our</option>
+                                    <option value="Shared">Shared</option>
+                                </select>
+                            </Field>                                <Field label="PO/Contract No" required><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
+                            <Field label="PO Date" required><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
+                            <Field label="Expected Settlement Date" required><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
@@ -2197,10 +2274,21 @@ const NewRequest = (props: IForexModuleProps) => {
                                 />
                             </Field>
                             <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
-                            <Field label="Foreign Bank Charges" required><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} /></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
+                            <Field label="Foreign Bank Charges" required>
+                                <select
+                                    className="form-control"
+                                    value={foreignBankCharges}
+                                    onChange={(e) => setForeignBankCharges(e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Beneficiary">Beneficiary</option>
+                                    <option value="Our">Our</option>
+                                    <option value="Shared">Shared</option>
+                                </select>
+                            </Field> 
+                                                           <Field label="PO/Contract No" required><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
+                            <Field label="PO Date" required><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
+                            <Field label="Expected Settlement Date" required><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
