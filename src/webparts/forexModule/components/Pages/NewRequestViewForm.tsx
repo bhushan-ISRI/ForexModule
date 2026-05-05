@@ -940,10 +940,9 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 <CollapsibleSection title="Other Details" >
                     <Grid>
                         <div className="date-summary">
-                            <span className="label">From Date:</span>
+                            <span className="label">From</span>
                             <span className="value">{fromdate}</span>
-                        <span className="label"> , </span>
-                            <span className="label">To Date:</span>
+                            <span className="label">To</span>
                             <span className="value">{todate}</span>
                         </div>
                     </Grid>
@@ -994,7 +993,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <th>Invoice Amount</th>
                                     <th>Attach Invoice</th>
                                     <th>Attach Other Docs</th>
-                                    <th>Add/Delete Entry</th>
+                                    {/* <th>Add/Delete Entry</th> */}
                                 </tr>
                             </thead>
                             <tbody>
@@ -1103,8 +1102,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             </div>
                                         </td>
 
-                                        <td style={{ textAlign: "center" }}>
-                                            {/* Show PLUS only on last row */}
+                                        {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1123,7 +1121,6 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 </button>
                                             )}
 
-                                            {/* Show DELETE if more than 1 row */}
                                             {rows.length > 1 && (
                                                 <button
                                                     type="button"
@@ -1140,12 +1137,12 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                     ✖
                                                 </button>
                                             )}
-                                        </td>
+                                        </td> */}
 
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                            {/* <tfoot>
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1155,7 +1152,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={3}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                         <div style={{ display: "flex", gap: "40px", marginTop: "30px" }}>
 
@@ -1257,7 +1254,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <th>MRN Date</th>
                                     <th>Attach Invoice</th>
                                     <th>Attach Other Document</th>
-                                    <th>Add/Delete Entry</th>
+                                    {/* <th>Add/Delete Entry</th> */}
                                 </tr>
                             </thead>
                             <tbody>
@@ -1333,8 +1330,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
 
-                                        <td style={{ textAlign: "center" }}>
-                                            {/* Show PLUS only on last row */}
+                                        {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1353,7 +1349,6 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 </button>
                                             )}
 
-                                            {/* Show DELETE if more than 1 row */}
                                             {rows.length > 1 && (
                                                 <button
                                                     type="button"
@@ -1370,12 +1365,12 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                     ✖
                                                 </button>
                                             )}
-                                        </td>
+                                        </td> */}
 
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                            {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1385,7 +1380,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={5}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}
@@ -1399,7 +1394,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
                             <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
+                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly/></Field>
                             <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly/></Field>
                             <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly/></Field>
@@ -1415,7 +1410,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <th>Attach PO</th>
                                     <th>Attach PI</th>
                                     <th>Attach Other Document</th>
-                                    <th>Add/Delete Entry</th>
+                                    {/* <th>Add/Delete Entry</th> */}
                                 </tr>
                             </thead>
                             <tbody>
@@ -1453,17 +1448,28 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
                                         <td>
-                                            <input
-                                                type="file"
+                                            <div>
+                                                {poAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName}
+                                                        </a>
+                                                    </div>
+                                                ))}
 
-                                            />
+                                            </div>
                                         </td>
                                         <td>
-                                            <input
-                                                type="file"
+                                            <div>
+                                                {piAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName}
+                                                        </a>
+                                                    </div>
+                                                ))}
 
-
-                                            />
+                                            </div>
                                         </td>
 
                                         <td>
@@ -1479,8 +1485,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
 
-                                        <td style={{ textAlign: "center" }}>
-                                            {/* Show PLUS only on last row */}
+                                        {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1499,7 +1504,6 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 </button>
                                             )}
 
-                                            {/* Show DELETE if more than 1 row */}
                                             {rows.length > 1 && (
                                                 <button
                                                     type="button"
@@ -1516,12 +1520,12 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                     ✖
                                                 </button>
                                             )}
-                                        </td>
+                                        </td> */}
 
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                            {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1531,7 +1535,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={4}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}
@@ -1543,7 +1547,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
                             <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
-                            <Field label="Foreign Bank Charges"><input type="number" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
+                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
                             <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly/></Field>
                             <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly/></Field>
                             <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly/></Field>
@@ -1559,7 +1563,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <th>Attach PO</th>
                                     <th>Attach PI</th>
                                     <th>Attach Other Document</th>
-                                    <th>Add/Delete Entry</th>
+                                    {/* <th>Add/Delete Entry</th> */}
                                 </tr>
                             </thead>
                             <tbody>
@@ -1597,17 +1601,27 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
                                         <td>
-                                            <input
-                                                type="file"
-
-                                            />
+                                            <div>
+                                                {poAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </td>
                                         <td>
-                                            <input
-                                                type="file"
+                                           <div>
+                                                {piAttachments[index]?.map((file: any, i: number) => (
+                                                    <div key={i}>
+                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                            {file.FileName}
+                                                        </a>
+                                                    </div>
+                                                ))}
 
-
-                                            />
+                                            </div>
                                         </td>
 
                                         <td>
@@ -1623,8 +1637,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
 
-                                        <td style={{ textAlign: "center" }}>
-                                            {/* Show PLUS only on last row */}
+                                        {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1643,7 +1656,6 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 </button>
                                             )}
 
-                                            {/* Show DELETE if more than 1 row */}
                                             {rows.length > 1 && (
                                                 <button
                                                     type="button"
@@ -1660,12 +1672,12 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                     ✖
                                                 </button>
                                             )}
-                                        </td>
+                                        </td> */}
 
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                            {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1675,7 +1687,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={4}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}
@@ -1683,14 +1695,14 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
                 {/* ================= CORRESPONDENT ================= */}
-                <CollapsibleSection title="Correspondent Bank Details">
+                {/* <CollapsibleSection title="Correspondent Bank Details">
                     <Grid>
                         <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} readOnly/></Field>
                         <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} readOnly/></Field>
                         <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} readOnly/></Field>
                         <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }} readOnly></textarea></Field>
                     </Grid>
-                </CollapsibleSection>
+                </CollapsibleSection> */}
                 {/* <Section title="Approval Remarks">
 
                     <Grid>
@@ -1708,7 +1720,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                     </Grid>
 
                 </Section> */}
-                <CollapsibleSection title="Payment Details">
+                {/* <CollapsibleSection title="Payment Details">
 
                     <Grid>
 
@@ -1738,7 +1750,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                     </Grid>
 
-                </CollapsibleSection>
+                </CollapsibleSection> */}
                 <CollapsibleSection title="Workflow History">
 
                     {workflowHistory.length > 0 ? (

@@ -774,234 +774,6 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
     };
 
-    // const onsubmit = async () => {
-
-    //     const sp = await spCrudOps;
-
-    //     try {
-
-    //         const correctApproversObjects = await validateAndBuildApprovers();
-
-    //         const correctApprovers = correctApproversObjects.map(a => a.Id);
-
-    //         // remove already approved users
-    //         const remainingApprovers = correctApprovers.filter(
-    //             id => !prevApprovers.includes(id)
-    //         );
-
-    //         if (!correctApprovers.length) {
-
-    //             alert("Approval matrix not configured");
-
-    //             return;
-
-    //         }
-
-    //         // compare arrays
-    //         const isSame =
-    //             JSON.stringify(correctApprovers) === JSON.stringify(allApprovers);
-
-    //         // update if changed
-    //         if (!isSame) {
-
-    //             await sp.updateData(
-    //                 "ForexRequest",
-    //                 Number(Id),
-    //                 {
-    //                     AllApprovers: JSON.stringify(correctApproversObjects)
-    //                 },
-    //                 props
-    //             );
-
-    //             setAllApprovers(correctApprovers);
-
-    //         }
-
-    //         // find current approver
-    //         // const currentIndex = remainingApprovers.indexOf(currentUserId);
-    //         const currentApproverObj = correctApproversObjects.find(
-    //             a => a.Id === currentUserId
-    //         );
-    //         // const newCurrentApprover =
-    //         //     currentIndex + 1 < remainingApprovers.length
-    //         //         ? remainingApprovers[currentIndex + 1]
-    //         //         : null;
-
-    //         // const nextApprover =
-    //         //     currentIndex + 2 < remainingApprovers.length
-    //         //         ? remainingApprovers[currentIndex + 2]
-    //         //         : null;
-    //         // if (currentIndex === -1) {
-
-    //         //     alert("You are not authorized to approve");
-
-    //         //     return;
-
-    //         // }
-
-    //         // // const nextApprover =
-    //         // //     currentIndex + 1 < correctApprovers.length
-    //         // //         ? correctApprovers[currentIndex + 1]
-    //         // //         : null;
-
-    //         // const updatedPrev = Array.from(new Set([...prevApprovers, currentUserId]));
-    //         const approvers = correctApproversObjects;
-
-    //         const currentIndex = approvers.findIndex(
-    //             a => a.Id === currentUserId
-    //         );
-
-    //         if (currentIndex === -1) {
-    //             alert("You are not authorized to approve");
-    //             return;
-    //         }
-
-    //         const nextApprover =
-    //             currentIndex + 1 < approvers.length
-    //                 ? approvers[currentIndex + 1]
-    //                 : null;
-
-    //         let status = "Approved";
-
-    //         if (nextApprover) {
-
-    //             if (nextApprover.Role === "HOD")
-    //                 status = "Pending for HOD";
-
-    //             else if (nextApprover.Role === "Vouching")
-    //                 status = "Pending for Vouching";
-
-    //             else if (nextApprover.Role === "TreasuryVerification")
-    //                 status = "Pending for Treasury Verification";
-
-    //             else if (nextApprover.Role === "TreasuryPayment")
-    //                 status = "Pending for Payment";
-
-    //         }
-
-    //         let remarksPayload: any = {};
-
-    //         if (currentApproverObj.Role === "RM") {
-    //             remarksPayload.RMRemark = approverRemarks;
-    //         }
-
-    //         if (currentApproverObj.Role === "HOD") {
-    //             remarksPayload.HODRemarks = approverRemarks;
-    //         }
-
-    //         if (currentApproverObj.Role === "Vouching") {
-
-    //             remarksPayload.ValidationDate = validationDate;
-    //             remarksPayload.VoucherNumber = voucherNumber;
-    //             remarksPayload.VouchingRemarks = vouchingRemarks;
-
-    //         }
-    //         if (currentApproverObj.Role === "TreasuryVerification") {
-    //             remarksPayload.TreasuryRemark = treasuryRemarks;
-    //         }
-
-    //         if (currentApproverObj.Role === "TreasuryPayment") {
-
-    //             remarksPayload.ForeignCurrency = foreignCurrency;
-    //             remarksPayload.ForeignCurrencyAmount = foreignAmount;
-    //             remarksPayload.ExchangeRate = exchangeRate;
-    //             remarksPayload.INRAmount = inrAmount;
-    //             remarksPayload.PaymentDate = paymentDate;
-    //             remarksPayload.PaymentReferenceNumber = paymentReference;
-
-    //         }
-
-    //         if (currentApproverObj.Role === "TreasuryPayment") {
-
-    //             const webUrl = props.context.pageContext.web.absoluteUrl;
-
-    //             if (swiftCopy) {
-
-    //                 const fileName = `SWIFT_${swiftCopy.name}`;
-
-    //                 await props.context.spHttpClient.post(
-    //                     `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
-    //                     SPHttpClient.configurations.v1,
-    //                     { body: swiftCopy }
-    //                 );
-
-    //             }
-
-    //             if (form15CA) {
-
-    //                 const fileName = `15CA_${form15CA.name}`;
-
-    //                 await props.context.spHttpClient.post(
-    //                     `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
-    //                     SPHttpClient.configurations.v1,
-    //                     { body: form15CA }
-    //                 );
-
-    //             }
-
-    //             if (form15CB) {
-
-    //                 const fileName = `15CB_${form15CB.name}`;
-
-    //                 await props.context.spHttpClient.post(
-    //                     `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
-    //                     SPHttpClient.configurations.v1,
-    //                     { body: form15CB }
-    //                 );
-
-    //             }
-
-    //         }
-
-    //         await sp.updateData(
-    //             "ForexRequest",
-    //             Number(Id),
-    //             {
-    //                 CurrentApproverId: nextApprover ? nextApprover.Id : null,
-    //                 Status: status,
-    //                 ...remarksPayload
-    //             },
-    //             props
-    //         );
-    //         // await sp.updateData(
-    //         //     "ForexRequest",
-    //         //     Number(Id),
-    //         //     {
-    //         //         CurrentApproverId: newCurrentApprover,
-
-    //         //         NextApproversId: {
-    //         //             results: nextApprover ? [nextApprover] : []
-    //         //         },
-
-    //         //         PrevApproversId: {
-    //         //             results: updatedPrev
-    //         //         },
-
-    //         //         Status: status,
-    //         //         ...remarksPayload
-    //         //     },
-    //         //     props
-    //         // );
-
-    //         alert(
-    //             "Request has been approved successfully"
-    //         );
-
-    //         history.push("/ApprovalDashboard");
-
-    //     } catch (error) {
-
-    //         console.error(error);
-
-    //         alert("Approval failed");
-
-    //     }
-
-    // };
-    // const onSentBack = () => {
-
-    // }
-
     const getCurrencyData = async () => {
         try {
             const sp = await spCrudOps;
@@ -1366,10 +1138,11 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
             }
             const currentApproverObj = approvers[currentIndex];
+
             // ⭐ Update JSON history
-            approvers[currentIndex].Status = "Rejected";
-            approvers[currentIndex].ActionDate = new Date().toISOString();
-            approvers[currentIndex].Remarks = approverRemarks;
+
+
+
             const existingItem = await sp.getData(
                 "ForexRequest",
                 "WorkFlowHistory",
@@ -1430,7 +1203,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 finalRemark = paymentReference; // or treasuryRemarks if you want
             }
-
+            approvers[currentIndex].Status = "Rejected";
+            approvers[currentIndex].ActionDate = new Date().toISOString();
+            approvers[currentIndex].Remarks = finalRemark;
 
             let updatedHistory = [...existingHistory];
             updatedHistory.push({
@@ -1482,11 +1257,14 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
         try {
 
+            // const correctApproversObjects = await validateAndBuildApprovers();
+
+
             // 🔴 Mandatory Remark
-            if (!approverRemarks || approverRemarks.trim() === "") {
-                alert("Please enter remarks before sending back.");
-                return;
-            }
+            // if (!approverRemarks || approverRemarks.trim() === "") {
+            //     alert("Please enter remarks before sending back.");
+            //     return;
+            // }
 
             // 🔹 1. Get latest item from SP
             const existingItem = await sp.getData(
@@ -1523,9 +1301,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             const currentApproverObj = approvers[currentIndex];
 
             // 🔹 4. Mark current as Sent Back
-            approvers[currentIndex].Status = "Sent Back";
-            approvers[currentIndex].ActionDate = new Date().toISOString();
-            approvers[currentIndex].Remarks = approverRemarks;
+
 
             // 🔹 5. Move to previous approver
             const previousApprover =
@@ -1534,8 +1310,41 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             if (previousApprover) {
                 previousApprover.Status = "Pending";
             }
+            let finalRemark = "";
+            if (currentApproverObj.Role === "RM" || currentApproverObj.Role === "HOD") {
 
+                if (!approverRemarks || approverRemarks.trim() === "") {
+                    alert("Please enter remark before approving");
+                    return;
+                }
+
+                finalRemark = approverRemarks;
+            }
+
+            else if (currentApproverObj.Role === "Vouching") {
+
+                if (!vouchingRemarks || vouchingRemarks.trim() === "") {
+                    alert("Please enter vouching remark");
+                    return;
+                }
+
+
+                finalRemark = vouchingRemarks;
+            }
+
+            else if (currentApproverObj.Role === "TreasuryVerification") {
+
+                if (!treasuryRemarks || treasuryRemarks.trim() === "") {
+                    alert("Please enter treasury remark");
+                    return;
+                }
+
+                finalRemark = treasuryRemarks;
+            }
             // 🔹 6. Workflow History
+            approvers[currentIndex].Status = "Sent Back";
+            approvers[currentIndex].ActionDate = new Date().toISOString();
+            approvers[currentIndex].Remarks = finalRemark;
             let existingHistory: any[] = [];
 
             if (existingItem[0].WorkFlowHistory) {
@@ -1549,7 +1358,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             existingHistory.push({
                 CurrentApprover: currentApproverObj.Name,
                 ActionTaken: "Sent Back",
-                Comment: approverRemarks,
+                Comment: finalRemark,
                 Date: new Date().toISOString(),
                 CurrentStatus: "Sent Back"
             });
@@ -1720,7 +1529,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     <Grid>
                         <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
                         <Field label="Tax Document Available?">
-                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }}>
+                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled>
                                 <option>Yes</option>
                                 <option>No</option>
                             </select>
@@ -1922,10 +1731,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 <CollapsibleSection title="Other Details" >
                     <div className="date-summary">
-                        <span className="label">From Date:</span>
+                        <span className="label">From</span>
                         <span className="value">{fromdate}</span>
-                        <span className="label"> , </span>
-                        <span className="label">To Date:</span>
+                        <span className="label">To</span>
                         <span className="value">{todate}</span>
                     </div>
                     <Grid>
@@ -2125,7 +1933,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                            {/* <tfoot>
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2135,7 +1943,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={3}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                         <div style={{ display: "flex", gap: "40px", marginTop: "30px" }}>
 
@@ -2360,7 +2168,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                            {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2370,7 +2178,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={5}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}
@@ -2514,7 +2322,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                            {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2524,7 +2332,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={4}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}
@@ -2667,7 +2475,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                            {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2677,7 +2485,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={4}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}

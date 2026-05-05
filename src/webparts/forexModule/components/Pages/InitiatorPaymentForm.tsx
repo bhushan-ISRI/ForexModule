@@ -664,7 +664,7 @@ const validateForm = () => {
                     <Grid>
                         <Field label="Request Number"><input value={requestNumber} readOnly /></Field>
                         <Field label="Currency"><input value={currency} readOnly /></Field>
-                        <Field label="Total Amount"><input value={totalAmount} readOnly /></Field>
+                        <Field label="Total Amount"><input value={totalAmount || totalInvoiceAmountNew.toFixed(2)} readOnly /></Field>
                         <Field label="Foreign Bank Charges"><input value={foreignBankCharges} readOnly /></Field>
                         <Field label="Requested On"><input type="date" value={requestedOn} readOnly /></Field>
                     </Grid>
@@ -761,7 +761,7 @@ const validateForm = () => {
 
                     </tbody>
 
-                    <tfoot>
+                    {/* <tfoot>
                         <tr>
 
                             <td colSpan={2}></td>
@@ -773,7 +773,7 @@ const validateForm = () => {
                             <td colSpan={3}></td>
 
                         </tr>
-                    </tfoot>
+                    </tfoot> */}
 
                 </table>
 

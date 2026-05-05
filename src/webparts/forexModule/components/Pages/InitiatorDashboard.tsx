@@ -51,7 +51,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
 
     const parentItems = await spCrudOps.getRootData(
       "ForexRequest",
-      "ID,ForexNumber,EmployeeName,EmployeeCode,RequestedOn,Status,Location,VendorName,TotalAmount,Author/Id",
+      "ID,ForexNumber,EmployeeName,EmployeeCode,RequestedOn,Status,Location,VendorName,TotalAmount,Author/Id,ForexType",
       "Author",
       "AuthorId eq " + props.id,
       { column: "ID", isAscending: false },
@@ -93,6 +93,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
       data = data.filter((item) =>
         Object.values({
           requestNo: item.ForexNumber,
+           requesttype: item.ForexType,
           vendorName: item.VendorName,
           EmployeeCode: item.EmployeeCode,
           EmployeeName: item.EmployeeName,
@@ -210,6 +211,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
 
               <tr>
                 <th>Request No.</th>
+                <th>Request Type</th>
                 <th>EmployeeCode</th>
                 <th>Employee Name</th>
                 <th>Request Date</th>
@@ -247,6 +249,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
                   <tr key={item.ID}>
 
                     <td>{item.ForexNumber}</td>
+                     <td>{item.ForexType}</td>
                     <td>{item.EmployeeCode}</td>
                     <td>{item.EmployeeName}</td>
                     <td>{formatDate(item.RequestedOn)}</td>

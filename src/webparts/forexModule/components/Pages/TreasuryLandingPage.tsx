@@ -111,155 +111,156 @@ export const TreasuryLandingPage: React.FC<IForexModuleProps> = (
     currentPage * itemsPerPage
   );
 
-return (
-  <div className="dashboard-wrapper">
+  return (
+    <div className="dashboard-wrapper">
 
-    {/* Header (UNCHANGED) */}
-    <div className="header">
-      <div className="left-banner">
-        <div className="logo-text">
-          <h2>Fixed Asset Disposal Advice - Treasury Dashboard</h2>
+      {/* Header (UNCHANGED) */}
+      <div className="header">
+        <div className="left-banner">
+          <div className="logo-text">
+            <h2>Fixed Asset Disposal Advice - Treasury Dashboard</h2>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="filter-section">
+        <div className="filter-left">
+          <input
+            type="text"
+            placeholder="Search..."
+            className="form-control"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <select
+            className="form-control"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All Status</option>
+            <option value="Draft">Draft</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Approved">Approved</option>
+            <option value="Send back">Send back</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+
+        {/* <Link to="/NewRequest" className="create-button">
+        + New Request
+      </Link> */}
+      </div>
+
+      {/* Table */}
+      <div className="table-section">
+        <div className="table-vert-scroll">
+          <table className="custom-table">
+            <thead>
+              <tr>
+                <th>Request No.</th>
+                <th>Request Type</th>
+                <th>Employee Name</th>
+                <th>Request Date</th>
+                <th>Service Type</th>
+                <th>Vendor Name</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="text-center">
+                    Loading data...
+                  </td>
+                </tr>
+              ) : paginatedData.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center">
+                    No records found
+                  </td>
+                </tr>
+              ) : (
+                paginatedData.map((item) => (
+                  <tr key={item.ID}>
+                    <td>{item.ReqtNo}</td>
+                    <td>{item.RequestorName}</td>
+                    <td>{formatDate(item.RequestDate)}</td>
+                    <td>{item.ServiceType?.Title}</td>
+                    <td>{item.VendorName}</td>
+                    <td>₹ {item.Amount || "-"}</td>
+                    <td>
+                      <span
+                        className={`status-badge ${item.Status?.replace(" ", "-")}`}
+                      >
+                        {item.Status}
+                      </span>
+                    </td>
+                    <td>
+                      {item.Status === "Send back" ||
+                        item.Status === "Draft" ? (
+                        <Link to={`/NDAEditform/${item.ID}`}>
+                          <img src={Edit} width={16} alt="Edit" />
+                        </Link>
+                      ) : (
+                        <>
+                          <Link to={`/NDAViewmore/${item.ID}`}>
+                            <img src={View} width={16} alt="View" />
+                          </Link>
+
+                          {item.Status === "Approved" && (
+                            <Link
+                              to={`/RenewalForm/${item.ID}`}
+                              style={{ marginLeft: "10px" }}
+                            >
+                              <img src={Renew} width={16} alt="Renew" />
+                            </Link>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="pagination">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <img src={Left} width={14} />
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((page) => Math.abs(page - currentPage) <= 2)
+            .map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={currentPage === page ? "active" : ""}
+              >
+                {page}
+              </button>
+            ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <img src={Right} width={14} />
+          </button>
         </div>
       </div>
     </div>
-
-    {/* Filters */}
-    <div className="filter-section">
-      <div className="filter-left">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="form-control"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <select
-          className="form-control"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="All">All Status</option>
-          <option value="Draft">Draft</option>
-          <option value="Submitted">Submitted</option>
-          <option value="Approved">Approved</option>
-          <option value="Send back">Send back</option>
-          <option value="Rejected">Rejected</option>
-        </select>
-      </div>
-
-      {/* <Link to="/NewRequest" className="create-button">
-        + New Request
-      </Link> */}
-    </div>
-
-    {/* Table */}
-    <div className="table-section">
-      <div className="table-vert-scroll">
-        <table className="custom-table">
-          <thead>
-            <tr>
-              <th>Request No.</th>
-              <th>Employee Name</th>
-              <th>Request Date</th>
-              <th>Service Type</th>
-              <th>Vendor Name</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={8} className="text-center">
-                  Loading data...
-                </td>
-              </tr>
-            ) : paginatedData.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="text-center">
-                  No records found
-                </td>
-              </tr>
-            ) : (
-              paginatedData.map((item) => (
-                <tr key={item.ID}>
-                  <td>{item.ReqtNo}</td>
-                  <td>{item.RequestorName}</td>
-                  <td>{formatDate(item.RequestDate)}</td>
-                  <td>{item.ServiceType?.Title}</td>
-                  <td>{item.VendorName}</td>
-                  <td>₹ {item.Amount || "-"}</td>
-                  <td>
-                    <span
-                      className={`status-badge ${item.Status?.replace(" ", "-")}`}
-                    >
-                      {item.Status}
-                    </span>
-                  </td>
-                  <td>
-                    {item.Status === "Send back" ||
-                    item.Status === "Draft" ? (
-                      <Link to={`/NDAEditform/${item.ID}`}>
-                        <img src={Edit} width={16} alt="Edit" />
-                      </Link>
-                    ) : (
-                      <>
-                        <Link to={`/NDAViewmore/${item.ID}`}>
-                          <img src={View} width={16} alt="View" />
-                        </Link>
-
-                        {item.Status === "Approved" && (
-                          <Link
-                            to={`/RenewalForm/${item.ID}`}
-                            style={{ marginLeft: "10px" }}
-                          >
-                            <img src={Renew} width={16} alt="Renew" />
-                          </Link>
-                        )}
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="pagination">
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          <img src={Left} width={14} />
-        </button>
-
-        {Array.from({ length: totalPages }, (_, i) => i + 1)
-          .filter((page) => Math.abs(page - currentPage) <= 2)
-          .map((page) => (
-            <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={currentPage === page ? "active" : ""}
-            >
-              {page}
-            </button>
-          ))}
-
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          <img src={Right} width={14} />
-        </button>
-      </div>
-    </div>
-  </div>
-);
+  );
 
 
 };

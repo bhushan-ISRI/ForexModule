@@ -47,7 +47,7 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
 
     const parentItems = await spCrudOps.getRootData(
       "ForexRequest",
-      "ID,ForexNumber,EmployeeName,EmployeeCode,RequestedOn,Status,Location,VendorName,TotalAmount,Author/Id,CurrentApprover/Id,NextApprovers/Id",
+      "ID,ForexNumber,EmployeeName,EmployeeCode,RequestedOn,Status,Location,VendorName,TotalAmount,Author/Id,CurrentApprover/Id,NextApprovers/Id,ForexType",
       "Author,CurrentApprover,NextApprovers",
       "CurrentApproverId eq " + props.id,
       { column: "ID", isAscending: false },
@@ -78,6 +78,7 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
       data = data.filter((item) =>
         Object.values({
           requestNo: item.ForexNumber,
+          requesttype: item.ForexType,
           // requestDate: formatDate(item.RequestDate),
           vendorName: item.VendorName,
           EmployeeCode: item.EmployeeCode,
@@ -161,6 +162,7 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
             <thead>
               <tr>
                 <th>Request No.</th>
+                <th>Request Type</th>
                 <th>EmployeeCode</th>
                 <th>Employee Name</th>
                 <th>Request Date</th>
@@ -189,6 +191,7 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
                 paginatedData.map((item) => (
                   <tr key={item.ID}>
                     <td>{item.ForexNumber}</td>
+                    <td>{item.ForexType}</td>
                     <td>{item.EmployeeCode}</td>
                     <td>{item.EmployeeName}</td>
                     <td>{formatDate(item.RequestedOn)}</td>

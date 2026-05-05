@@ -71,7 +71,7 @@ const NewRequest = (props: IForexModuleProps) => {
     const [requestNumber, setRequestNumber] = useState("");
     const [requestedOn, setRequestedOn] = useState("");
     const [currency, setCurrency] = useState("");
-    const [totalAmount, setTotalAmount] = useState("");
+    const [totalAmount, setTotalAmount] = useState(0);
     const [foreignBankCharges, setForeignBankCharges] = useState("");
     const [poContractNo, setPoContractNo] = useState("");
     const [poDate, setPoDate] = useState("");
@@ -222,6 +222,11 @@ const NewRequest = (props: IForexModuleProps) => {
     const totalInvoiceAmount = rows.reduce((sum, row) => {
         return sum + (parseFloat(row.invoiceAmount) || 0);
     }, 0);
+
+    useEffect(() => {
+        setTotalAmount(totalInvoiceAmount);
+    }, [totalInvoiceAmount]);
+
     const uniqueBoeNumbers = rows
         .map(r => r.boeNo)
         .filter((value, index, self) =>
@@ -909,7 +914,7 @@ const NewRequest = (props: IForexModuleProps) => {
                 alert("Please add at least one invoice row.");
                 return;
             }
-            if(totalAmount === "" || isNaN(Number(totalAmount)) || Number(totalAmount) <= 0){
+            if( isNaN(Number(totalAmount)) || Number(totalAmount) <= 0){
                 alert("Please enter a valid Total Amount.");
                 return;
             }
@@ -962,7 +967,7 @@ const NewRequest = (props: IForexModuleProps) => {
                     DocumentIsAvailable: taxDocumentView,
                     DTAAApplicable: dTAAApplicable,
                     ForexNumber: requestNumber,
-                    TotalAmount: (totalAmount) || "",
+                    TotalAmount: ""+totalAmount,
                     ForeignBankCharges: (foreignBankCharges) || "",
                     RequestedOn: requestedOn || null,
                     VendorCode: vendor.VendorCode,
@@ -1524,10 +1529,9 @@ const NewRequest = (props: IForexModuleProps) => {
 
                     <Grid>
                         <div className="date-summary">
-                            <span className="label">From Date:</span>
+                            <span className="label">From</span>
                             <span className="value">{fromdate}</span>
-                            <span className="label">,</span>
-                            <span className="label">To Date:</span>
+                            <span className="label">To</span>
                             <span className="value">{todate}</span>
                         </div>
 
@@ -1587,7 +1591,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly /></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -1778,7 +1782,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                             {/*<tfoot>
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1788,7 +1792,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={3}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                         <div style={{ display: "flex", gap: "40px", marginTop: "30px" }}>
 
@@ -1890,7 +1894,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly /></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2050,7 +2054,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                           {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2060,7 +2064,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={5}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}
@@ -2083,7 +2087,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly/></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2242,7 +2246,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                           {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2252,7 +2256,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={4}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}
@@ -2273,7 +2277,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount" required><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly/></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2433,7 +2437,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
+                           {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2443,7 +2447,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </td>
                                     <td colSpan={4}></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> */}
                         </table>
                     </Section>
                 )}
