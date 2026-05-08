@@ -735,38 +735,12 @@ const NewRequest = (props: IForexModuleProps) => {
     };
 
 
-  const validateForm = () => {
+    const validateForm = () => {
 
-    // ================= HEADER VALIDATION =================
-       if (!requestedOn) {
-            alert("Requested On is required");
-            return false;
-        }
-
-        if (!currency) {
-            alert("Currency is required");
-            return false;
-        }
-
-        if (!foreignBankCharges) {
-            alert("Foreign Bank Charges is required");
-            return false;
-        }
-    if (paymentType.includes("Advance Payment") ) {
-
-        if (!poContractNo) {
-            alert("PO/Contract No is required");
-            return false;
-        }
-
-        if (!poDate) {
-            alert("PO Date is required");
-            return false;
-        }
-
-        if (!expectedSettlementDate) {
-            alert("Expected Settlement Date is required");
-            return false;
+        // ================= HEADER VALIDATION =================
+        if (!vendor.VendorCode) {
+            alert("Vendor is required.");
+            return;
         }
 
         if (!requestedOn) {
@@ -783,113 +757,148 @@ const NewRequest = (props: IForexModuleProps) => {
             alert("Foreign Bank Charges is required");
             return false;
         }
-    }
+        if (paymentType.includes("Advance Payment")) {
 
-    // ================= ROW VALIDATION =================
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+            if (!poContractNo) {
+                alert("PO/Contract No is required");
+                return false;
+            }
 
-        // COMMON
-        if (!row.invoiceNo) {
-            alert(`Invoice No required in row ${i + 1}`);
-            return false;
+            if (!poDate) {
+                alert("PO Date is required");
+                return false;
+            }
+
+            if (!expectedSettlementDate) {
+                alert("Expected Settlement Date is required");
+                return false;
+            }
+
+            if (!requestedOn) {
+                alert("Requested On is required");
+                return false;
+            }
+
+            if (!currency) {
+                alert("Currency is required");
+                return false;
+            }
+
+            if (!foreignBankCharges) {
+                alert("Foreign Bank Charges is required");
+                return false;
+            }
         }
 
-        if (!row.invoiceDate) {
-            alert(`Invoice Date required in row ${i + 1}`);
-            return false;
+        // ================= ROW VALIDATION =================
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+
+            // COMMON
+            if (!row.invoiceNo) {
+                alert(`Invoice No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.invoiceDate) {
+                alert(`Invoice Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.invoiceAmount) {
+                alert(`Invoice Amount required in row ${i + 1}`);
+                return false;
+            }
+
+            // ================= GOODS BILL =================
+            if (paymentType === "Goods-Bill Payment") {
+
+                if (!row.boeNo) {
+                    alert(`BOE No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.boeDate) {
+                    alert(`BOE Date required in row ${i + 1}`);
+                    return false;
+                }
+                 if (!row.mrnNo) {
+                    alert(`MRN No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.blNo) {
+                    alert(`BL No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.blDate) {
+                    alert(`BL Date required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
+                    alert(`Invoice attachment required in row ${i + 1}`);
+                    return false;
+                }
+            }
+
+            // ================= SERVICE BILL =================
+            if (paymentType === "Service-Bill Payment") {
+
+                if (!row.mrnNo) {
+                    alert(`MRN No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.mrnDate) {
+                    alert(`MRN Date required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
+                    alert(`Invoice attachment required in row ${i + 1}`);
+                    return false;
+                }
+            }
+
+            // ================= ADVANCE =================
+            if (
+                paymentType === "Service-Advance Payment" ||
+                paymentType === "Goods-Advance Payment"
+            ) {
+                if (!poFiles[i] || poFiles[i].length === 0) {
+                    alert(`PO attachment required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!piFiles[i] || piFiles[i].length === 0) {
+                    alert(`PI attachment required in row ${i + 1}`);
+                    return false;
+                }
+            }
         }
 
-        if (!row.invoiceAmount) {
-            alert(`Invoice Amount required in row ${i + 1}`);
-            return false;
-        }
-
-        // ================= GOODS BILL =================
+        // ================= UNIQUE BOE FILES =================
         if (paymentType === "Goods-Bill Payment") {
 
-            if (!row.boeNo) {
-                alert(`BOE No required in row ${i + 1}`);
-                return false;
+            for (let boe of uniqueBoeNumbers) {
+                if (!boeFiles[boe] || boeFiles[boe].length === 0) {
+                    alert(`BOE document required for BOE No: ${boe}`);
+                    return false;
+                }
             }
 
-            if (!row.boeDate) {
-                alert(`BOE Date required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!row.blNo) {
-                alert(`BL No required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!row.blDate) {
-                alert(`BL Date required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
-                alert(`Invoice attachment required in row ${i + 1}`);
-                return false;
+            for (let bl of uniqueBlNumbers) {
+                if (!blFiles[bl] || blFiles[bl].length === 0) {
+                    alert(`BL document required for BL No: ${bl}`);
+                    return false;
+                }
             }
         }
 
-        // ================= SERVICE BILL =================
-        if (paymentType === "Service-Bill Payment") {
-
-            if (!row.mrnNo) {
-                alert(`MRN No required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!row.mrnDate) {
-                alert(`MRN Date required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!invoiceFiles[i] || invoiceFiles[i].length === 0) {
-                alert(`Invoice attachment required in row ${i + 1}`);
-                return false;
-            }
-        }
-
-        // ================= ADVANCE =================
-        if (
-            paymentType === "Service-Advance Payment" ||
-            paymentType === "Goods-Advance Payment"
-        ) {
-            if (!poFiles[i] || poFiles[i].length === 0) {
-                alert(`PO attachment required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!piFiles[i] || piFiles[i].length === 0) {
-                alert(`PI attachment required in row ${i + 1}`);
-                return false;
-            }
-        }
-    }
-
-    // ================= UNIQUE BOE FILES =================
-    if (paymentType === "Goods-Bill Payment") {
-
-        for (let boe of uniqueBoeNumbers) {
-            if (!boeFiles[boe] || boeFiles[boe].length === 0) {
-                alert(`BOE document required for BOE No: ${boe}`);
-                return false;
-            }
-        }
-
-        for (let bl of uniqueBlNumbers) {
-            if (!blFiles[bl] || blFiles[bl].length === 0) {
-                alert(`BL document required for BL No: ${bl}`);
-                return false;
-            }
-        }
-    }
-
-    return true;
-};
+        return true;
+    };
 
     const onsubmit = async () => {
 
@@ -905,16 +914,16 @@ const NewRequest = (props: IForexModuleProps) => {
             const sp = await spCrudOps;
 
             // 🔹 1️⃣ Validate Before Saving
-            if (!vendor.VendorCode) {
-                alert("Vendor is required.");
-                return;
-            }
+            // if (!vendor.VendorCode) {
+            //     alert("Vendor is required.");
+            //     return;
+            // }
 
             if (rows.length === 0) {
                 alert("Please add at least one invoice row.");
                 return;
             }
-            if( isNaN(Number(totalAmount)) || Number(totalAmount) <= 0){
+            if (isNaN(Number(totalAmount)) || Number(totalAmount) <= 0) {
                 alert("Please enter a valid Total Amount.");
                 return;
             }
@@ -967,7 +976,7 @@ const NewRequest = (props: IForexModuleProps) => {
                     DocumentIsAvailable: taxDocumentView,
                     DTAAApplicable: dTAAApplicable,
                     ForexNumber: requestNumber,
-                    TotalAmount: ""+totalAmount,
+                    TotalAmount: "" + totalAmount,
                     ForeignBankCharges: (foreignBankCharges) || "",
                     RequestedOn: requestedOn || null,
                     VendorCode: vendor.VendorCode,
@@ -1152,7 +1161,16 @@ const NewRequest = (props: IForexModuleProps) => {
 
         }
     };
+const formatDate = (date: any) => {
+    if (!date) return "";
 
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+
+    return `${day}-${month}-${year}`;
+};
 
     return (
 
@@ -1296,7 +1314,7 @@ const NewRequest = (props: IForexModuleProps) => {
                             <input value={vendor.Country} readOnly />
                         </Field>
                         <Field label="Pincode" ><input value={vendor.PostalCode} readOnly /></Field>
-                        <Field label="Bank Name" required>
+                        <Field label="Bank Name">
                             <input value={vendor.BankName} readOnly />
                         </Field>
                         <Field label="Bank Country" ><input value={vendor.BankCountry} readOnly /></Field>
@@ -1309,7 +1327,7 @@ const NewRequest = (props: IForexModuleProps) => {
                 {/* ================= TAX INFO ================= */}
                 <Section title="Tax & Regulatory Information">
                     <Grid>
-                        <Field label="Nature of Payment" required><input value={paymentType} readOnly /></Field>
+                        <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
                         <Field label="Tax Document Available?" >
                             <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled
                                 style={{
@@ -1530,9 +1548,10 @@ const NewRequest = (props: IForexModuleProps) => {
                     <Grid>
                         <div className="date-summary">
                             <span className="label">From</span>
-                            <span className="value">{fromdate}</span>
+                            <span className="value">{formatDate(fromdate)}</span>
                             <span className="label">To</span>
-                            <span className="value">{todate}</span>
+                            <span className="value">{formatDate(todate)},</span>
+                            <span className="label"></span>
                         </div>
 
                     </Grid>
@@ -1591,7 +1610,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly /></Field>
+                            <Field label="Total Amount"><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly /></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -1782,7 +1801,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                             {/*<tfoot>
+                            {/*<tfoot>
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1881,7 +1900,7 @@ const NewRequest = (props: IForexModuleProps) => {
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number" required><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
+                            <Field label="Request Number" required><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
                             <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency" required>
                                 <Dropdown
@@ -1894,7 +1913,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly /></Field>
+                            <Field label="Total Amount" ><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly /></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2054,7 +2073,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                           {/*  <tfoot>
+                            {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2074,7 +2093,7 @@ const NewRequest = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number" required><input value={requestNumber} /></Field>
+                            <Field label="Request Number" required><input value={requestNumber} readOnly/></Field>
                             <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency" required>
                                 <Dropdown
@@ -2087,7 +2106,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly/></Field>
+                            <Field label="Total Amount" ><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly /></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2246,7 +2265,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                           {/*  <tfoot>
+                            {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2264,7 +2283,7 @@ const NewRequest = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number" required><input value={requestNumber} /></Field>
+                            <Field label="Request Number" required><input value={requestNumber} readOnly/></Field>
                             <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency" required>
                                 <Dropdown
@@ -2277,7 +2296,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly/></Field>
+                            <Field label="Total Amount" ><input type="number" value={totalInvoiceAmount} onChange={(e) => { setTotalAmount(totalInvoiceAmount) }} readOnly /></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2289,8 +2308,8 @@ const NewRequest = (props: IForexModuleProps) => {
                                     <option value="Our">Our</option>
                                     <option value="Shared">Shared</option>
                                 </select>
-                            </Field> 
-                                                           <Field label="PO/Contract No" required><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
+                            </Field>
+                            <Field label="PO/Contract No" required><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
                             <Field label="PO Date" required><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
                             <Field label="Expected Settlement Date" required><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
                         </Grid>
@@ -2437,7 +2456,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                           {/*  <tfoot>
+                            {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:

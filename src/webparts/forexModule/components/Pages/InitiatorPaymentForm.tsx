@@ -370,7 +370,10 @@ const validateForm = () => {
             alert(`Invoice Amount required in row ${i + 1}`);
             return false;
         }
-
+if (totalInvoiceAmount > parseFloat(totalAmount)) {
+    alert("Total Invoice Amount cannot be greater than Total Performa Invoice Amount");
+    return false;
+}
         // ================= GOODS ADVANCE =================
         if (paymentType === "Goods-Advance Payment") {
 
@@ -381,6 +384,10 @@ const validateForm = () => {
 
             if (!row.boeDate) {
                 alert(`BOE Date required in row ${i + 1}`);
+                return false;
+            }
+             if (!row.mrnNo) {
+                alert(`MRN No required in row ${i + 1}`);
                 return false;
             }
 

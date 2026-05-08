@@ -37,12 +37,12 @@ const Grid = ({ children }: any) => (
     <div className="form-grid">{children}</div>
 );
 
-const Field = ({ label, children, full }: any) => (
-    <div className={full ? "form-field full" : "form-field"}>
-        <label>{label}</label>
-        {children}
-    </div>
-);
+// const Field = ({ label, children, full }: any) => (
+//     <div className={full ? "form-field full" : "form-field"}>
+//         <label>{label}</label>
+//         {children}
+//     </div>
+// );
 
 const CollapsibleSection = ({ title, children }: any) => {
     const [open, setOpen] = React.useState(false);
@@ -65,7 +65,15 @@ const CollapsibleSection = ({ title, children }: any) => {
         </div>
     );
 };
-
+const Field = ({ label, children, full, required }: any) => (
+    <div className={full ? "form-field full" : "form-field"}>
+        <label>
+            {label}
+            {required && <span className="required-star">*</span>}
+        </label>
+        {children}
+    </div>
+);
 const ApprovalRequestForm = (props: IForexModuleProps) => {
     const { Id } = useParams<{ Id: string }>();
     const history = useHistory();
@@ -125,9 +133,11 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
     const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
     const [eligibleAmountWithWHT, setEligibleAmountWithWHT] = useState("");
     const [paidAmount, setPaidAmount] = useState("");
+    const [validationDateshow, setValidationDateshow] = useState("");
+    const [voucherNumbershow, setVoucherNumbershow] = useState("");
     const [ballenceEligibleAmount, setBallenceEligibleAmount] = useState("");
     const [foreignCurrencyOptions, setforeignCurrencyOptions] = useState<IDropdownOption[]>([]);
-
+    const [actionLoading, setActionLoading] = useState(false);
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
         EmployeeName: "",
@@ -320,7 +330,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 setEligibleAmountWithWHT(data.EligibleAmountWithWHT || "");
                 setPaidAmount(data.PaidAmount || "");
                 setBallenceEligibleAmount(data.BallenceEligibleAmount || "");
-
+                setVoucherNumbershow(data.VoucherNumber || "");
+                setValidationDateshow(data.ValidationDate ? data.ValidationDate.split("T")[0] : "");
                 if (data.AllApprovers) {
 
                     setAllApproversJson(data.AllApprovers);
@@ -797,7 +808,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
 
     const onsubmit = async () => {
-
+        if (actionLoading) return;
+        setActionLoading(true);
         const sp = await spCrudOps;
 
         try {
@@ -921,6 +933,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!approverRemarks || approverRemarks.trim() === "") {
                     alert("Please enter remark before approving");
+                    setActionLoading(false);
+
                     return;
                 }
 
@@ -931,6 +945,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!vouchingRemarks || vouchingRemarks.trim() === "") {
                     alert("Please enter vouching remark");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -942,6 +957,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!treasuryRemarks || treasuryRemarks.trim() === "") {
                     alert("Please enter treasury remark");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -952,6 +968,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!paymentReference || paymentReference.trim() === "") {
                     alert("Please enter payment reference");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -985,11 +1002,13 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!validationDate) {
                     alert("Please enter validation date");
+                    setActionLoading(false);
                     return;
                 }
                 if (paymentType.includes("Advance")) {
                     if (!voucherNumber || voucherNumber.trim() === "") {
                         alert("Please enter voucher number");
+                        setActionLoading(false);
                         return;
                     }
                 }
@@ -1004,26 +1023,32 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             if (currentApproverObj.Role === "TreasuryPayment") {
                 if (!foreignCurrency) {
                     alert("Please select foreign currency");
+                    setActionLoading(false);
                     return;
                 }
                 if (!foreignAmount || isNaN(Number(foreignAmount))) {
                     alert("Please enter a valid foreign amount");
+                    setActionLoading(false);
                     return;
                 }
                 if (!exchangeRate || isNaN(Number(exchangeRate))) {
                     alert("Please enter a valid exchange rate");
+                    setActionLoading(false);
                     return;
                 }
                 if (!inrAmount || isNaN(Number(inrAmount))) {
                     alert("Please enter a valid INR amount");
+                    setActionLoading(false);
                     return;
                 }
                 if (!paymentDate) {
                     alert("Please enter payment date");
+                    setActionLoading(false);
                     return;
                 }
                 if (!paymentReference || paymentReference.trim() === "") {
                     alert("Please enter payment reference");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -1107,21 +1132,24 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
             console.error(error);
             alert("Approval failed");
+            setActionLoading(false);
 
         }
 
     };
     const onReject = async () => {
-
+        if (actionLoading) return;
+        setActionLoading(true);
         const sp = await spCrudOps;
 
         try {
 
             // 🔴 Mandatory Remark Check
-            if (!approverRemarks || approverRemarks.trim() === "") {
-                alert("Please enter remarks before Rejecting the request.");
-                return;
-            }
+            // if (!approverRemarks || approverRemarks.trim() === "") {
+            //     alert("Please enter remarks before Rejecting the request.");
+            //      setActionLoading(false);
+            //     return;
+            // }
 
             const correctApproversObjects = await validateAndBuildApprovers();
 
@@ -1134,6 +1162,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             if (currentIndex === -1) {
 
                 alert("You are not authorized");
+                setActionLoading(false);
                 return;
 
             }
@@ -1168,6 +1197,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!approverRemarks || approverRemarks.trim() === "") {
                     alert("Please enter remark before approving");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -1178,6 +1208,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!vouchingRemarks || vouchingRemarks.trim() === "") {
                     alert("Please enter vouching remark");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -1188,6 +1219,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!treasuryRemarks || treasuryRemarks.trim() === "") {
                     alert("Please enter treasury remark");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -1196,12 +1228,13 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
             else if (currentApproverObj.Role === "TreasuryPayment") {
 
-                if (!paymentReference || paymentReference.trim() === "") {
-                    alert("Please enter payment reference");
-                    return;
-                }
+                // if (!paymentReference || paymentReference.trim() === "") {
+                //     alert("Please enter payment reference");
+                //     setActionLoading(false);
+                //     return;
+                // }
 
-                finalRemark = paymentReference; // or treasuryRemarks if you want
+                // finalRemark = paymentReference; // or treasuryRemarks if you want
             }
             approvers[currentIndex].Status = "Rejected";
             approvers[currentIndex].ActionDate = new Date().toISOString();
@@ -1246,12 +1279,15 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
             console.error(error);
             alert("Sent back failed");
+            setActionLoading(false);
 
         }
 
     };
 
     const onSentBack = async () => {
+        if (actionLoading) return;
+        setActionLoading(true);
 
         const sp = await spCrudOps;
 
@@ -1295,6 +1331,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
             if (currentIndex === -1) {
                 alert("You are not authorized");
+                setActionLoading(false);
                 return;
             }
 
@@ -1315,6 +1352,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!approverRemarks || approverRemarks.trim() === "") {
                     alert("Please enter remark before approving");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -1325,6 +1363,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!vouchingRemarks || vouchingRemarks.trim() === "") {
                     alert("Please enter vouching remark");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -1336,6 +1375,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 if (!treasuryRemarks || treasuryRemarks.trim() === "") {
                     alert("Please enter treasury remark");
+                    setActionLoading(false);
                     return;
                 }
 
@@ -1384,7 +1424,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
             console.error(error);
             alert("Send back failed");
-
+            setActionLoading(false);
         }
     };
     const isServicePayment = paymentType.includes("Service");
@@ -1402,7 +1442,16 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 return "Approve";
         }
     };
+    const formatDate = (date: any) => {
+        if (!date) return "";
 
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+
+        return `${day}-${month}-${year}`;
+    };
     return (
         <div className="forex-wrapper">
 
@@ -1732,9 +1781,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 <CollapsibleSection title="Other Details" >
                     <div className="date-summary">
                         <span className="label">From</span>
-                        <span className="value">{fromdate}</span>
+                        <span className="value">{formatDate(fromdate)}</span>
                         <span className="label">To</span>
-                        <span className="value">{todate}</span>
+                        <span className="value">{formatDate(todate)},</span>
                     </div>
                     <Grid>
 
@@ -2563,7 +2612,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                         <Grid>
 
-                            <Field label="Validation Date *">
+                            <Field label="Validation Date" required>
                                 <input
                                     type="date"
                                     value={validationDate}
@@ -2573,7 +2622,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                             {/* Hide Voucher Number for Non Advance */}
                             {(paymentType.includes("Advance")) && (
-                                <Field label="Voucher Number *">
+                                <Field label="Voucher Number" required>
                                     <input
                                         value={voucherNumber}
                                         onChange={(e) => setVoucherNumber(e.target.value)}
@@ -2581,7 +2630,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 </Field>
                             )}
 
-                            <Field label="Remarks" full>
+                            <Field label="Remarks" full required>
                                 <textarea
                                     rows={2}
                                     value={vouchingRemarks}
@@ -2597,130 +2646,188 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 {/* ================= TREASURY VERIFICATION ================= */}
 
                 {currentRole === "TreasuryVerification" && (
-                    <Section title="Treasury Verification">
-                        <Grid>
+                    <>
+                        <Section title="Vouching Details">
 
-                            <Field label="Treasury Remarks" full>
-                                <textarea
-                                    rows={2}
-                                    value={treasuryRemarks}
-                                    onChange={(e) => setTreasuryRemarks(e.target.value)}
-                                />
-                            </Field>
+                            <Grid>
 
-                        </Grid>
-                    </Section>
+                                <Field label="Validation Date" required>
+                                    <input
+                                        type="date"
+                                        value={validationDateshow}
+                                    // onChange={(e) => setValidationDate(e.target.value)}
+                                    />
+                                </Field>
+
+                                {/* Hide Voucher Number for Non Advance */}
+                                {(paymentType.includes("Advance")) && (
+                                    <Field label="Voucher Number" required>
+                                        <input
+                                            value={voucherNumbershow}
+                                            onChange={(e) => setVoucherNumber(e.target.value)}
+                                        />
+                                    </Field>
+                                )}
+
+
+
+                            </Grid>
+
+                        </Section>
+                        <Section title="Treasury Verification">
+                            <Grid>
+
+                                <Field label="Treasury Remarks" full required>
+                                    <textarea
+                                        rows={2}
+                                        value={treasuryRemarks}
+                                        onChange={(e) => setTreasuryRemarks(e.target.value)}
+                                    />
+                                </Field>
+
+                            </Grid>
+                        </Section>
+                    </>
                 )}
 
                 {currentRole === "TreasuryPayment" && (
+                    <>
+                        <Section title="Vouching Details">
 
-                    <Section title="Payment Details">
+                            <Grid>
 
-                        <Grid>
-
-                            <Field label="Foreign Currency *">
-                                <Dropdown
-                                    options={foreignCurrencyOptions}
-                                    selectedKey={foreignCurrency}
-                                    onChange={(e, option) => {
-                                        if (option) {
-                                            setForeignCurrency(option.key as string);
-                                        }
-                                    }}
-                                />
-                            </Field>
-
-                            <Field label="Foreign Currency Amount *">
-                                <input
-                                    type="number"
-                                    value={foreignAmount}
-                                    onChange={(e) => setForeignAmount(e.target.value)}
-                                />
-                            </Field>
-
-                            <Field label="Exchange Rate *">
-                                <input
-                                    type="number"
-                                    value={exchangeRate}
-                                    onChange={(e) => setExchangeRate(e.target.value)}
-                                />
-                            </Field>
-
-                            <Field label="INR Amount *">
-                                <input
-                                    type="number"
-                                    value={inrAmount}
-                                    onChange={(e) => setInrAmount(e.target.value)}
-                                />
-                            </Field>
-
-                        </Grid>
-
-                        <p style={{ color: "red", fontSize: "12px" }}>
-                            (if difference in foreign currency & Amount system to display alert message only)
-                        </p>
-
-                        <Grid>
-
-                            <Field label="Payment Date *">
-                                <input
-                                    type="date"
-                                    value={paymentDate}
-                                    onChange={(e) => setPaymentDate(e.target.value)}
-                                />
-                            </Field>
-
-                            <Field label="Payment reference number *">
-                                <input
-                                    value={paymentReference}
-                                    onChange={(e) => setPaymentReference(e.target.value)}
-                                />
-                            </Field>
-
-                            {/* 15CA only for Service */}
-                            {isServicePayment && (
-                                <Field label="Attach 15CA (Applicable only for Service)">
+                                <Field label="Validation Date" required>
                                     <input
-                                        type="file"
-                                        onChange={(e) => setForm15CA(e.target.files?.[0] || null)}
+                                        type="date"
+                                        value={validationDateshow}
+                                    // onChange={(e) => setValidationDate(e.target.value)}
                                     />
                                 </Field>
-                            )}
 
-                            {/* 15CB only for Service */}
-                            {isServicePayment && (
-                                <Field label="Attach 15CB (Applicable only for Service)">
-                                    <input
-                                        type="file"
-                                        onChange={(e) => setForm15CB(e.target.files?.[0] || null)}
+                                {/* Hide Voucher Number for Non Advance */}
+                                {(paymentType.includes("Advance")) && (
+                                    <Field label="Voucher Number" required>
+                                        <input
+                                            value={voucherNumbershow}
+                                            onChange={(e) => setVoucherNumber(e.target.value)}
+                                        />
+                                    </Field>
+                                )}
+
+
+
+                            </Grid>
+
+                        </Section>
+
+                        <Section title="Payment Details">
+
+                            <Grid>
+
+                                <Field label="Foreign Currency" required>
+                                    <Dropdown
+                                        options={foreignCurrencyOptions}
+                                        selectedKey={foreignCurrency}
+                                        onChange={(e, option) => {
+                                            if (option) {
+                                                setForeignCurrency(option.key as string);
+                                            }
+                                        }}
                                     />
                                 </Field>
-                            )}
 
-                        </Grid>
-
-                        <Grid>
-
-                            {/* Swift Copy only for Goods */}
-                            {isGoodsPayment && (
-                                <Field label="Attach Swift Copy (Applicable for Goods)">
+                                <Field label="Foreign Currency Amount" required>
                                     <input
-                                        type="file"
-                                        onChange={(e) => setSwiftCopy(e.target.files?.[0] || null)}
+                                        type="number"
+                                        value={foreignAmount}
+                                        onChange={(e) => setForeignAmount(e.target.value)}
                                     />
                                 </Field>
-                            )}
 
-                        </Grid>
+                                <Field label="Exchange Rate" required>
+                                    <input
+                                        type="number"
+                                        value={exchangeRate}
+                                        onChange={(e) => setExchangeRate(e.target.value)}
+                                    />
+                                </Field>
 
-                    </Section>
+                                <Field label="INR Amount" required>
+                                    <input
+                                        type="number"
+                                        value={inrAmount}
+                                        onChange={(e) => setInrAmount(e.target.value)}
+                                    />
+                                </Field>
+
+                            </Grid>
+
+                            <p style={{ color: "red", fontSize: "12px" }}>
+                                (if difference in foreign currency & Amount system to display alert message only)
+                            </p>
+
+                            <Grid>
+
+                                <Field label="Payment Date" required>
+                                    <input
+                                        type="date"
+                                        value={paymentDate}
+                                        onChange={(e) => setPaymentDate(e.target.value)}
+                                    />
+                                </Field>
+
+                                <Field label="Payment reference number" required>
+                                    <input
+                                        value={paymentReference}
+                                        onChange={(e) => setPaymentReference(e.target.value)}
+                                    />
+                                </Field>
+
+                                {/* 15CA only for Service */}
+                                {isServicePayment && (
+                                    <Field label="Attach 15CA (Applicable only for Service)">
+                                        <input
+                                            type="file"
+                                            onChange={(e) => setForm15CA(e.target.files?.[0] || null)}
+                                        />
+                                    </Field>
+                                )}
+
+                                {/* 15CB only for Service */}
+                                {isServicePayment && (
+                                    <Field label="Attach 15CB (Applicable only for Service)">
+                                        <input
+                                            type="file"
+                                            onChange={(e) => setForm15CB(e.target.files?.[0] || null)}
+                                        />
+                                    </Field>
+                                )}
+
+                            </Grid>
+
+                            <Grid>
+
+                                {/* Swift Copy only for Goods */}
+                                {isGoodsPayment && (
+                                    <Field label="Attach Swift Copy (Applicable for Goods)">
+                                        <input
+                                            type="file"
+                                            onChange={(e) => setSwiftCopy(e.target.files?.[0] || null)}
+                                        />
+                                    </Field>
+                                )}
+
+                            </Grid>
+
+                        </Section>
+                    </>
 
                 )}
                 {(currentRole === "RM" || currentRole === "HOD") && (
                     <Section title=" Remarks Section ">
                         <Grid>
 
-                            <Field label="Approver Remarks" full>
+                            <Field label="Approver Remarks" full required>
                                 <textarea
                                     rows={2}
                                     value={approverRemarks}
@@ -2732,12 +2839,17 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     </Section>
                 )}
                 <div className="button-row">
-                    <button className="btn-submit" onClick={onsubmit}>
-                        {getApproveButtonText()}
+                    <button className="btn-submit" onClick={onsubmit} disabled={actionLoading}>
+                        {actionLoading ? "Processing..." : getApproveButtonText()}
                     </button>
-                    <button className="btn-exit" onClick={onSentBack}>Send Back</button>
 
-                    <button className="btn-Reject" onClick={onReject}>Reject</button>
+                    <button className="btn-Reject" onClick={onReject} disabled={actionLoading}>
+                        {actionLoading ? "Processing..." : "Reject"}
+                    </button>
+
+                    <button className="btn-exit" onClick={onSentBack} disabled={actionLoading}>
+                        {actionLoading ? "Processing..." : "Send Back"}
+                    </button>
                     <button className="btn-exit" onClick={() => history.goBack()}>Exit</button>
                 </div>
 
@@ -2775,8 +2887,4 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
     );
 };
 
-export default ApprovalRequestForm;
-
-
-
-
+export default ApprovalRequestForm; 

@@ -69,7 +69,11 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
     let data = [...listData];
 
     if (statusFilter !== "All") {
-      data = data.filter((item) => item.Status === statusFilter);
+      data = data.filter(
+        (item) =>
+          item.Status?.toLowerCase().trim() ===
+          statusFilter.toLowerCase().trim()
+      );
     }
 
     if (searchTerm) {
@@ -142,12 +146,22 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="All">All Status</option>
-            <option value="Draft">Draft</option>
-            <option value="Submitted">Submitted</option>
-            <option value="Approved">Approved</option>
-            <option value="Send back">Send back</option>
+
+            {/* <option value="Draft">Draft</option> */}
+            <option value="Pending">Pending</option>
+            <option value="Pending with Treasury for Verification">Pending with Treasury for Verification</option>
+            <option value="Pending for Vouching">Pending for Vouching</option>
+
+            {/* <option value="Approved">Approved</option> */}
+            <option value="Sent Back">Sent Back</option>
             <option value="Rejected">Rejected</option>
+
+            <option value="Paid And Closed">Paid and Closed</option>
+            <option value="Paid and Pending for Settlement">Paid and Pending for Settlement</option>
+            {/* <option value="Verified and Closed with Bank">Verified and Closed with Bank</option> */}
+            {/* <option value="Closed">Closed</option> */}
           </select>
+
         </div>
 
         {/* <Link to="/NewRequest" className="create-button">

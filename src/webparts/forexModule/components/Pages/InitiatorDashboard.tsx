@@ -81,9 +81,13 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
     }
 
     // Status Filter
-    if (statusFilter !== "All") {
-      data = data.filter((item) => item.Status === statusFilter);
-    }
+  if (statusFilter !== "All") {
+  data = data.filter(
+    (item) =>
+      item.Status?.toLowerCase().trim() ===
+      statusFilter.toLowerCase().trim()
+  );
+}
 
     // Search Filter
     if (searchTerm) {
@@ -93,7 +97,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
       data = data.filter((item) =>
         Object.values({
           requestNo: item.ForexNumber,
-           requesttype: item.ForexType,
+          requesttype: item.ForexType,
           vendorName: item.VendorName,
           EmployeeCode: item.EmployeeCode,
           EmployeeName: item.EmployeeName,
@@ -182,12 +186,20 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="All">All Status</option>
-            <option value="Draft">Draft</option>
-            <option value="Submitted">Submitted</option>
-            <option value="Approved">Approved</option>
-            <option value="Send back">Send back</option>
+
+            {/* <option value="Draft">Draft</option> */}
+            <option value="Pending">Pending</option>
+            <option value="Pending with Treasury for Verification">Pending with Treasury for Verification</option>
+            <option value="Pending for Vouching">Pending for Vouching</option>
+
+            {/* <option value="Approved">Approved</option> */}
+            <option value="Sent Back">Sent Back</option>
             <option value="Rejected">Rejected</option>
-            <option value="Paid">Paid</option>
+
+            <option value="Paid And Closed">Paid and Closed</option>
+            <option value="Paid and Pending for Settlement">Paid and Pending for Settlement</option>
+            {/* <option value="Verified and Closed with Bank">Verified and Closed with Bank</option> */}
+            {/* <option value="Closed">Closed</option> */}
           </select>
 
         </div>
@@ -249,7 +261,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
                   <tr key={item.ID}>
 
                     <td>{item.ForexNumber}</td>
-                     <td>{item.ForexType}</td>
+                    <td>{item.ForexType}</td>
                     <td>{item.EmployeeCode}</td>
                     <td>{item.EmployeeName}</td>
                     <td>{formatDate(item.RequestedOn)}</td>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../Pages/Css/NewRequest.scss";
 import { IForexModuleProps } from "../IForexModuleProps";
 import { useHistory } from 'react-router-dom';
-import { Dropdown, IDropdownOption } from '@fluentui/react';
+import {ComboBox,IComboBox, IComboBoxOption, Dropdown, IDropdownOption } from '@fluentui/react';
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { Attachment } from "@pnp/sp/attachments";
 import { useParams } from "react-router-dom";
@@ -185,6 +185,9 @@ const Editrequest = (props: IForexModuleProps) => {
     const [blFiles, setBlFiles] = useState<any>({});
     const [boeLibraryFiles, setBoeLibraryFiles] = useState<any[]>([]);
     const [bolLibraryFiles, setBolLibraryFiles] = useState<any[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+        const [vendorOptions, setVendorOptions] = useState<IComboBoxOption[]>([]);
+    
     const addRow = () => {
         setRows([
             ...rows,
@@ -235,6 +238,7 @@ const Editrequest = (props: IForexModuleProps) => {
         );
 
     useEffect(() => {
+        loadVendorOptions();
         getuserData();
         getFinancialYearStart();
         getCurrencyData();
@@ -243,6 +247,32 @@ const Editrequest = (props: IForexModuleProps) => {
             loadForexData(Id);
         }
     }, [Id])
+
+       const loadVendorOptions = async () => {
+        const sp = await spCrudOps;
+
+        try {
+            const vendors = await sp.getData(
+                "VendorMaster",
+                "ID,VendorCode,VendorName",
+                "",
+                "",
+                { column: "VendorCode", isAscending: true },
+                5000,
+                props
+            );
+
+            const options = vendors.map((v: any) => ({
+                key: v.VendorCode,
+                text: `${v.VendorCode}`
+            }));
+
+            setVendorOptions(options);
+
+        } catch (error) {
+            console.error("Error loading vendors:", error);
+        }
+    };
 
     const getCurrencyData = async () => {
         try {
@@ -885,12 +915,22 @@ const Editrequest = (props: IForexModuleProps) => {
                 paymentType === "Service-Advance Payment" ||
                 paymentType === "Goods-Advance Payment"
             ) {
-                if (!poFiles[i] || poFiles[i].length === 0 || row.attachments.filter((f) => f.FileName.startsWith("PO_")).length === 0) {
+                const hasPOFiles = poFiles[i] && poFiles[i].length > 0;
+                const hasPOAttachments =
+                    row.attachments &&
+                    row.attachments.filter((f) => f.FileName?.startsWith("PO_")).length > 0;
+
+                if (!hasPOFiles && !hasPOAttachments) {
                     alert(`PO attachment required in row ${i + 1}`);
                     return false;
                 }
 
-                if (!piFiles[i] || piFiles[i].length === 0 || row.attachments.filter((f) => f.FileName.startsWith("PI_")).length === 0) {
+                const hasPIFiles = piFiles[i] && piFiles[i].length > 0;
+                const hasPIAttachments =
+                    row.attachments &&
+                    row.attachments.filter((f) => f.FileName?.startsWith("PI_")).length > 0;
+
+                if (!hasPIFiles && !hasPIAttachments) {
                     alert(`PI attachment required in row ${i + 1}`);
                     return false;
                 }
@@ -950,6 +990,9 @@ const Editrequest = (props: IForexModuleProps) => {
 
 
     const onsubmit = async () => {
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
 
         try {
 
@@ -984,7 +1027,7 @@ const Editrequest = (props: IForexModuleProps) => {
                 ActionTaken: "Request resubmitted",
                 Comment: remarks || "",
                 Date: new Date().toISOString(),
-                CurrentStatus:"Resubmitted"
+                CurrentStatus: "Resubmitted"
             };
 
             prevHistory.push(newEntry);
@@ -1260,6 +1303,16 @@ const Editrequest = (props: IForexModuleProps) => {
             setBlFiles((prev: any) => ({ ...prev, [key]: files }));
         }
     };
+    const formatDate = (date: any) => {
+        if (!date) return "";
+
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+
+        return `${day}-${month}-${year}`;
+    };
     return (
         <div className="forex-wrapper">
 
@@ -1305,6 +1358,7 @@ const Editrequest = (props: IForexModuleProps) => {
                                         HOD: employee.HOD
                                     }, selected);
                                 }}
+                                disabled// disable if rows exist
                             >
                                 <option value="Goods-Bill Payment">Goods-Bill Payment</option>
                                 <option value="Service-Bill Payment">Service-Bill Payment</option>
@@ -1357,14 +1411,39 @@ const Editrequest = (props: IForexModuleProps) => {
                 <Section title="Vendor / Beneficiary Details">
                     <Grid>
                         <Field label="Vendor Code">
-                            <input
+                            <ComboBox
+                                placeholder="Search Vendor Code"
+                                options={vendorOptions}
+                                selectedKey={vendor.VendorCode}
+                                allowFreeform={false}
+                                autoComplete="on"
+                                useComboBoxAsMenuWidth
+                                onChange={(
+                                    event: React.FormEvent<IComboBox>,
+                                    option?: IComboBoxOption,
+                                    index?: number,
+                                    value?: string
+                                ) => {
+                                    if (option) {
+                                        const code = option.key as string;
+
+                                        setVendor(prev => ({
+                                            ...prev,
+                                            VendorCode: code
+                                        }));
+
+                                        getVendorData(code);
+                                    }
+                                }}
+                            />
+                            {/* <input
                                 value={vendor.VendorCode}
                                 onChange={(e) => {
                                     const code = e.target.value;
                                     setVendor({ ...vendor, VendorCode: code });
                                 }}
                                 onBlur={(e) => getVendorData(e.target.value)}   // fetch when user leaves field
-                            />
+                            /> */}
                         </Field>
                         <Field label="Vendor Name">
                             <input value={vendor.VendorName} readOnly />
@@ -1597,9 +1676,9 @@ const Editrequest = (props: IForexModuleProps) => {
                     <Grid>
                         <div className="date-summary">
                             <span className="label">From</span>
-                            <span className="value">{fromdate}</span>
+                            <span className="value">{formatDate(fromdate)}</span>
                             <span className="label">To</span>
-                            <span className="value">{todate}</span>
+                            <span className="value">{formatDate(todate)},</span>
                         </div>
                     </Grid>
 
@@ -1626,7 +1705,7 @@ const Editrequest = (props: IForexModuleProps) => {
                 {paymentType === "Goods-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency">
                                 <Dropdown
@@ -1935,7 +2014,7 @@ const Editrequest = (props: IForexModuleProps) => {
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency">
                                 <Dropdown
@@ -2131,7 +2210,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
                             <Field label="Total Amount"><input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
@@ -2316,7 +2395,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} /></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
                             <Field label="Total Amount"><input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
@@ -2574,7 +2653,9 @@ const Editrequest = (props: IForexModuleProps) => {
                     </Grid>
                 </Section>
                 <div className="button-row">
-                    <button className="btn-submit" onClick={onsubmit}>Submit</button>
+                    <button className="btn-submit" onClick={onsubmit} disabled={isSubmitting}>
+                        {isSubmitting ? "Submitting..." : "Submit"}
+                    </button>
                     <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
                 </div>
 
