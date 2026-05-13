@@ -822,7 +822,7 @@ const NewRequest = (props: IForexModuleProps) => {
                     alert(`BOE Date required in row ${i + 1}`);
                     return false;
                 }
-                 if (!row.mrnNo) {
+                if (!row.mrnNo) {
                     alert(`MRN No required in row ${i + 1}`);
                     return false;
                 }
@@ -971,7 +971,7 @@ const NewRequest = (props: IForexModuleProps) => {
                     BankName: bankname || "",
                     BankAccNo: bankaccountno || "",
                     Remarks: remarks || "",
-                    Status: "Pending",
+                    Status: "Pending for RM Approval",
                     NatureOfPayment: paymentType,
                     DocumentIsAvailable: taxDocumentView,
                     DTAAApplicable: dTAAApplicable,
@@ -1161,16 +1161,278 @@ const NewRequest = (props: IForexModuleProps) => {
 
         }
     };
-const formatDate = (date: any) => {
-    if (!date) return "";
+    const handledraft = async () => {
 
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
+        try {
 
-    return `${day}-${month}-${year}`;
-};
+            setLoading(true);
+
+            const sp = await spCrudOps;
+
+            const workflowHistory = [
+                {
+                    CurrentApprover: employee.EmployeeName,
+                    ActionTaken: "Draft Saved",
+                    Comment: remarks || "",
+                    Date: new Date().toISOString(),
+                    CurrentStatus: "Draft"
+                }
+            ];
+            const approverslist = approvers || [];
+
+            // Current approver
+            const currentApprover =
+                approverslist.length > 0 ? approverslist[0] : null;
+
+            // ONLY ONE next approver
+            const nextApprover =
+                approverslist.length > 1 ? approverslist[1] : null;
+
+            // Save ALL approvers as JSON
+            const allApproversJson = JSON.stringify(approverDetails);
+
+            const parentResponse = await sp.insertData(
+                "ForexRequest",
+                {
+                    ForexType: paymentType,
+                    EmployeeCode: employee.EmployeeCode,
+                    EmployeeName: employee.EmployeeName,
+                    Division: employee.Division,
+                    Location: employee.Location,
+                    RMId: employee.RMId || null,
+                    HODId: employee.HODId || null,
+                    ContactNo: employee.ContactNo?.toString() || "",
+                    Email: employee.Email,
+
+                    BankName: bankname || "",
+                    BankAccNo: bankaccountno || "",
+                    BankSwiftCode: bankswiftcode || "",
+
+                    Remarks: remarks || "",
+
+                    Status: "Draft",
+
+                    NatureOfPayment: paymentType,
+                    DocumentIsAvailable: taxDocumentView,
+                    DTAAApplicable: dTAAApplicable,
+
+                    ForexNumber: requestNumber,
+
+                    TotalAmount: "" + totalAmount,
+
+                    ForeignBankCharges: foreignBankCharges || "",
+
+                    RequestedOn: requestedOn || null,
+
+                    VendorCode: vendor.VendorCode || "",
+                    VendorName: vendor.VendorName || "",
+
+                    poContractNo: poContractNo || "",
+                    poDate: poDate || null,
+                    expectedSettlementDate: expectedSettlementDate || null,
+
+                    EmployeeStatus: employee.EmployeeStatus || "",
+
+                    BallenceEligibleAmount: "" + ballenceEligibleAmount,
+                    PaidAmount: "" + paidAmount,
+                    EligibleAmountWithWHT: "" + eligibleAmountWithWHT,
+
+                    CurrencyId: currency || null,
+
+                    WorkFlowHistory: JSON.stringify(workflowHistory),
+
+                    // Draft -> no approval flow
+                    CurrentApproverId: null,
+                    NextApproversId: { results: [] },
+                    AllApprovers: "" + allApproversJson
+
+                },
+                props
+            );
+
+            const requestId = parentResponse.data.ID;
+
+            console.log("Draft Saved ID:", requestId);
+
+            // ================= CHILD ROWS =================
+
+            for (let index = 0; index < rows.length; index++) {
+
+                const row = rows[index];
+
+                // Skip empty rows
+                if (
+                    !row.invoiceNo &&
+                    !row.invoiceDate &&
+                    !row.invoiceAmount
+                ) continue;
+
+                const childResponse = await sp.insertData(
+                    "ForexServicesBillPayment",
+                    {
+                        ForexIDId: requestId,
+
+                        SrNo: "" + (index + 1),
+
+                        InvoiceNumber: row.invoiceNo || "",
+                        InvoiceDate: row.invoiceDate || null,
+
+                        InvoiceAmount: row.invoiceAmount || "",
+
+                        MRNNumber: row.mrnNo || "",
+                        MRNDate: row.mrnDate || null,
+
+                        BillofLandingNo: row.blNo || "",
+                        BillOfLandingdate: row.blDate || null,
+
+                        BOENo: row.boeNo || "",
+                        BOEDate: row.boeDate || null
+                    },
+                    props
+                );
+
+                const childItemId = childResponse.data.ID;
+
+                const webUrl = props.context.pageContext.web.absoluteUrl;
+
+                // ================= INVOICE FILES =================
+
+                // ================= BILL MODE =================
+                if (paymentType === "Goods-Bill Payment" || paymentType === "Service-Bill Payment") {
+                    if (invoiceFiles[index] && invoiceFiles[index].length > 0) {
+                        for (const file of (invoiceFiles[index] || [])) {
+
+                            const fileName = `INV_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                    if (otherFiles[index] && otherFiles[index].length > 0) {
+                        for (const file of (otherFiles[index] || [])) {
+
+                            const fileName = `DOC_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                }
+                // ================= ADVANCE MODE =================
+                if (paymentType === "Goods-Advance Payment" || paymentType === "Service-Advance Payment") {
+                    if (poFiles[index] && poFiles[index].length > 0) {
+                        for (const file of (poFiles[index] || [])) {
+
+                            const fileName = `PO_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                    if (piFiles[index] && piFiles[index].length > 0) {
+                        for (const file of (piFiles[index] || [])) {
+
+                            const fileName = `PI_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                    if (advanceOtherFiles[index] && advanceOtherFiles[index].length > 0) {
+                        for (const file of (advanceOtherFiles[index] || [])) {
+
+                            const fileName = `DOC_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                }
+
+            }
+            for (const boeNo of uniqueBoeNumbers) {
+
+                if (!boeFiles[boeNo] || boeFiles[boeNo].length > 0) {
+                    const files = boeFiles[boeNo] || [];
+
+                    for (const file of files) {
+
+                        await uploadToLibrary(
+                            "BOEAttachments",
+                            `${requestId}_${boeNo}_${Date.now()}_${file.name}`,
+                            file,
+                            {
+                                Title: file.name,
+                                BOENo: boeNo,
+                                ReqeuestId: requestId.toString()
+                            }
+                        );
+                    }
+                }
+            }
+
+            for (const blNo of uniqueBlNumbers) {
+                if (!blFiles[blNo] || blFiles[blNo].length > 0) {
+
+                    const files = blFiles[blNo] || [];
+
+                    for (const file of files) {
+
+                        await uploadToLibrary(
+                            "BillOfLandingAttachment",
+                            `${requestId}_${blNo}_${Date.now()}_${file.name}`,
+                            file,
+                            {
+                                Title: file.name,
+                                BOLNo: blNo,
+                                ReqeuestId: requestId.toString()
+                            }
+                        );
+                    }
+                }
+            }
+
+            alert("Draft saved successfully!");
+
+            history.push("/");
+
+        } catch (error) {
+
+            console.error("Error saving draft:", error);
+
+            alert("Something went wrong while saving draft.");
+
+        } finally {
+
+            setLoading(false);
+
+        }
+    };
+    const formatDate = (date: any) => {
+        if (!date) return "";
+
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+
+        return `${day}-${month}-${year}`;
+    };
 
     return (
 
@@ -1541,7 +1803,7 @@ const formatDate = (date: any) => {
                     </>
                 )}
 
-                <Section title="Other Details">
+                <Section title="Summary of WHT Applicability">
 
 
 
@@ -1900,7 +2162,7 @@ const formatDate = (date: any) => {
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number" required><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
+                            <Field label="Request Number" required><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
                             <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency" required>
                                 <Dropdown
@@ -2093,7 +2355,7 @@ const formatDate = (date: any) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number" required><input value={requestNumber} readOnly/></Field>
+                            <Field label="Request Number" required><input value={requestNumber} readOnly /></Field>
                             <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency" required>
                                 <Dropdown
@@ -2283,7 +2545,7 @@ const formatDate = (date: any) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number" required><input value={requestNumber} readOnly/></Field>
+                            <Field label="Request Number" required><input value={requestNumber} readOnly /></Field>
                             <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
                             <Field label="Currency" required>
                                 <Dropdown
@@ -2494,6 +2756,12 @@ const formatDate = (date: any) => {
                         disabled={loading}
                     >
                         {loading ? "Submitting..." : "Submit"}
+                    </button>
+                    <button
+                        onClick={!loading ? handledraft : undefined}
+                        className={`btn-submit`}
+                    >
+                         {loading ? "Submitting..." : "Save as Draft"}
                     </button>
                     <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
                 </div>

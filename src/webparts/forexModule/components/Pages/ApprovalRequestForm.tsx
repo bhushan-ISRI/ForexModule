@@ -126,9 +126,13 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
     const [paymentDate, setPaymentDate] = useState("");
     const [paymentReference, setPaymentReference] = useState("");
 
-    const [swiftCopy, setSwiftCopy] = useState<File | null>(null);
-    const [form15CA, setForm15CA] = useState<File | null>(null);
-    const [form15CB, setForm15CB] = useState<File | null>(null);
+    const [swiftCopy, setSwiftCopy] = useState<File[]>([]);
+
+    const removeSwiftCopyFile = (index: number) => {
+        setSwiftCopy((prev) => prev.filter((_, i) => i !== index));
+    };
+    const [form15CA, setForm15CA] = useState<File[]>([]);
+    const [form15CB, setForm15CB] = useState<File[]>([]);
     const [allApproversJson, setAllApproversJson] = useState<string>("");
     const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
     const [eligibleAmountWithWHT, setEligibleAmountWithWHT] = useState("");
@@ -229,6 +233,13 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
         }
     ]);
 
+    const remove15CAFile = (index: number) => {
+        setForm15CA((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const remove15CBFile = (index: number) => {
+        setForm15CB((prev) => prev.filter((_, i) => i !== index));
+    };
     const addRow = () => {
         setRows([
             ...rows,
@@ -805,7 +816,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             });
         } catch (error) { console.error("Error fetching currency data:", error); }
     }
-
+    const isServicePayment = paymentType.includes("Service");
+    const isGoodsPayment = paymentType.includes("Goods");
 
     const onsubmit = async () => {
         if (actionLoading) return;
@@ -882,7 +894,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             if (nextApprover) {
 
                 if (nextApprover.Role === "HOD")
-                    status = "Pending for HOD";
+                    status = "Pending for HOD Approval";
 
                 else if (nextApprover.Role === "Vouching")
                     status = "Pending for Vouching";
@@ -972,7 +984,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     return;
                 }
 
-                finalRemark = paymentReference; // or treasuryRemarks if you want
+                //finalRemark = paymentReference; // or treasuryRemarks if you want
             }
 
 
@@ -1052,6 +1064,22 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     return;
                 }
 
+                if (!isGoodsPayment && (form15CA.length <= 0) ) {
+                    alert("Please attach Form145 ");
+                    setActionLoading(false);
+                    return;
+                }
+                if (!isGoodsPayment && (form15CB.length <= 0) ) {
+                    alert("Please attach Form146 ");
+                    setActionLoading(false);
+                    return;
+                }
+                if (isGoodsPayment && (swiftCopy.length <= 0) ) {
+                    alert("Please attach SWIFT copy");
+                    setActionLoading(false);
+                    return;
+                }
+
                 remarksPayload.ForeignCurrency = foreignCurrency;
                 remarksPayload.ForeignCurrencyAmount = foreignAmount;
                 remarksPayload.ExchangeRate = exchangeRate;
@@ -1066,40 +1094,52 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 const webUrl = props.context.pageContext.web.absoluteUrl;
 
-                if (swiftCopy) {
+                if (swiftCopy.length > 0) {
 
-                    const fileName = `SWIFT_${swiftCopy.name}`;
+                    for (const file of swiftCopy) {
 
-                    await props.context.spHttpClient.post(
-                        `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
-                        SPHttpClient.configurations.v1,
-                        { body: swiftCopy }
-                    );
+                        const fileName = `SwiftCopy_${file.name}`;
 
+                        await props.context.spHttpClient.post(
+                            `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            {
+                                body: file
+                            }
+                        );
+                    }
                 }
 
-                if (form15CA) {
+                if (form15CA.length > 0) {
 
-                    const fileName = `15CA_${form15CA.name}`;
+                    for (const file of form15CA) {
 
-                    await props.context.spHttpClient.post(
-                        `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
-                        SPHttpClient.configurations.v1,
-                        { body: form15CA }
-                    );
+                        const fileName = `15CA_${file.name}`;
 
+                        await props.context.spHttpClient.post(
+                            `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            {
+                                body: file
+                            }
+                        );
+                    }
                 }
 
-                if (form15CB) {
+                if (form15CB.length > 0) {
 
-                    const fileName = `15CB_${form15CB.name}`;
+                    for (const file of form15CB) {
 
-                    await props.context.spHttpClient.post(
-                        `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
-                        SPHttpClient.configurations.v1,
-                        { body: form15CB }
-                    );
+                        const fileName = `15CB_${file.name}`;
 
+                        await props.context.spHttpClient.post(
+                            `${webUrl}/_api/web/lists/getbytitle('ForexRequest')/items(${Id})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            {
+                                body: file
+                            }
+                        );
+                    }
                 }
 
             }
@@ -1122,7 +1162,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             } else if (currentApproverObj.Role === "TreasuryVerification") {
                 alert("Request has been verified");
             } else if (currentApproverObj.Role === "TreasuryPayment") {
-                alert("Request has been processed successfully”");
+                alert("Request has been processed successfully");
             } else {
                 alert("Request has been approved successfully");
             }
@@ -1427,8 +1467,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             setActionLoading(false);
         }
     };
-    const isServicePayment = paymentType.includes("Service");
-    const isGoodsPayment = paymentType.includes("Goods");
+
 
     const getApproveButtonText = () => {
         switch (currentRole) {
@@ -1538,6 +1577,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 {/* ================= VENDOR ================= */}
                 <CollapsibleSection title="Vendor / Beneficiary Details">
+                <Section title="Vendor / Beneficiary Details">
                     <Grid>
                         <Field label="Vendor Code">
                             <input
@@ -1571,10 +1611,10 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                         <Field label="Bank Branch Address"><input value={vendor.BankAddress} readOnly /></Field>
                         <Field label="Bank IBAN / Account No" full><input value={vendor.AccountNumberIBAN} readOnly /></Field>
                     </Grid>
-                </CollapsibleSection>
+                </Section>
 
                 {/* ================= TAX INFO ================= */}
-                <CollapsibleSection title="Tax & Regulatory Information">
+                <Section title="Tax & Regulatory Information">
                     <Grid>
                         <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
                         <Field label="Tax Document Available?">
@@ -1601,11 +1641,11 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                             </Field>
                         )}
                     </Grid>
-                </CollapsibleSection>
+                </Section>
                 {taxDocumentView === "Yes" && (
                     <>
                         {/* 🔹 Permanent Establishment Declaration */}
-                        <CollapsibleSection title="Permanent Establishment Declaration">
+                        <Section title="Permanent Establishment Declaration">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -1655,10 +1695,10 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </CollapsibleSection>
+                        </Section>
 
                         {/* 🔹 Tax Residency Certificate */}
-                        <CollapsibleSection title="Tax Residency Certificate">
+                        <Section title="Tax Residency Certificate">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -1714,10 +1754,10 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </CollapsibleSection>
+                        </Section>
 
                         {/* 🔹 Form 10F */}
-                        <CollapsibleSection title="Form 10F">
+                        <Section title="Form 10F">
                             <Grid>
 
                                 <Field label="Document Available">
@@ -1774,11 +1814,12 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 </Field>
 
                             </Grid>
-                        </CollapsibleSection>
+                        </Section>
                     </>
                 )}
+                </CollapsibleSection>
 
-                <CollapsibleSection title="Other Details" >
+                <CollapsibleSection title="Summary of WHT Applicability" >
                     <div className="date-summary">
                         <span className="label">From</span>
                         <span className="value">{formatDate(fromdate)}</span>
@@ -2580,7 +2621,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     <th>Action</th>
                                     <th>Remark</th> {/* ✅ NEW COLUMN */}
                                     <th>Date</th>
-                                    <th>Status</th>
+                                    {/* <th>Status</th> */}
                                 </tr>
                             </thead>
                             <tbody>
@@ -2595,7 +2636,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                                 ? new Date(item.Date).toLocaleString("en-GB")
                                                 : ""}
                                         </td>
-                                        <td>{item.CurrentStatus}</td>     {/* ✅ FIX */}
+                                        {/* <td>{item.CurrentStatus}</td>     ✅ FIX */}
                                     </tr>
                                 ))}
                             </tbody>
@@ -2653,9 +2694,10 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                                 <Field label="Validation Date" required>
                                     <input
-                                        type="date"
+                                        type="text"
                                         value={validationDateshow}
                                     // onChange={(e) => setValidationDate(e.target.value)}
+                                    readOnly
                                     />
                                 </Field>
 
@@ -2698,9 +2740,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                                 <Field label="Validation Date" required>
                                     <input
-                                        type="date"
+                                        type="text"
                                         value={validationDateshow}
-                                    // onChange={(e) => setValidationDate(e.target.value)}
+                                        readOnly
                                     />
                                 </Field>
 
@@ -2709,7 +2751,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     <Field label="Voucher Number" required>
                                         <input
                                             value={voucherNumbershow}
-                                            onChange={(e) => setVoucherNumber(e.target.value)}
+                                            // onChange={(e) => setVoucherNumber(e.target.value)}
+                                            readOnly
                                         />
                                     </Field>
                                 )}
@@ -2785,21 +2828,109 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                                 {/* 15CA only for Service */}
                                 {isServicePayment && (
-                                    <Field label="Attach 15CA (Applicable only for Service)">
+                                    <Field label="Form145" required>
                                         <input
                                             type="file"
-                                            onChange={(e) => setForm15CA(e.target.files?.[0] || null)}
+                                            multiple
+                                            onChange={(e) => {
+                                                const files = e.target.files
+                                                    ? Array.from(e.target.files)
+                                                    : [];
+
+                                                setForm15CA((prev) => [...prev, ...files]);
+                                            }}
                                         />
+
+                                        {/* File List */}
+                                        {form15CA.length > 0 && (
+                                            <div style={{ marginTop: "10px" }}>
+                                                {form15CA.map((file, index) => (
+                                                    <div
+                                                        key={index}
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent: "space-between",
+                                                            alignItems: "center",
+                                                            marginBottom: "5px",
+                                                            padding: "6px 10px",
+                                                            border: "1px solid #ddd",
+                                                            borderRadius: "4px",
+                                                        }}
+                                                    >
+                                                        <span>{file.name}</span>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => remove15CAFile(index)}
+                                                            style={{
+                                                                background: "red",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                padding: "4px 8px",
+                                                                cursor: "pointer",
+                                                                borderRadius: "4px",
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </Field>
                                 )}
 
                                 {/* 15CB only for Service */}
                                 {isServicePayment && (
-                                    <Field label="Attach 15CB (Applicable only for Service)">
+                                    <Field label="Form146 " required>
                                         <input
                                             type="file"
-                                            onChange={(e) => setForm15CB(e.target.files?.[0] || null)}
+                                            multiple
+                                            onChange={(e) => {
+                                                const files = e.target.files
+                                                    ? Array.from(e.target.files)
+                                                    : [];
+
+                                                setForm15CB((prev) => [...prev, ...files]);
+                                            }}
                                         />
+
+                                        {/* File List */}
+                                        {form15CB.length > 0 && (
+                                            <div style={{ marginTop: "10px" }}>
+                                                {form15CB.map((file, index) => (
+                                                    <div
+                                                        key={index}
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent: "space-between",
+                                                            alignItems: "center",
+                                                            marginBottom: "5px",
+                                                            padding: "6px 10px",
+                                                            border: "1px solid #ddd",
+                                                            borderRadius: "4px",
+                                                        }}
+                                                    >
+                                                        <span>{file.name}</span>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => remove15CBFile(index)}
+                                                            style={{
+                                                                background: "red",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                padding: "4px 8px",
+                                                                cursor: "pointer",
+                                                                borderRadius: "4px",
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </Field>
                                 )}
 
@@ -2809,14 +2940,57 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                                 {/* Swift Copy only for Goods */}
                                 {isGoodsPayment && (
-                                    <Field label="Attach Swift Copy (Applicable for Goods)">
+                                    <Field label="Attach Swift Copy (Applicable for Goods)" required>
                                         <input
                                             type="file"
-                                            onChange={(e) => setSwiftCopy(e.target.files?.[0] || null)}
+                                            multiple
+                                            onChange={(e) => {
+                                                const files = e.target.files
+                                                    ? Array.from(e.target.files)
+                                                    : [];
+
+                                                setSwiftCopy((prev) => [...prev, ...files]);
+                                            }}
                                         />
+
+                                        {/* File List */}
+                                        {swiftCopy.length > 0 && (
+                                            <div style={{ marginTop: "10px" }}>
+                                                {swiftCopy.map((file, index) => (
+                                                    <div
+                                                        key={index}
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent: "space-between",
+                                                            alignItems: "center",
+                                                            marginBottom: "5px",
+                                                            padding: "6px 10px",
+                                                            border: "1px solid #ddd",
+                                                            borderRadius: "4px",
+                                                        }}
+                                                    >
+                                                        <span>{file.name}</span>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeSwiftCopyFile(index)}
+                                                            style={{
+                                                                background: "red",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                padding: "4px 8px",
+                                                                cursor: "pointer",
+                                                                borderRadius: "4px",
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </Field>
                                 )}
-
                             </Grid>
 
                         </Section>

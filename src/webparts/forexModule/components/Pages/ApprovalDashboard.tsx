@@ -148,7 +148,8 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
             <option value="All">All Status</option>
 
             {/* <option value="Draft">Draft</option> */}
-            <option value="Pending">Pending</option>
+            <option value="Pending">Pending for RM Approval</option>
+            <option value="Pending">Pending for HOD Approval</option>
             <option value="Pending with Treasury for Verification">Pending with Treasury for Verification</option>
             <option value="Pending for Vouching">Pending for Vouching</option>
 
@@ -220,7 +221,8 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
                       </span>
                     </td>
                     <td>
-                      {item.Status === "Paid and Pending for Settlement" ? (
+                      <td>
+                         {item.Status === "Paid and Pending for Settlement" ? (
                         <Link to={`/TrackerApprovalForm/${item.ID}`}>
                           <img src={Edit} width={16} alt="Tracker Approval" />
                         </Link>
@@ -229,6 +231,14 @@ export const ApprovalDashboard: React.FC<IForexModuleProps> = (
                           <img src={Edit} width={16} alt="Approval" />
                         </Link>
                       )}
+                      </td>
+                      <td>
+                          <Link to={`/ViewRequest/${item.ID}`}>
+                            <img src={View} width={16} alt="View" />
+                          </Link>
+                      </td>
+                     
+
                     </td>
                   </tr>
                 ))

@@ -533,14 +533,14 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
             ActionTaken: "Approved",
             Comment: approverRemark,
             Date: new Date().toISOString(),
-            CurrentStatus: "Paid and Closed"
+            CurrentStatus: "Paid & Closed"
         });
 
         await sp.updateData(
             "ForexRequest",
             Number(Id),
             {
-                Status: "Paid and Closed",
+                Status: "Paid & Closed",
                 TreasuryApproverRemark: approverRemark,
                ClosedWithADBank: isClosedWithAD ? "Yes" : "No",
                 ReferenceNumber: referenceNumber,

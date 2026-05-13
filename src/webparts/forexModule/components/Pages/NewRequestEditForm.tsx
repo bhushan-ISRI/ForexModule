@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../Pages/Css/NewRequest.scss";
 import { IForexModuleProps } from "../IForexModuleProps";
 import { useHistory } from 'react-router-dom';
-import {ComboBox,IComboBox, IComboBoxOption, Dropdown, IDropdownOption } from '@fluentui/react';
+import { ComboBox, IComboBox, IComboBoxOption, Dropdown, IDropdownOption } from '@fluentui/react';
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { Attachment } from "@pnp/sp/attachments";
 import { useParams } from "react-router-dom";
@@ -43,13 +43,15 @@ const Grid = ({ children }: any) => (
     <div className="form-grid">{children}</div>
 );
 
-const Field = ({ label, children, full }: any) => (
+const Field = ({ label, children, full, required }: any) => (
     <div className={full ? "form-field full" : "form-field"}>
-        <label>{label}</label>
+        <label>
+            {label}
+            {required && <span className="required-star">*</span>}
+        </label>
         {children}
     </div>
 );
-
 const Editrequest = (props: IForexModuleProps) => {
     const { Id } = useParams<{ Id: string }>();
 
@@ -186,8 +188,8 @@ const Editrequest = (props: IForexModuleProps) => {
     const [boeLibraryFiles, setBoeLibraryFiles] = useState<any[]>([]);
     const [bolLibraryFiles, setBolLibraryFiles] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-        const [vendorOptions, setVendorOptions] = useState<IComboBoxOption[]>([]);
-    
+    const [vendorOptions, setVendorOptions] = useState<IComboBoxOption[]>([]);
+
     const addRow = () => {
         setRows([
             ...rows,
@@ -248,7 +250,7 @@ const Editrequest = (props: IForexModuleProps) => {
         }
     }, [Id])
 
-       const loadVendorOptions = async () => {
+    const loadVendorOptions = async () => {
         const sp = await spCrudOps;
 
         try {
@@ -777,47 +779,56 @@ const Editrequest = (props: IForexModuleProps) => {
         // ================= HEADER VALIDATION =================
         if (!requestedOn) {
             alert("Requested On is required");
+            setIsSubmitting(false);
             return false;
         }
 
         if (!currency) {
             alert("Currency is required");
+            setIsSubmitting(false);
             return false;
         }
 
         if (!foreignBankCharges) {
             alert("Foreign Bank Charges is required");
+            setIsSubmitting(false);
             return false;
         }
         if (paymentType.includes("Advance Payment")) {
 
             if (!poContractNo) {
                 alert("PO/Contract No is required");
+                setIsSubmitting(false);
                 return false;
             }
 
             if (!poDate) {
                 alert("PO Date is required");
+                setIsSubmitting(false);
                 return false;
             }
 
             if (!expectedSettlementDate) {
                 alert("Expected Settlement Date is required");
+                setIsSubmitting(false);
                 return false;
             }
 
             if (!requestedOn) {
                 alert("Requested On is required");
+                setIsSubmitting(false);
                 return false;
             }
 
             if (!currency) {
                 alert("Currency is required");
+                setIsSubmitting(false);
                 return false;
             }
 
             if (!foreignBankCharges) {
                 alert("Foreign Bank Charges is required");
+                setIsSubmitting(false);
                 return false;
             }
         }
@@ -829,16 +840,19 @@ const Editrequest = (props: IForexModuleProps) => {
             // COMMON
             if (!row.invoiceNo) {
                 alert(`Invoice No required in row ${i + 1}`);
+                setIsSubmitting(false);
                 return false;
             }
 
             if (!row.invoiceDate) {
                 alert(`Invoice Date required in row ${i + 1}`);
+                setIsSubmitting(false);
                 return false;
             }
 
             if (!row.invoiceAmount) {
                 alert(`Invoice Amount required in row ${i + 1}`);
+                setIsSubmitting(false);
                 return false;
             }
 
@@ -847,21 +861,25 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 if (!row.boeNo) {
                     alert(`BOE No required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
 
                 if (!row.boeDate) {
                     alert(`BOE Date required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
 
                 if (!row.blNo) {
                     alert(`BL No required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
 
                 if (!row.blDate) {
                     alert(`BL Date required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
 
@@ -877,6 +895,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 if (!hasNewFile && !hasExistingFile) {
                     alert(`Invoice attachment required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
             }
@@ -886,11 +905,13 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 if (!row.mrnNo) {
                     alert(`MRN No required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
 
                 if (!row.mrnDate) {
                     alert(`MRN Date required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
 
@@ -906,6 +927,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 if (!hasNewFile && !hasExistingFile) {
                     alert(`Invoice attachment required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
             }
@@ -922,6 +944,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 if (!hasPOFiles && !hasPOAttachments) {
                     alert(`PO attachment required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
 
@@ -932,6 +955,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 if (!hasPIFiles && !hasPIAttachments) {
                     alert(`PI attachment required in row ${i + 1}`);
+                    setIsSubmitting(false);
                     return false;
                 }
             }
@@ -966,6 +990,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 if (!hasNewBoeFile && !hasExistingBoeFile) {
                     alert(`BOE document required for BOE No: ${boe}`);
+                    setIsSubmitting(false);
                     return false;
                 }
             }
@@ -980,6 +1005,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
                 if (!hasNewBlFile && !hasExistingBlFile) {
                     alert(`BL document required for BL No: ${bl}`);
+                    setIsSubmitting(false);
                     return false;
                 }
             }
@@ -988,6 +1014,77 @@ const Editrequest = (props: IForexModuleProps) => {
         return true;
     };
 
+    const uploadToLibrary = async (
+        libraryName: string,
+        fileName: string,
+        file: File,
+        metadata: any
+    ) => {
+
+        const webUrl = props.context.pageContext.web.absoluteUrl;
+        const serverRelativeUrl = props.context.pageContext.web.serverRelativeUrl;
+        const folderPath = `${serverRelativeUrl}/${libraryName}`;
+
+        // ================= STEP 1: UPLOAD FILE =================
+
+        const uploadUrl =
+            `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${folderPath}')/Files/add(url='${fileName}',overwrite=true)`;
+
+        const uploadOptions: ISPHttpClientOptions = {
+            body: file
+        };
+
+        const uploadResponse = await props.context.spHttpClient.post(
+            uploadUrl,
+            SPHttpClient.configurations.v1,
+            uploadOptions
+        );
+
+        if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error("Upload error:", errorText);
+            throw new Error("File upload failed");
+        }
+
+        const uploadResult = await uploadResponse.json();
+
+        // ================= STEP 2: GET ENTITY TYPE =================
+
+        const entityTypeResponse = await props.context.spHttpClient.get(
+            `${webUrl}/_api/web/lists/getbytitle('${libraryName}')?$select=ListItemEntityTypeFullName`,
+            SPHttpClient.configurations.v1
+        );
+
+        const entityTypeData = await entityTypeResponse.json();
+        const entityTypeName = entityTypeData.ListItemEntityTypeFullName;
+
+        // ================= STEP 3: UPDATE METADATA =================
+        // ================= STEP 3: UPDATE METADATA =================
+
+        const itemUrl =
+            `${webUrl}/_api/web/GetFileByServerRelativeUrl('${uploadResult.ServerRelativeUrl}')/ListItemAllFields`;
+
+        const updateOptions: ISPHttpClientOptions = {
+            headers: {
+                "IF-MATCH": "*",
+                "X-HTTP-Method": "MERGE",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(metadata)
+        };
+
+        const updateResponse = await props.context.spHttpClient.post(
+            itemUrl,
+            SPHttpClient.configurations.v1,
+            updateOptions
+        );
+
+        if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            console.error("Metadata update error:", errorText);
+            throw new Error("Metadata update failed");
+        }
+    };
 
     const onsubmit = async () => {
         if (isSubmitting) return;
@@ -1003,6 +1100,7 @@ const Editrequest = (props: IForexModuleProps) => {
 
             if (rows.length === 0) {
                 alert("Please add at least one invoice row.");
+                setIsSubmitting(false);
                 return;
             }
             // ===============================
@@ -1065,7 +1163,7 @@ const Editrequest = (props: IForexModuleProps) => {
                         BankName: bankname || "",
                         BankAccNo: bankaccountno || "",
                         Remarks: remarks || "",
-                        Status: "Pending",
+                        Status: "Pending for RM Approval",
                         NatureOfPayment: paymentType,
                         DocumentIsAvailable: taxDocumentView,
                         DTAAApplicable: dTAAApplicable,
@@ -1254,7 +1352,269 @@ const Editrequest = (props: IForexModuleProps) => {
 
         }
     };
+    const handledraft = async () => {
 
+        try {
+
+            setIsSubmitting(true);
+
+            const sp = await spCrudOps;
+
+            const workflowHistory = [
+                {
+                    CurrentApprover: employee.EmployeeName,
+                    ActionTaken: "Draft Saved",
+                    Comment: remarks || "",
+                    Date: new Date().toISOString(),
+                    CurrentStatus: "Draft"
+                }
+            ];
+            const approverslist = approvers || [];
+
+            // Current approver
+            const currentApprover =
+                approverslist.length > 0 ? approverslist[0] : null;
+
+            // ONLY ONE next approver
+            const nextApprover =
+                approverslist.length > 1 ? approverslist[1] : null;
+
+            // Save ALL approvers as JSON
+            const allApproversJson = JSON.stringify(approverDetails);
+
+            const parentResponse = await sp.updateData(
+                "ForexRequest",
+                Number(Id),
+                {
+                    ForexType: paymentType,
+                    EmployeeCode: employee.EmployeeCode,
+                    EmployeeName: employee.EmployeeName,
+                    Division: employee.Division,
+                    Location: employee.Location,
+                    RMId: employee.RMId || null,
+                    HODId: employee.HODId || null,
+                    ContactNo: employee.ContactNo?.toString() || "",
+                    Email: employee.Email,
+
+                    BankName: bankname || "",
+                    BankAccNo: bankaccountno || "",
+                    BankSwiftCode: bankswiftcode || "",
+
+                    Remarks: remarks || "",
+
+                    Status: "Draft",
+
+                    NatureOfPayment: paymentType,
+                    DocumentIsAvailable: taxDocumentView,
+                    DTAAApplicable: dTAAApplicable,
+
+                    ForexNumber: requestNumber,
+
+                    TotalAmount: "" + totalAmount,
+
+                    ForeignBankCharges: foreignBankCharges || "",
+
+                    RequestedOn: requestedOn || null,
+
+                    VendorCode: vendor.VendorCode || "",
+                    VendorName: vendor.VendorName || "",
+
+                    poContractNo: poContractNo || "",
+                    poDate: poDate || null,
+                    expectedSettlementDate: expectedSettlementDate || null,
+
+                    EmployeeStatus: employee.EmployeeStatus || "",
+
+                    BallenceEligibleAmount: "" + ballenceEligibleAmount,
+                    PaidAmount: "" + paidAmount,
+                    EligibleAmountWithWHT: "" + eligibleAmountWithWHT,
+
+                    CurrencyId: currency || null,
+
+                    WorkFlowHistory: JSON.stringify(workflowHistory),
+
+                    // Draft -> no approval flow
+                    CurrentApproverId: null,
+                    NextApproversId: { results: [] },
+                    AllApprovers: "" + allApproversJson
+
+                },
+                props
+            );
+
+            const requestId = parentResponse.data.ID;
+
+            console.log("Draft Saved ID:", requestId);
+
+            // ================= CHILD ROWS =================
+
+            for (let index = 0; index < rows.length; index++) {
+
+                const row = rows[index];
+
+                // Skip empty rows
+                if (
+                    !row.invoiceNo &&
+                    !row.invoiceDate &&
+                    !row.invoiceAmount
+                ) continue;
+
+                const childResponse = await sp.insertData(
+                    "ForexServicesBillPayment",
+                    {
+                        ForexIDId: requestId,
+
+                        SrNo: "" + (index + 1),
+
+                        InvoiceNumber: row.invoiceNo || "",
+                        InvoiceDate: row.invoiceDate || null,
+
+                        InvoiceAmount: row.invoiceAmount || "",
+
+                        MRNNumber: row.mrnNo || "",
+                        MRNDate: row.mrnDate || null,
+
+                        BillofLandingNo: row.blNo || "",
+                        BillOfLandingdate: row.blDate || null,
+
+                        BOENo: row.boeNo || "",
+                        BOEDate: row.boeDate || null
+                    },
+                    props
+                );
+
+                const childItemId = childResponse.data.ID;
+
+                const webUrl = props.context.pageContext.web.absoluteUrl;
+
+                // ================= INVOICE FILES =================
+
+                // ================= BILL MODE =================
+                if (paymentType === "Goods-Bill Payment" || paymentType === "Service-Bill Payment") {
+                    if (invoiceFiles[index] && invoiceFiles[index].length > 0) {
+                        for (const file of (invoiceFiles[index] || [])) {
+
+                            const fileName = `INV_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                    if (otherFiles[index] && otherFiles[index].length > 0) {
+                        for (const file of (otherFiles[index] || [])) {
+
+                            const fileName = `DOC_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                }
+                // ================= ADVANCE MODE =================
+                if (paymentType === "Goods-Advance Payment" || paymentType === "Service-Advance Payment") {
+                    if (poFiles[index] && poFiles[index].length > 0) {
+                        for (const file of (poFiles[index] || [])) {
+
+                            const fileName = `PO_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                    if (piFiles[index] && piFiles[index].length > 0) {
+                        for (const file of (piFiles[index] || [])) {
+
+                            const fileName = `PI_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                    if (otherFilesAdv[index] && otherFilesAdv[index].length > 0) {
+                        for (const file of (otherFilesAdv[index] || [])) {
+
+                            const fileName = `DOC_${row.invoiceNo}_${file.name}`;
+
+                            await props.context.spHttpClient.post(
+                                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${childItemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                                SPHttpClient.configurations.v1,
+                                { body: file }
+                            );
+                        }
+                    }
+                }
+
+            }
+            for (const boeNo of uniqueBoeNumbers) {
+
+                if (!boeFiles[boeNo] || boeFiles[boeNo].length > 0) {
+                    const files = boeFiles[boeNo] || [];
+
+                    for (const file of files) {
+
+                        await uploadToLibrary(
+                            "BOEAttachments",
+                            `${requestId}_${boeNo}_${Date.now()}_${file.name}`,
+                            file,
+                            {
+                                Title: file.name,
+                                BOENo: boeNo,
+                                ReqeuestId: requestId.toString()
+                            }
+                        );
+                    }
+                }
+            }
+
+            for (const blNo of uniqueBlNumbers) {
+                if (!blFiles[blNo] || blFiles[blNo].length > 0) {
+
+                    const files = blFiles[blNo] || [];
+
+                    for (const file of files) {
+
+                        await uploadToLibrary(
+                            "BillOfLandingAttachment",
+                            `${requestId}_${blNo}_${Date.now()}_${file.name}`,
+                            file,
+                            {
+                                Title: file.name,
+                                BOLNo: blNo,
+                                ReqeuestId: requestId.toString()
+                            }
+                        );
+                    }
+                }
+            }
+
+            alert("Draft saved successfully!");
+
+            history.push("/");
+
+        } catch (error) {
+
+            console.error("Error saving draft:", error);
+
+            alert("Something went wrong while saving draft.");
+
+        } finally {
+
+            setIsSubmitting(false);
+
+        }
+    };
 
     const handleAdvanceFileChange = (
         index: number,
@@ -1312,6 +1672,46 @@ const Editrequest = (props: IForexModuleProps) => {
         const year = d.getFullYear();
 
         return `${day}-${month}-${year}`;
+    };
+    const removeAttachment = async (
+        itemId: number,
+        fileName: string,
+        rowIndex: number
+    ) => {
+
+        try {
+
+            const webUrl = props.context.pageContext.web.absoluteUrl;
+
+            await props.context.spHttpClient.post(
+                `${webUrl}/_api/web/lists/getbytitle('ForexServicesBillPayment')/items(${itemId})/AttachmentFiles/getByFileName('${fileName}')`,
+                SPHttpClient.configurations.v1,
+                {
+                    headers: {
+                        "IF-MATCH": "*",
+                        "X-HTTP-Method": "DELETE"
+                    }
+                }
+            );
+
+            // 🔥 REMOVE FROM STATE
+            const updatedRows = [...rows];
+
+            updatedRows[rowIndex].attachments =
+                updatedRows[rowIndex].attachments?.filter(
+                    (f: any) => f.FileName !== fileName
+                );
+
+            setRows(updatedRows);
+
+            alert("Attachment removed successfully");
+
+        } catch (error) {
+
+            console.error("Error deleting attachment:", error);
+
+            alert("Error deleting attachment");
+        }
     };
     return (
         <div className="forex-wrapper">
@@ -1408,9 +1808,9 @@ const Editrequest = (props: IForexModuleProps) => {
                 </Section>
 
                 {/* ================= VENDOR ================= */}
-                <Section title="Vendor / Beneficiary Details">
+                <Section title="Vendor / Beneficiary Details ">
                     <Grid>
-                        <Field label="Vendor Code">
+                        <Field label="Vendor Code" required>
                             <ComboBox
                                 placeholder="Search Vendor Code"
                                 options={vendorOptions}
@@ -1486,7 +1886,7 @@ const Editrequest = (props: IForexModuleProps) => {
                         )}
 
                         {taxDocumentView === "Yes" && (
-                            <Field label="DTAA Applicable?">
+                            <Field label="DTAA Applicable?" required>
                                 <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)}>
                                     <option value="">Select</option>
                                     <option value="Yes">Yes</option>
@@ -1684,16 +2084,16 @@ const Editrequest = (props: IForexModuleProps) => {
 
                     <Grid>
 
-                        <Field label="Eligible amount that can be transmitted without WHT">
+                        <Field label="Eligible amount that can be transmitted without WHT" required>
                             <input type="number" value={eligibleAmountWithWHT} onChange={(e) => setEligibleAmountWithWHT(e.target.value)} />
                         </Field>
 
 
-                        <Field label="Paid Amount">
+                        <Field label="Paid Amount" required>
                             <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} />
                         </Field>
 
-                        <Field label="Balance eligible amount(Without with holding Tax)">
+                        <Field label="Balance eligible amount(Without with holding Tax)" required>
                             <input type="number" value={ballenceEligibleAmount} onChange={(e) => setBallenceEligibleAmount(e.target.value)} />
                         </Field>
                     </Grid>
@@ -1705,9 +2105,13 @@ const Editrequest = (props: IForexModuleProps) => {
                 {paymentType === "Goods-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency">
+                            <Field label="Request Number" required>
+                                <input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly />
+                            </Field>
+                            <Field label="Requested On" required>
+                                <input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
+                            </Field>
+                            <Field label="Currency" required>
                                 <Dropdown
                                     options={currencyOptions}
                                     selectedKey={currency}
@@ -1718,7 +2122,9 @@ const Editrequest = (props: IForexModuleProps) => {
                                     }}
                                 />
                             </Field>
-                            <Field label="Total Amount"><input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Total Amount" required>
+                                <input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly />
+                            </Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -1738,16 +2144,16 @@ const Editrequest = (props: IForexModuleProps) => {
                         <table className="data-table" style={{ marginTop: "10px" }}>
                             <thead>
                                 <tr>
-                                    <th>Sr.No</th>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>BOE No</th>
-                                    <th>BOE Date</th>
-                                    <th>MRN No</th>
-                                    <th>Bill of Lading No</th>
-                                    <th>Bill of Lading Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>Attach Invoice</th>
+                                    <th >Sr.No </th>
+                                    <th>Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>BOE No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>BOE Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>MRN No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Bill of Lading No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Bill of Lading Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach Invoice<span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Docs</th>
                                     <th>Add/Delete Entry</th>
                                 </tr>
@@ -1842,6 +2248,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("INV_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -1861,6 +2287,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("DOC_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -2014,9 +2460,9 @@ const Editrequest = (props: IForexModuleProps) => {
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency">
+                            <Field label="Request Number" required><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On" required><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
+                            <Field label="Currency" required>
                                 <Dropdown
                                     options={currencyOptions}
                                     selectedKey={currency}
@@ -2026,7 +2472,9 @@ const Editrequest = (props: IForexModuleProps) => {
                                         }
                                     }}
                                 /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Total Amount" required>
+                                <input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly />
+                            </Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2047,12 +2495,12 @@ const Editrequest = (props: IForexModuleProps) => {
                             <thead>
                                 <tr>
                                     <th>Sr No</th>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>MRN No</th>
-                                    <th>MRN Date</th>
-                                    <th>Attach Invoice</th>
+                                    <th>Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>MRN No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Document</th>
                                     <th>Add/Delete Entry</th>
                                 </tr>
@@ -2116,6 +2564,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("INV_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -2135,6 +2603,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("DOC_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -2211,9 +2699,11 @@ const Editrequest = (props: IForexModuleProps) => {
                     <Section title="Forex Payment Request Details">
                         <Grid>
                             <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On" required>
+                                <input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
+                            </Field>
+                            <Field label="Currency" required><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
+                            <Field label="Total Amount" required><input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2225,20 +2715,22 @@ const Editrequest = (props: IForexModuleProps) => {
                                     <option value="Our">Our</option>
                                     <option value="Shared">Shared</option>
                                 </select>
-                            </Field>                                <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
+                            </Field>
+
+                            <Field label="PO/Contract No" required><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
+                            <Field label="PO Date" required><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
+                            <Field label="Expected Settlement Date" required><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
                             <thead>
                                 <tr>
                                     <th>Sr No</th>
-                                    <th>Performa Invoice No</th>
-                                    <th>Performa Invoice Date</th>
-                                    <th>Performa Invoice Amount</th>
-                                    <th>Attach PO</th>
-                                    <th>Attach PI</th>
+                                    <th>Performa Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Performa Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Performa Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach PO <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach PI <span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Document</th>
                                     <th>Add/Delete Entry</th>
                                 </tr>
@@ -2285,6 +2777,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("PO_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -2303,6 +2815,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                             <a href={file.ServerRelativeUrl} target="_blank">
                                                                 {file.FileName.replace("PI_", "")}
                                                             </a>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    removeAttachment(
+                                                                        row.id!,
+                                                                        file.FileName,
+                                                                        index
+                                                                    )
+                                                                }
+                                                                style={{
+                                                                    background: "#dc3545",
+                                                                    color: "#fff",
+                                                                    border: "none",
+                                                                    borderRadius: "4px",
+                                                                    padding: "2px 8px",
+                                                                    cursor: "pointer"
+                                                                }}
+                                                            >
+                                                                Remove
+                                                            </button>
                                                         </div>
                                                     ))}
 
@@ -2322,6 +2854,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("DOC_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -2396,9 +2948,15 @@ const Editrequest = (props: IForexModuleProps) => {
                     <Section title="Forex Payment Request Details">
                         <Grid>
                             <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} /></Field>
-                            <Field label="Currency"><Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} /></Field>
+                            <Field label="Requested On" required>
+                                <input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
+                            </Field>
+                            <Field label="Currency" required>
+                                <Dropdown options={currencyOptions} selectedKey={currency} onChange={(e, option) => { if (option) setCurrency(option.key as string); }} />
+                            </Field>
+                            <Field label="Total Amount" required>
+                                <input type="number" value={totalInvoiceAmount.toFixed(2)} onChange={(e) => { setTotalAmount(e.target.value) }} />
+                            </Field>
                             <Field label="Foreign Bank Charges" required>
                                 <select
                                     className="form-control"
@@ -2410,20 +2968,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                     <option value="Our">Our</option>
                                     <option value="Shared">Shared</option>
                                 </select>
-                            </Field>                                 <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} /></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} /></Field>
+                            </Field>                                 <Field label="PO/Contract No" required>
+                                <input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} />
+                            </Field>
+                            <Field label="PO Date" required>
+                                <input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} />
+                            </Field>
+                            <Field label="Expected Settlement Date" required>
+                                <input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} />
+                            </Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
                             <thead>
                                 <tr>
                                     <th>Sr No</th>
-                                    <th>Performa Invoice No</th>
-                                    <th>Performa Invoice Date</th>
-                                    <th>Performa Invoice Amount</th>
-                                    <th>Attach PO</th>
-                                    <th>Attach PI</th>
+                                    <th>Performa Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Performa Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Performa Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach PO <span className="required" style={{ color: "red" }}>*</span></th>
+                                    <th>Attach PI <span className="required" style={{ color: "red" }}>*</span></th>
                                     <th>Attach Other Document</th>
                                     <th>Add/Delete Entry</th>
                                 </tr>
@@ -2470,6 +3034,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("PO_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -2487,6 +3071,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("PI_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -2505,6 +3109,26 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <a href={file.ServerRelativeUrl} target="_blank">
                                                             {file.FileName.replace("DOC_", "")}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeAttachment(
+                                                                    row.id!,
+                                                                    file.FileName,
+                                                                    index
+                                                                )
+                                                            }
+                                                            style={{
+                                                                background: "#dc3545",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "4px",
+                                                                padding: "2px 8px",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 ))}
 
@@ -2623,7 +3247,7 @@ const Editrequest = (props: IForexModuleProps) => {
                                     <th>Action</th>
                                     <th>Remark</th> {/* ✅ NEW COLUMN */}
                                     <th>Date</th>
-                                    <th>Status</th>
+                                    {/* <th>Status</th> */}
                                 </tr>
                             </thead>
                             <tbody>
@@ -2638,7 +3262,7 @@ const Editrequest = (props: IForexModuleProps) => {
                                                 ? new Date(item.Date).toLocaleString("en-GB")
                                                 : ""}
                                         </td>
-                                        <td>{item.CurrentStatus}</td>     {/* ✅ FIX */}
+                                        {/* <td>{item.CurrentStatus}</td>     ✅ FIX */}
                                     </tr>
                                 ))}
                             </tbody>
@@ -2655,6 +3279,9 @@ const Editrequest = (props: IForexModuleProps) => {
                 <div className="button-row">
                     <button className="btn-submit" onClick={onsubmit} disabled={isSubmitting}>
                         {isSubmitting ? "Submitting..." : "Submit"}
+                    </button>
+                    <button className="btn-submit" onClick={handledraft} disabled={isSubmitting}>
+                        {isSubmitting ? "Submitting..." : "Save as Draft"}
                     </button>
                     <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
                 </div>

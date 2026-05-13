@@ -114,6 +114,28 @@ const ViewRequestForm = (props: IForexModuleProps) => {
     const [paymentDate, setPaymentDate] = useState("");
     const [paymentReferenceNumber, setPaymentReferenceNumber] = useState("");
     const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
+    const [poAttachmentsAdvance, setPoAttachmentsAddvance] = useState<any>({});
+    const [piAttachmentsAddvance, setPiAttachmentsAddvance] = useState<any>({});
+    const [invoiceAttachmentsTrackeradvance, setInvoiceAttachmentsTrackeradvance] = useState<any>({});
+    const [otherAttachmentsTrackeradvance, setOtherAttachmentsTrackeradvance] = useState<any>({});
+    const [poAttachmentsTrackeradvance, setPoAttachmentsTrackeradvance] = useState<any>({});
+    const [piAttachmentsTrackeradvance, setPiAttachmentsTrackeradvance] = useState<any>({});
+    const [boeAttachments, setBoeAttachments] = useState<any>({});
+    const [blAttachments, setBlAttachments] = useState<any>({});
+    const [boeAttachmentstrackeradvance, setBoeAttachmentstrackeradvance] = useState<any>({});
+    const [blAttachmentstrackeradvance, setBlAttachmentstrackeradvance] = useState<any>({});
+    const [rowsAdvance, setRowsAdvance] = useState<InvoiceRow[]>([
+        {
+            invoiceNo: "",
+            invoiceDate: "",
+            boeNo: "",
+            boeDate: "",
+            mrnNo: "",
+            blNo: "",
+            blDate: "",
+            invoiceAmount: "",
+        },
+    ]);
 
     const [employee, setEmployee] = React.useState({
         EmployeeCode: "",
@@ -237,6 +259,20 @@ const ViewRequestForm = (props: IForexModuleProps) => {
         setRows(updatedRows);
     };
 
+    const [swiftCopy, setSwiftCopy] = useState<File[]>([]);
+    const [form15CA, setForm15CA] = useState<File[]>([]);
+    const [form15CB, setForm15CB] = useState<File[]>([]);
+    const [foreignCurrencypayment, setForeignCurrencypayment] = useState("");
+    const [foreignAmountpayment, setForeignAmountpayment] = useState("");
+    const [exchangeRatepayment, setExchangeRatepayment] = useState("");
+    const [inrAmountpayment, setInrAmountpayment] = useState("");
+    const [paymentDatepayment, setPaymentDatepayment] = useState("");
+    const [paymentReferencepayment, setPaymentReferencepayment] = useState("");
+    const isServicePayment = paymentType.includes("Service");
+    const isGoodsPayment = paymentType.includes("Goods");
+    const [validationDateshow, setValidationDateshow] = useState("");
+    const [voucherNumbershow, setVoucherNumbershow] = useState("");
+
     const totalInvoiceAmount = rows.reduce((sum, row) => {
         return sum + (parseFloat(row.invoiceAmount) || 0);
     }, 0);
@@ -256,6 +292,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
         getFinancialYearStart();
         if (Id) {
             loadForexData(Id);
+            loadTrackerData(parseInt(Id));
         }
     }, [Id])
     //----------------------- load data for edit------------------------//
@@ -300,6 +337,8 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 setForeignCurrencyAmount(data.ForeignCurrencyAmount || "");
                 setExchangeRate(data.ExchangeRate || "");
                 setInrAmount(data.INRAmount || "");
+                setValidationDateshow(data.ValidationDate?.split("T")[0] || "");
+                setVoucherNumbershow(data.VoucherNumber || "");
                 setPaymentDate(data.PaymentDate?.split("T")[0] || "");
                 setPaymentReferenceNumber(data.PaymentReferenceNumber || "");
                 // 🔥 LOAD WORKFLOW HISTORY
@@ -365,7 +404,16 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
                 setApproverDetails(approverList);
+
+                setForeignAmountpayment(data.ForeignCurrencyAmount || "");
+                setPaymentReferencepayment(data.PaymentReferenceNumber || "");
+                setPaymentDatepayment(data.PaymentDate?.split("T")[0] || "");
+                setInrAmountpayment(data.INRAmount || "");
+                setExchangeRatepayment(data.ExchangeRate || "");
+                setForeignCurrencypayment(data.ForeignCurrency || "");
+
             }
+
 
             const child = await sp.getData(
                 "ForexServicesBillPayment",
@@ -454,7 +502,83 @@ const ViewRequestForm = (props: IForexModuleProps) => {
     };
     //=----------------------- userdata------------------------//
 
+    const loadTrackerData = async (forexId: number) => {
 
+        const sp = await spCrudOps;
+
+        const tracker = await sp.getData(
+            "ForexAdvanceBillPayment",
+            "*,AttachmentFiles",
+            "AttachmentFiles",
+            `ForexIDId eq ${forexId}`,
+            { column: "ID", isAscending: true },
+            5000,
+            props
+        );
+
+        if (tracker.length > 0) {
+
+            const formattedRows = tracker.map((item: any) => ({
+                invoiceNo: item.InvoiceNumber || "",
+                invoiceDate: item.InvoiceDate?.split("T")[0] || "",
+                invoiceAmount: item.InvoiceAmount || "",
+                mrnNo: item.MRNNumber || "",
+                mrnDate: item.MRNDate?.split("T")[0] || "",
+                blNo: item.BillofLandingNo || "",
+                blDate: item.BillOfLandingdate?.split("T")[0] || "",
+                boeNo: item.BOENo || "",
+                boeDate: item.BOEDate?.split("T")[0] || ""
+            }));
+
+            setRowsAdvance(formattedRows);
+
+            const attachmentMap: any = {};
+            const poAttachmentMap: any = {};
+            const piAttachmentMap: any = {};
+            const otherAttachmentMap: any = {};
+            const boeAttachmentMap: any = {};
+            const blAttachmentMap: any = {};
+
+            tracker.forEach((item: any, index: number) => {
+
+                const files = item.AttachmentFiles || [];
+
+                poAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("PO_")
+                );
+
+                piAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("PI_")
+                );
+
+                otherAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("DOC_")
+                );
+
+                boeAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("BOE_")
+                );
+
+                blAttachmentMap[index] = files.filter((f: any) =>
+                    f.FileName?.startsWith("BL_")
+                );
+
+            });
+
+            setPoAttachmentsTrackeradvance(poAttachmentMap);
+            setPiAttachmentsTrackeradvance(piAttachmentMap);
+            setOtherAttachmentsTrackeradvance(otherAttachmentMap);
+            setBoeAttachmentstrackeradvance(boeAttachmentMap);
+            setBlAttachmentstrackeradvance(blAttachmentMap);
+        }
+    };
+    const uniqueBoeNumbersadvancetracker = Array.from(
+        new Set(rowsAdvance.map((r) => r.boeNo).filter(Boolean))
+    );
+
+    const uniqueBlNumbersadvancetracker = Array.from(
+        new Set(rowsAdvance.map((r) => r.blNo).filter(Boolean))
+    );
     //----------------------VendorData-------------------------//
     const getVendorData = async (vendorCode: string) => {
 
@@ -698,246 +822,250 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 </Section>
 
                 {/* ================= VENDOR ================= */}
+
                 <CollapsibleSection title="Vendor / Beneficiary Details">
-                    <Grid>
-                        <Field label="Vendor Code">
-                            <input
-                                value={vendor.VendorCode}
-                                onChange={(e) => {
-                                    const code = e.target.value;
-                                    setVendor({ ...vendor, VendorCode: code });
-                                }}
-                                onBlur={(e) => getVendorData(e.target.value)}   // fetch when user leaves field
-                            disabled/>
-                        </Field>
-                        <Field label="Vendor Name">
-                            <input value={vendor.VendorName} readOnly />
-                        </Field>
-                        <Field label="Address" full><input value={vendor.VendorAddress} readOnly /></Field>
-                        <Field label="City">
-                            <input value={vendor.City} readOnly />
-                        </Field>
-
-                        <Field label="Country">
-                            <input value={vendor.Country} readOnly />
-                        </Field>
-                        <Field label="Pincode"><input value={vendor.PostalCode} readOnly /></Field>
-                        <Field label="Bank Name">
-                            <input value={vendor.BankName} readOnly />
-                        </Field>
-                        <Field label="Bank Country"><input value={vendor.BankCountry} readOnly /></Field>
-                        <Field label="Bank Swift Code"><input value={vendor.SWIFTBICCode} readOnly /></Field>
-                        <Field label="Bank Branch Address"><input value={vendor.BankAddress} readOnly /></Field>
-                        <Field label="Bank IBAN / Account No" full><input value={vendor.AccountNumberIBAN} readOnly /></Field>
-                    </Grid>
-                </CollapsibleSection>
-
-                {/* ================= TAX INFO ================= */}
-                <CollapsibleSection title="Tax & Regulatory Information">
-                    <Grid>
-                        <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
-                        <Field label="Tax Document Available?" >
-                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled>
-                                <option>Yes</option>
-                                <option>No</option>
-                            </select>
-                        </Field>
-                        {taxDocumentView === "No" && (
-                            <Field >
-                                <span style={{ color: "red" }}>
-                                    (if No, withholding tax will be applicable)
-                                </span>
+                    <Section >
+                        <Grid>
+                            <Field label="Vendor Code">
+                                <input
+                                    value={vendor.VendorCode}
+                                    onChange={(e) => {
+                                        const code = e.target.value;
+                                        setVendor({ ...vendor, VendorCode: code });
+                                    }}
+                                    onBlur={(e) => getVendorData(e.target.value)}   // fetch when user leaves field
+                                    disabled />
                             </Field>
-                        )}
+                            <Field label="Vendor Name">
+                                <input value={vendor.VendorName} readOnly />
+                            </Field>
+                            <Field label="Address" full><input value={vendor.VendorAddress} readOnly /></Field>
+                            <Field label="City">
+                                <input value={vendor.City} readOnly />
+                            </Field>
 
-                        {taxDocumentView === "Yes" && (
-                            <Field label="DTAA Applicable?">
-                                <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)} disabled>
-                                    <option value="">Select</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="No">No</option>
+                            <Field label="Country">
+                                <input value={vendor.Country} readOnly />
+                            </Field>
+                            <Field label="Pincode"><input value={vendor.PostalCode} readOnly /></Field>
+                            <Field label="Bank Name">
+                                <input value={vendor.BankName} readOnly />
+                            </Field>
+                            <Field label="Bank Country"><input value={vendor.BankCountry} readOnly /></Field>
+                            <Field label="Bank Swift Code"><input value={vendor.SWIFTBICCode} readOnly /></Field>
+                            <Field label="Bank Branch Address"><input value={vendor.BankAddress} readOnly /></Field>
+                            <Field label="Bank IBAN / Account No" full><input value={vendor.AccountNumberIBAN} readOnly /></Field>
+                        </Grid>
+                    </Section>
+
+                    {/* ================= TAX INFO ================= */}
+                    <Section title="Tax & Regulatory Information">
+                        <Grid>
+                            <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
+                            <Field label="Tax Document Available?" >
+                                <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled>
+                                    <option>Yes</option>
+                                    <option>No</option>
                                 </select>
                             </Field>
-                        )}
-                    </Grid>
+                            {taxDocumentView === "No" && (
+                                <Field >
+                                    <span style={{ color: "red" }}>
+                                        (if No, withholding tax will be applicable)
+                                    </span>
+                                </Field>
+                            )}
+
+                            {taxDocumentView === "Yes" && (
+                                <Field label="DTAA Applicable?">
+                                    <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)} disabled>
+                                        <option value="">Select</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </Field>
+                            )}
+                        </Grid>
+                    </Section>
+                    {taxDocumentView === "Yes" && (
+                        <>
+                            {/* 🔹 Permanent Establishment Declaration */}
+                            <Section title="Permanent Establishment Declaration">
+                                <Grid>
+
+                                    <Field label="Document Available">
+                                        <select
+                                            value={permanentEstablishmentDeclaration.DocumentAvailable || ""}
+                                            disabled
+                                        >
+                                            <option value="">Select</option>
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </Field>
+
+                                    <Field label="Document Number">
+                                        <input
+                                            value={permanentEstablishmentDeclaration.DocumentNumber || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Document Date">
+                                        <input
+                                            type="date"
+                                            value={permanentEstablishmentDeclaration.DocumentDate || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Validity Start Date">
+                                        <input
+                                            type="date"
+                                            value={permanentEstablishmentDeclaration.ValidityStartDate || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Validity End Date">
+                                        <input
+                                            type="date"
+                                            value={permanentEstablishmentDeclaration.ValidityEndDate || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="View Document">
+                                        <span><a href={permanentEstablishmentDeclaration.Attachmenturl || "#"} target="_blank">{permanentEstablishmentDeclaration.Attachmentfilename || "No Document Available"}</a></span>
+                                    </Field>
+
+                                </Grid>
+                            </Section>
+
+                            {/* 🔹 Tax Residency Certificate */}
+                            <Section title="Tax Residency Certificate">
+                                <Grid>
+
+                                    <Field label="Document Available">
+                                        <select
+                                            value={taxResidencyCertificate.DocumentAvailable || ""}
+                                            disabled
+                                        >
+                                            <option value="">Select</option>
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </Field>
+
+                                    <Field label="Document Number">
+                                        <input
+                                            value={taxResidencyCertificate.DocumentNumber || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Country of Tax Residence">
+                                        <input
+                                            value={taxResidencyCertificate.CountryOfTaxResidence || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Tax Identification Number">
+                                        <input
+                                            value={taxResidencyCertificate.TaxIdentificationNumber || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Validity Start Date">
+                                        <input
+                                            type="date"
+                                            value={taxResidencyCertificate.ValidityStartDate || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Validity End Date">
+                                        <input
+                                            type="date"
+                                            value={taxResidencyCertificate.ValidityEndDate || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="View Document">
+                                        <span><a href={taxResidencyCertificate.Attachmenturl || "#"} target="_blank">{taxResidencyCertificate.Attachmentfilename || "No Document Available"}</a></span>
+                                    </Field>
+
+                                </Grid>
+                            </Section>
+
+                            {/* 🔹 Form 10F */}
+                            <Section title="Form 10F">
+                                <Grid>
+
+                                    <Field label="Document Available">
+                                        <select
+                                            value={form10F.DocumentAvailable || ""}
+                                            disabled
+                                        >
+                                            <option value="">Select</option>
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </Field>
+
+                                    <Field label="Document Number">
+                                        <input
+                                            value={form10F.DocumentNumber || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Acknowledgment Number">
+                                        <input
+                                            value={form10F.AcknowledgmentNumber || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Document Date">
+                                        <input
+                                            type="date"
+                                            value={form10F.DocumentDate || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Validity Start Date">
+                                        <input
+                                            type="date"
+                                            value={form10F.ValidityStartDate || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="Validity End Date">
+                                        <input
+                                            type="date"
+                                            value={form10F.ValidityEndDate || ""}
+                                            readOnly
+                                        />
+                                    </Field>
+
+                                    <Field label="View Document">
+                                        <span><a href={form10F.Attachmenturl || "#"} target="_blank">{form10F.Attachmentfilename || "No Document Available"}</a></span>
+                                    </Field>
+
+                                </Grid>
+                            </Section>
+
+                        </>
+                    )}
                 </CollapsibleSection>
-                {taxDocumentView === "Yes" && (
-                    <>
-                        {/* 🔹 Permanent Establishment Declaration */}
-                        <CollapsibleSection title="Permanent Establishment Declaration">
-                            <Grid>
 
-                                <Field label="Document Available">
-                                    <select
-                                        value={permanentEstablishmentDeclaration.DocumentAvailable || ""}
-                                        disabled
-                                    >
-                                        <option value="">Select</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
-                                    </select>
-                                </Field>
-
-                                <Field label="Document Number">
-                                    <input
-                                        value={permanentEstablishmentDeclaration.DocumentNumber || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Document Date">
-                                    <input
-                                        type="date"
-                                        value={permanentEstablishmentDeclaration.DocumentDate || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Validity Start Date">
-                                    <input
-                                        type="date"
-                                        value={permanentEstablishmentDeclaration.ValidityStartDate || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Validity End Date">
-                                    <input
-                                        type="date"
-                                        value={permanentEstablishmentDeclaration.ValidityEndDate || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="View Document">
-                                    <span><a href={permanentEstablishmentDeclaration.Attachmenturl || "#"} target="_blank">{permanentEstablishmentDeclaration.Attachmentfilename || "No Document Available"}</a></span>
-                                </Field>
-
-                            </Grid>
-                        </CollapsibleSection>
-
-                        {/* 🔹 Tax Residency Certificate */}
-                        <CollapsibleSection title="Tax Residency Certificate">
-                            <Grid>
-
-                                <Field label="Document Available">
-                                    <select
-                                        value={taxResidencyCertificate.DocumentAvailable || ""}
-                                        disabled
-                                    >
-                                        <option value="">Select</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
-                                    </select>
-                                </Field>
-
-                                <Field label="Document Number">
-                                    <input
-                                        value={taxResidencyCertificate.DocumentNumber || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Country of Tax Residence">
-                                    <input
-                                        value={taxResidencyCertificate.CountryOfTaxResidence || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Tax Identification Number">
-                                    <input
-                                        value={taxResidencyCertificate.TaxIdentificationNumber || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Validity Start Date">
-                                    <input
-                                        type="date"
-                                        value={taxResidencyCertificate.ValidityStartDate || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Validity End Date">
-                                    <input
-                                        type="date"
-                                        value={taxResidencyCertificate.ValidityEndDate || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="View Document">
-                                    <span><a href={taxResidencyCertificate.Attachmenturl || "#"} target="_blank">{taxResidencyCertificate.Attachmentfilename || "No Document Available"}</a></span>
-                                </Field>
-
-                            </Grid>
-                        </CollapsibleSection>
-
-                        {/* 🔹 Form 10F */}
-                        <CollapsibleSection title="Form 10F">
-                            <Grid>
-
-                                <Field label="Document Available">
-                                    <select
-                                        value={form10F.DocumentAvailable || ""}
-                                        disabled
-                                    >
-                                        <option value="">Select</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
-                                    </select>
-                                </Field>
-
-                                <Field label="Document Number">
-                                    <input
-                                        value={form10F.DocumentNumber || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Acknowledgment Number">
-                                    <input
-                                        value={form10F.AcknowledgmentNumber || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Document Date">
-                                    <input
-                                        type="date"
-                                        value={form10F.DocumentDate || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Validity Start Date">
-                                    <input
-                                        type="date"
-                                        value={form10F.ValidityStartDate || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="Validity End Date">
-                                    <input
-                                        type="date"
-                                        value={form10F.ValidityEndDate || ""}
-                                        readOnly
-                                    />
-                                </Field>
-
-                                <Field label="View Document">
-                                    <span><a href={form10F.Attachmenturl || "#"} target="_blank">{form10F.Attachmentfilename || "No Document Available"}</a></span>
-                                </Field>
-
-                            </Grid>
-                        </CollapsibleSection>
-                    </>
-                )}
-
-                <CollapsibleSection title="Other Details" >
+                <CollapsibleSection title="Summary of WHT Applicability" >
                     <Grid>
                         <div className="date-summary">
                             <span className="label">From</span>
@@ -970,8 +1098,8 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                     <Section title="Forex Payment Request Details">
                         <Grid>
                             <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
                             <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} readOnly /></Field>
                             {/* <Field label="PO/Contract No"><input /></Field>
@@ -1007,7 +1135,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceNo", e.target.value)
                                                 }
-                                            readOnly/>
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1017,7 +1145,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceDate", e.target.value)
                                                 }
-                                            readOnly/>
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1026,7 +1154,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "boeNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1036,7 +1164,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "boeDate", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1045,7 +1173,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1054,7 +1182,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "blNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1064,7 +1192,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "blDate", e.target.value)
                                                 }
-                                            readOnly/>
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1074,7 +1202,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceAmount", e.target.value)
                                                 }
-                                            readOnly/>
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1233,7 +1361,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 {paymentType === "Service-Bill Payment" && (
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
                             <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
                             <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
                             <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
@@ -1268,7 +1396,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1278,7 +1406,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceDate", e.target.value)
                                                 }
-                                            readOnly/>
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1287,7 +1415,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceAmount", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1296,7 +1424,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
                                         <td>
                                             <input
@@ -1305,7 +1433,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "mrnDate", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
                                         <td>
                                             {invoiceAttachments[index]?.map((file: any, i: number) => (
@@ -1390,14 +1518,14 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
-                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly/></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly/></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly/></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
+                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly /></Field>
+                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly /></Field>
+                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly /></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
@@ -1424,7 +1552,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceNo", e.target.value)
                                                 }
-                                           readOnly />
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1434,7 +1562,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceDate", e.target.value)
                                                 }
-                                            readOnly/>
+                                                readOnly />
                                         </td>
 
                                         <td>
@@ -1443,7 +1571,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 onChange={(e) =>
                                                     handleChange(index, "invoiceAmount", e.target.value)
                                                 }
-                                            readOnly/>
+                                                readOnly />
                                         </td>
 
 
@@ -1543,14 +1671,14 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                     <Section title="Forex Payment Request Details">
                         <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly/></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly/></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly/></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly/></Field>
-                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly/></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly/></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly/></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly/></Field>
+                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
+                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
+                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
+                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
+                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
+                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly /></Field>
+                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly /></Field>
+                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly /></Field>
                         </Grid>
 
                         <table className="data-table" style={{ marginTop: "10px" }}>
@@ -1612,7 +1740,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             </div>
                                         </td>
                                         <td>
-                                           <div>
+                                            <div>
                                                 {piAttachments[index]?.map((file: any, i: number) => (
                                                     <div key={i}>
                                                         <a href={file.ServerRelativeUrl} target="_blank">
@@ -1751,6 +1879,678 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                     </Grid>
 
                 </CollapsibleSection> */}
+                {paymentType === "Goods-Advance Payment" && (
+                    <>
+                        <Section title="Bill Payment Details (For Goods Bill Payment)">
+
+                            {/* <p style={{ color: "red", fontSize: "12px" }}>
+                                Tracker data submitted by user
+                            </p> */}
+
+                            <table className="data-table">
+
+                                <thead>
+                                    <tr>
+                                        <th>Sr.No.</th>
+                                        <th>Invoice Number</th>
+                                        <th>Invoice Date</th>
+                                        <th>BOE Number</th>
+                                        <th>BOE Date</th>
+                                        <th>MRN Number</th>
+                                        <th>Bill of Lading Number</th>
+                                        <th>Bill of Lading Date</th>
+                                        <th>Invoice Amount</th>
+                                        <th>Attach Invoice</th>
+                                        <th>Attach Other</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+
+                                    {rowsAdvance.map((row, index) => (
+                                        <tr key={index}>
+
+                                            <td>{index + 1}</td>
+
+                                            <td><span>{row.invoiceNo}</span></td>
+
+                                            <td><span>{row.invoiceDate}</span></td>
+
+                                            <td><span>{row.boeNo}</span></td>
+
+                                            <td><span>{row.boeDate}</span></td>
+
+                                            <td><span>{row.mrnNo}</span></td>
+
+                                            <td><span>{row.blNo}</span></td>
+
+                                            <td><span>{row.blDate}</span></td>
+
+                                            <td><span>{row.invoiceAmount}</span></td>
+
+                                            {/* Invoice Upload */}
+                                            <td>
+
+                                                {poAttachmentsTrackeradvance[index]?.length > 0 ? (
+
+                                                    poAttachmentsTrackeradvance[index].map((file: any, i: number) => (
+
+                                                        <div key={i}>
+
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                download
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="upload-link"
+                                                            >
+                                                                📥 {file.FileName || file.name}
+                                                            </a>
+
+                                                        </div>
+
+                                                    ))
+
+                                                ) : (
+
+                                                    <span>-</span>
+
+                                                )}
+
+                                            </td>
+
+                                            {/* Other Upload */}
+                                            <td>
+
+                                                {piAttachmentsTrackeradvance[index]?.length > 0 ? (
+
+                                                    piAttachmentsTrackeradvance[index].map((file: any, i: number) => (
+
+                                                        <div key={i}>
+
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                download
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="upload-link"
+                                                            >
+                                                                📥 {file.FileName || file.name}
+                                                            </a>
+
+                                                        </div>
+
+                                                    ))
+
+                                                ) : (
+
+                                                    <span>-</span>
+
+                                                )}
+
+                                            </td>
+
+
+                                        </tr>
+                                    ))}
+
+                                </tbody>
+
+                                {/* <tfoot>
+                                    <tr>
+                                        <td colSpan={7}></td>
+                                        <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                        <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                        <td colSpan={2}></td>
+                                    </tr>
+                                </tfoot> */}
+
+                            </table>
+
+                        </Section>
+
+                        {/* BOE + BL DOCUMENTS */}
+
+                        <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
+
+                            {/* BOE TABLE */}
+
+                            <div>
+
+                                {/* <p style={{ color: "red", fontSize: "12px" }}>
+                                    Unique BOE no listed below
+                                </p> */}
+
+                                <table className="data-table">
+
+                                    <thead>
+                                        <tr>
+                                            <th>BOE No</th>
+                                            <th>Attach Documents</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+
+                                        {uniqueBoeNumbersadvancetracker.map((boe, index) => (
+                                            <tr key={index}>
+
+                                                <td>{boe}</td>
+
+                                                <td>
+
+                                                    {boeAttachmentstrackeradvance[index]?.length > 0 ? (
+
+                                                        boeAttachmentstrackeradvance[index].map((file: any, i: number) => (
+                                                            <div key={i} style={{ fontSize: "12px" }}>
+
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    download
+                                                                    rel="noopener noreferrer"
+                                                                    className="upload-link"
+                                                                >
+                                                                    📄 {file.FileName}
+                                                                </a>
+
+                                                            </div>
+                                                        ))
+
+                                                    ) : (
+
+                                                        <span>-</span>
+
+                                                    )}
+                                                </td>
+
+                                            </tr>
+                                        ))}
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+
+                            {/* BL TABLE */}
+
+                            <div>
+                                {/* 
+                                <p style={{ color: "red", fontSize: "12px" }}>
+                                    Unique Bill of Lading listed below
+                                </p> */}
+
+                                <table className="data-table">
+
+                                    <thead>
+                                        <tr>
+                                            <th>Bill of Lading</th>
+                                            <th>Attach Documents</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+
+                                        {uniqueBlNumbersadvancetracker.map((bl, index) => (
+                                            <tr key={index}>
+
+                                                <td>{bl}</td>
+
+                                                <td>
+
+                                                    {/* <input
+                                                        type="file"
+                                                        onChange={(e) => handleBlUpload(index, e.target.files)}
+                                                    />
+
+                                                    {blAttachments[index]?.map((file: any, i: number) => (
+                                                        <div key={i} style={{ fontSize: "12px" }}>
+                                                            {file.name}
+                                                        </div>
+                                                    ))} */}
+                                                    {blAttachmentstrackeradvance[index]?.length > 0 ? (
+
+                                                        blAttachmentstrackeradvance[index].map((file: any, i: number) => (
+                                                            <div key={i} style={{ fontSize: "12px" }}>
+
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    download
+                                                                    rel="noopener noreferrer"
+                                                                    className="upload-link"
+                                                                >
+                                                                    📄 {file.FileName}
+                                                                </a>
+
+                                                            </div>
+                                                        ))
+
+                                                    ) : (
+
+                                                        <span>-</span>
+
+                                                    )}
+
+                                                </td>
+
+                                            </tr>
+                                        ))}
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                    </>
+                )}
+
+                {paymentType === "Service-Advance Payment" && (
+
+                    <div style={{ marginTop: "30px" }}>
+
+                        {/* <div style={{ background: "#fff8b3", padding: "4px", fontSize: "12px" }}>
+                            <b>Only for Service: Advance Payment</b>
+                        </div> */}
+
+                        <p>
+                            <b>Bill Payment Details (for Service Bill Payment)</b>
+                        </p>
+
+                        <table className="data-table">
+
+                            <thead>
+                                <tr>
+                                    <th>Sr.No.</th>
+                                    <th>Invoice Number</th>
+                                    <th>Invoice Date</th>
+                                    <th>Invoice Amount</th>
+                                    <th>MRN Number</th>
+                                    <th>MRN Date</th>
+                                    <th>Invoice Document</th>
+                                    <th>Other Document</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {rowsAdvance.map((row, index) => (
+                                    <tr key={index}>
+
+                                        <td>{index + 1}</td>
+
+                                        <td>
+                                            <span>{row.invoiceNo}</span>
+                                        </td>
+
+                                        <td>
+                                            <span>{row.invoiceDate}</span>
+                                        </td>
+
+                                        <td>
+                                            <span>{row.invoiceAmount}</span>
+                                        </td>
+
+                                        <td>
+                                            <span>{row.mrnNo}</span>
+                                        </td>
+
+                                        <td>
+                                            <span>{row.mrnDate}</span>
+                                        </td>
+
+                                        {/* Invoice Attachments */}
+
+                                        <td>
+
+                                            {poAttachmentsTrackeradvance[index]?.length > 0 ? (
+
+                                                poAttachmentsTrackeradvance[index].map((file: any, i: number) => (
+
+                                                    <div key={i}>
+
+                                                        <a
+                                                            href={file.ServerRelativeUrl}
+                                                            download
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="upload-link"
+                                                        >
+                                                            📥 {file.FileName || file.name}
+                                                        </a>
+
+                                                    </div>
+
+                                                ))
+
+                                            ) : (
+
+                                                <span>-</span>
+
+                                            )}
+
+                                        </td>
+
+                                        {/* Other Attachments */}
+
+                                        <td>
+
+                                            {piAttachmentsTrackeradvance[index]?.length > 0 ? (
+
+                                                piAttachmentsTrackeradvance[index].map((file: any, i: number) => (
+
+                                                    <div key={i}>
+
+                                                        <a
+                                                            href={file.ServerRelativeUrl}
+                                                            download
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="upload-link"
+                                                        >
+                                                            📥 {file.FileName || file.name}
+                                                        </a>
+
+                                                    </div>
+
+                                                ))
+
+                                            ) : (
+
+                                                <span>-</span>
+
+                                            )}
+
+                                        </td>
+
+                                    </tr>
+                                ))}
+
+                            </tbody>
+                            {/* <tfoot>
+                                <tr>
+                                    <td colSpan={2}></td>
+                                    <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                    <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                    <td colSpan={5}></td>
+                                </tr>
+                            </tfoot> */}
+                        </table>
+
+                    </div>
+
+                )}
+                <Section title="Vouching Details">
+
+                    <Grid>
+
+                        <Field label="Validation Date" required>
+                            <input
+                                type="text"
+                                value={validationDateshow}
+                                // onChange={(e) => setValidationDate(e.target.value)}
+                                readOnly
+                            />
+                        </Field>
+
+                        {/* Hide Voucher Number for Non Advance */}
+                        {(paymentType.includes("Advance")) && (
+                            <Field label="Voucher Number" required>
+                                <input
+                                    value={voucherNumbershow}
+                                // onChange={(e) => setVoucherNumber(e.target.value)}
+                                />
+                            </Field>
+                        )}
+
+
+
+                    </Grid>
+
+                </Section>
+
+                <Section title="Payment Details">
+
+                    <Grid>
+
+                        <Field label="Foreign Currency" required>
+                            {/* <Dropdown
+                                                        options={foreignCurrencyOptions}
+                                                        selectedKey={foreignCurrency}
+                                                        onChange={(e, option) => {
+                                                            if (option) {
+                                                                setForeignCurrency(option.key as string);
+                                                            }
+                                                        }}
+                                                    /> */}
+                            <input type="text" value={foreignCurrency} readOnly style={{ marginTop: "5px" }} />
+                        </Field>
+
+                        <Field label="Foreign Currency Amount" required>
+                            <input
+                                type="number"
+                                value={foreignAmountpayment}
+                                // onChange={(e) => setForeignAmount(e.target.value)}
+                                readOnly
+                            />
+                        </Field>
+
+                        <Field label="Exchange Rate" required>
+                            <input
+                                type="number"
+                                value={exchangeRatepayment}
+                                // onChange={(e) => setExchangeRate(e.target.value)}
+                                readOnly
+                            />
+                        </Field>
+
+                        <Field label="INR Amount" required>
+                            <input
+                                type="number"
+                                value={inrAmountpayment}
+                                // onChange={(e) => setInrAmount(e.target.value)}
+                                readOnly
+                            />
+                        </Field>
+
+                    </Grid>
+
+                    <p style={{ color: "red", fontSize: "12px" }}>
+                        (if difference in foreign currency & Amount system to display alert message only)
+                    </p>
+
+                    <Grid>
+
+                        <Field label="Payment Date">
+                            <input
+                                type="date"
+                                value={paymentDatepayment}
+                                // onChange={(e) => setPaymentDate(e.target.value)}
+                                readOnly
+                            />
+                        </Field>
+
+                        <Field label="Payment reference number" >
+                            <input
+                                value={paymentReferencepayment}
+                                // onChange={(e) => setPaymentReference(e.target.value)}
+                                readOnly
+                            />
+                        </Field>
+
+                        {/* 15CA only for Service */}
+                        {isServicePayment && (
+                            <Field label="Form145" required>
+                                {/* <input
+                                    type="file"
+                                    multiple
+                                    onChange={(e) => {
+                                        const files = e.target.files
+                                            ? Array.from(e.target.files)
+                                            : [];
+
+                                        setForm15CA((prev) => [...prev, ...files]);
+                                    }}
+                                /> */}
+
+                                {/* File List */}
+                                {form15CA.length > 0 && (
+                                    <div style={{ marginTop: "10px" }}>
+                                        {form15CA.map((file, index) => (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    alignItems: "center",
+                                                    marginBottom: "5px",
+                                                    padding: "6px 10px",
+                                                    border: "1px solid #ddd",
+                                                    borderRadius: "4px",
+                                                }}
+                                            >
+                                                <span>{file.name}</span>
+
+                                                {/* <button
+                                                    type="button"
+                                                    onClick={() => remove15CAFile(index)}
+                                                    style={{
+                                                        background: "red",
+                                                        color: "#fff",
+                                                        border: "none",
+                                                        padding: "4px 8px",
+                                                        cursor: "pointer",
+                                                        borderRadius: "4px",
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button> */}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </Field>
+                        )}
+
+                        {/* 15CB only for Service */}
+                        {isServicePayment && (
+                            <Field label="Form146 " required>
+                                {/* <input
+                                    type="file"
+                                    multiple
+                                    onChange={(e) => {
+                                        const files = e.target.files
+                                            ? Array.from(e.target.files)
+                                            : [];
+
+                                        setForm15CB((prev) => [...prev, ...files]);
+                                    }}
+                                /> */}
+
+                                {/* File List */}
+                                {form15CB.length > 0 && (
+                                    <div style={{ marginTop: "10px" }}>
+                                        {form15CB.map((file, index) => (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    alignItems: "center",
+                                                    marginBottom: "5px",
+                                                    padding: "6px 10px",
+                                                    border: "1px solid #ddd",
+                                                    borderRadius: "4px",
+                                                }}
+                                            >
+                                                <span>{file.name}</span>
+
+                                                {/* <button
+                                                    type="button"
+                                                    onClick={() => remove15CBFile(index)}
+                                                    style={{
+                                                        background: "red",
+                                                        color: "#fff",
+                                                        border: "none",
+                                                        padding: "4px 8px",
+                                                        cursor: "pointer",
+                                                        borderRadius: "4px",
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button> */}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </Field>
+                        )}
+
+                    </Grid>
+
+                    <Grid>
+
+                        {/* Swift Copy only for Goods */}
+                        {isGoodsPayment && (
+                            <Field label="Attach Swift Copy (Applicable for Goods)" required>
+                                {/* <input
+                                    type="file"
+                                    multiple
+                                    onChange={(e) => {
+                                        const files = e.target.files
+                                            ? Array.from(e.target.files)
+                                            : [];
+
+                                        setSwiftCopy((prev) => [...prev, ...files]);
+                                    }}
+                                /> */}
+
+                                {/* File List */}
+                                {swiftCopy.length > 0 && (
+                                    <div style={{ marginTop: "10px" }}>
+                                        {swiftCopy.map((file, index) => (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    alignItems: "center",
+                                                    marginBottom: "5px",
+                                                    padding: "6px 10px",
+                                                    border: "1px solid #ddd",
+                                                    borderRadius: "4px",
+                                                }}
+                                            >
+                                                <span>{file.name}</span>
+
+                                                {/* <button
+                                                    type="button"
+                                                    onClick={() => removeSwiftCopyFile(index)}
+                                                    style={{
+                                                        background: "red",
+                                                        color: "#fff",
+                                                        border: "none",
+                                                        padding: "4px 8px",
+                                                        cursor: "pointer",
+                                                        borderRadius: "4px",
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button> */}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </Field>
+                        )}
+                    </Grid>
+
+                </Section>
                 <CollapsibleSection title="Workflow History">
 
                     {workflowHistory.length > 0 ? (
@@ -1762,7 +2562,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <th>Action</th>
                                     <th>Remark</th>
                                     <th>Date</th>
-                                    <th>Status</th>
+                                    {/* <th>Status</th> */}
                                 </tr>
                             </thead>
 
@@ -1778,7 +2578,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 ? new Date(item.Date).toLocaleString("en-GB")
                                                 : ""}
                                         </td>
-                                        <td>{item.CurrentStatus}</td>
+                                        {/* <td>{item.CurrentStatus}</td> */}
                                     </tr>
                                 ))}
                             </tbody>

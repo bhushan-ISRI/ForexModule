@@ -276,7 +276,91 @@ const TrackerForm = (props: IForexModuleProps) => {
                 setPoAttachments(poAttachmentMap);
                 setPiAttachments(piAttachmentMap);
             }
+
+            const trackerData = await sp.getData(
+    "ForexAdvanceBillPayment",
+    "*,AttachmentFiles",
+    "AttachmentFiles",
+    `ForexIDId eq ${id}`,
+    { column: "ID", isAscending: true },
+    5000,
+    props
+);
+
+            if (trackerData.length > 0) {
+
+                const trackerInvoiceAttachments: any = {};
+                const trackerOtherAttachments: any = {};
+                const trackerBoeAttachments: any = {};
+                const trackerBlAttachments: any = {};
+
+                const trackerRows = trackerData.map((item: any, index: number) => {
+
+                    const files = item.AttachmentFiles || [];
+
+                    trackerInvoiceAttachments[index] = files.filter((f: any) =>
+                        f.FileName?.startsWith("INV_")
+                    );
+
+                    trackerOtherAttachments[index] = files.filter((f: any) =>
+                        f.FileName?.startsWith("DOC_")
+                    );
+
+                    trackerBoeAttachments[index] = files.filter((f: any) =>
+                        f.FileName?.startsWith("BOE_")
+                    );
+
+                    trackerBlAttachments[index] = files.filter((f: any) =>
+                        f.FileName?.startsWith("BL_")
+                    );
+
+                    return {
+                        invoiceNo: item.InvoiceNumber || "",
+                        invoiceDate: item.InvoiceDate?.split("T")[0] || "",
+                        boeNo: item.BOENo || "",
+                        boeDate: item.BOEDate?.split("T")[0] || "",
+                        mrnNo: item.MRNNumber || "",
+                        mrnDate: item.MRNDate?.split("T")[0] || "",
+                        blNo: item.BillofLandingNo || "",
+                        blDate: item.BillOfLandingdate?.split("T")[0] || "",
+                        invoiceAmount: item.InvoiceAmount || "",
+                    };
+                });
+
+                setInvoiceAttachments(trackerInvoiceAttachments);
+                setOtherAttachmentsadvance(trackerOtherAttachments);
+                setBoeAttachments(trackerBoeAttachments);
+                setBlAttachments(trackerBlAttachments);
+
+                const savedAmount = trackerRows.reduce(
+                    (sum, r) => sum + (parseFloat(r.invoiceAmount || "0")),
+                    0
+                );
+
+                let finalRows = [...trackerRows];
+
+                if (savedAmount < parseFloat(data.TotalAmount || "0")) {
+
+                    finalRows.push({
+                        invoiceNo: "",
+                        invoiceDate: "",
+                        boeNo: "",
+                        boeDate: "",
+                        mrnNo: "",
+                        mrnDate: "",
+                        blNo: "",
+                        blDate: "",
+                        invoiceAmount: "",
+                    });
+
+                }
+
+                setRows(finalRows);
+            }
         }
+        // 🔹 Load already saved tracker data
+
+
     };
 
     /* ---------- Rows ---------- */
@@ -349,115 +433,135 @@ const TrackerForm = (props: IForexModuleProps) => {
 
         return null;
     };
-const validateForm = () => {
+    const validateForm = () => {
 
-    for (let i = 0; i < rows.length; i++) {
+        for (let i = 0; i < rows.length; i++) {
 
-        const row = rows[i];
+            const row = rows[i];
 
-        // COMMON
-        if (!row.invoiceNo) {
-            alert(`Invoice No required in row ${i + 1}`);
-            return false;
+            // COMMON
+            if (!row.invoiceNo) {
+                alert(`Invoice No required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.invoiceDate) {
+                alert(`Invoice Date required in row ${i + 1}`);
+                return false;
+            }
+
+            if (!row.invoiceAmount) {
+                alert(`Invoice Amount required in row ${i + 1}`);
+                return false;
+            }
+            if (totalInvoiceAmount > parseFloat(totalAmount)) {
+                alert("Total Invoice Amount cannot be greater than Total Performa Invoice Amount");
+                return false;
+            }
+            // ================= GOODS ADVANCE =================
+            if (paymentType === "Goods-Advance Payment") {
+
+                if (!row.boeNo) {
+                    alert(`BOE No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.boeDate) {
+                    alert(`BOE Date required in row ${i + 1}`);
+                    return false;
+                }
+                if (!row.mrnNo) {
+                    alert(`MRN No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.blNo) {
+                    alert(`Bill of Lading No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.blDate) {
+                    alert(`Bill of Lading Date required in row ${i + 1}`);
+                    return false;
+                }
+
+                // Invoice file
+                if (!invoiceAttachments[i] || invoiceAttachments[i].length === 0) {
+                    alert(`Invoice attachment required in row ${i + 1}`);
+                    return false;
+                }
+            }
+
+            // ================= SERVICE ADVANCE =================
+            if (paymentType === "Service-Advance Payment") {
+
+                if (!row.mrnNo) {
+                    alert(`MRN No required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!row.mrnDate) {
+                    alert(`MRN Date required in row ${i + 1}`);
+                    return false;
+                }
+
+                if (!invoiceAttachments[i] || invoiceAttachments[i].length === 0) {
+                    alert(`Invoice attachment required in row ${i + 1}`);
+                    return false;
+                }
+            }
         }
 
-        if (!row.invoiceDate) {
-            alert(`Invoice Date required in row ${i + 1}`);
-            return false;
-        }
-
-        if (!row.invoiceAmount) {
-            alert(`Invoice Amount required in row ${i + 1}`);
-            return false;
-        }
-if (totalInvoiceAmount > parseFloat(totalAmount)) {
-    alert("Total Invoice Amount cannot be greater than Total Performa Invoice Amount");
-    return false;
-}
-        // ================= GOODS ADVANCE =================
+        // ================= GOODS ADVANCE UNIQUE FILES =================
         if (paymentType === "Goods-Advance Payment") {
 
-            if (!row.boeNo) {
-                alert(`BOE No required in row ${i + 1}`);
-                return false;
+            for (let i = 0; i < uniqueBoeNumbers.length; i++) {
+                if (!boeAttachments[i] || boeAttachments[i].length === 0) {
+                    alert(`BOE document required for BOE No: ${uniqueBoeNumbers[i]}`);
+                    return false;
+                }
             }
 
-            if (!row.boeDate) {
-                alert(`BOE Date required in row ${i + 1}`);
-                return false;
-            }
-             if (!row.mrnNo) {
-                alert(`MRN No required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!row.blNo) {
-                alert(`Bill of Lading No required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!row.blDate) {
-                alert(`Bill of Lading Date required in row ${i + 1}`);
-                return false;
-            }
-
-            // Invoice file
-            if (!invoiceAttachments[i] || invoiceAttachments[i].length === 0) {
-                alert(`Invoice attachment required in row ${i + 1}`);
-                return false;
+            for (let i = 0; i < uniqueBlNumbers.length; i++) {
+                if (!blAttachments[i] || blAttachments[i].length === 0) {
+                    alert(`BL document required for Bill of Lading: ${uniqueBlNumbers[i]}`);
+                    return false;
+                }
             }
         }
 
-        // ================= SERVICE ADVANCE =================
-        if (paymentType === "Service-Advance Payment") {
-
-            if (!row.mrnNo) {
-                alert(`MRN No required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!row.mrnDate) {
-                alert(`MRN Date required in row ${i + 1}`);
-                return false;
-            }
-
-            if (!invoiceAttachments[i] || invoiceAttachments[i].length === 0) {
-                alert(`Invoice attachment required in row ${i + 1}`);
-                return false;
-            }
-        }
-    }
-
-    // ================= GOODS ADVANCE UNIQUE FILES =================
-    if (paymentType === "Goods-Advance Payment") {
-
-        for (let i = 0; i < uniqueBoeNumbers.length; i++) {
-            if (!boeAttachments[i] || boeAttachments[i].length === 0) {
-                alert(`BOE document required for BOE No: ${uniqueBoeNumbers[i]}`);
-                return false;
-            }
-        }
-
-        for (let i = 0; i < uniqueBlNumbers.length; i++) {
-            if (!blAttachments[i] || blAttachments[i].length === 0) {
-                alert(`BL document required for Bill of Lading: ${uniqueBlNumbers[i]}`);
-                return false;
-            }
-        }
-    }
-
-    return true;
-};
+        return true;
+    };
     const onSubmit = async () => {
 
         const sp = await spCrudOps;
 
         try {
             if (!validateForm()) return;
+            const trackerData = await sp.getData(
+                "ForexAdvanceBillPayment",
+                "*",
+                "",
+                `ForexIDId eq ${Id}`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+            const newRows = rows.filter(
+                (r) =>
+                    r.invoiceNo &&
+                    r.invoiceDate &&
+                    r.invoiceAmount &&
+                    !trackerData.some(
+                        (t: any) =>
+                            t.InvoiceNumber === r.invoiceNo &&
+                            t.InvoiceAmount == r.invoiceAmount
+                    )
+            );
 
-            for (let i = 0; i < rows.length; i++) {
+            for (let i = 0; i < newRows.length; i++) {
 
-                const row = rows[i];
+                const row = newRows[i];
 
                 const item = await sp.insertData(
                     "ForexAdvanceBillPayment",
@@ -553,21 +657,52 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
             }
             let updatedHistory = [...existingHistory];
 
+            const advanceAmount = parseFloat(totalAmount || "0");
+            const settledAmount = parseFloat(totalInvoiceAmount.toFixed(2) || "0");
+
+            let finalStatus = "";
+            let balanceAmount = 0;
+
+            if (advanceAmount === settledAmount) {
+
+                finalStatus = "Paid and Pending for Settlement";
+                balanceAmount = 0;
+
+            } else {
+
+                finalStatus = "Paid";
+                balanceAmount = advanceAmount - settledAmount;
+
+            }
+
             updatedHistory.push({
-                CurrentApprover: props.context.pageContext.user.displayName,   // or logged-in user
+                CurrentApprover: props.context.pageContext.user.displayName,
                 Role: "",
                 ActionTaken: "Tracker Submitted",
                 Comment: "",
                 Date: new Date().toISOString(),
-                CurrentStatus: "Paid and Pending for Settlement"
+                CurrentStatus: finalStatus
             });
+
             await sp.updateData(
                 "ForexRequest",
                 Number(Id),
                 {
-                    Status: 'Paid and Pending for Settlement',
+                    Status: finalStatus,
+
+                    // 🔹 New fields
+                    // TotalPerformaInvoice: advanceAmount,
+                    // AdvancePaid: advanceAmount,
+                    // AmountSettled: settledAmount,
+                    // Balance: balanceAmount,
+
                     WorkFlowHistory: JSON.stringify(updatedHistory),
-                    CurrentApproverId: treasuryUserId
+
+                    CurrentApproverId:
+                        finalStatus === "Paid and Pending for Settlement"
+                            ? treasuryUserId
+                            : null,
+                    BalenceAmount: "" + balanceAmount
                 },
                 props
             );
@@ -795,7 +930,7 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
                                     <th>Action</th>
                                     <th>Remark</th>
                                     <th>Date</th>
-                                    <th>Status</th>
+                                    {/* <th>Status</th> */}
                                 </tr>
                             </thead>
 
@@ -811,7 +946,7 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
                                                 ? new Date(item.Date).toLocaleString("en-GB")
                                                 : ""}
                                         </td>
-                                        <td>{item.CurrentStatus}</td>
+                                        {/* <td>{item.CurrentStatus}</td> */}
                                     </tr>
                                 ))}
                             </tbody>
@@ -922,6 +1057,22 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
                                                     type="file"
                                                     onChange={(e) => handleInvoiceFile(index, e.target.files)}
                                                 />
+                                                {invoiceAttachments[index]?.length > 0 && (
+                                                    <div style={{ marginTop: "5px" }}>
+                                                        {invoiceAttachments[index].map((file: any, i: number) => (
+                                                            <div key={i}>
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    style={{ fontSize: "12px" }}
+                                                                >
+                                                                    {file.FileName}
+                                                                </a>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </td>
 
                                             {/* Other Upload */}
@@ -930,6 +1081,23 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
                                                     type="file"
                                                     onChange={(e) => handleOtherFile(index, e.target.files)}
                                                 />
+                                                {otherAttachmentsadvance[index]?.length > 0 && (
+                                                    <div style={{ marginTop: "5px" }}>
+                                                        {otherAttachmentsadvance[index].map((file: any, i: number) => (
+                                                            <div key={i}>
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    style={{ fontSize: "12px" }}
+                                                                >
+                                                                    {file.FileName}
+                                                                </a>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
                                             </td>
 
                                             <td style={{ textAlign: "center" }}>
@@ -1002,8 +1170,17 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
                                                     />
 
                                                     {boeAttachments[index]?.map((file: any, i: number) => (
-                                                        <div key={i} style={{ fontSize: "12px" }}>
-                                                            {file.name}
+                                                        <div key={i}>
+
+                                                            <a
+                                                                href={file.ServerRelativeUrl || "#"}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ fontSize: "12px" }}
+                                                            >
+                                                                {file.FileName || file.name}
+                                                            </a>
+
                                                         </div>
                                                     ))}
 
@@ -1053,11 +1230,19 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
                                                     />
 
                                                     {blAttachments[index]?.map((file: any, i: number) => (
-                                                        <div key={i} style={{ fontSize: "12px" }}>
-                                                            {file.name}
+                                                        <div key={i}>
+
+                                                            <a
+                                                                href={file.ServerRelativeUrl || "#"}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ fontSize: "12px" }}
+                                                            >
+                                                                {file.FileName || file.name}
+                                                            </a>
+
                                                         </div>
                                                     ))}
-
                                                 </td>
 
                                             </tr>
@@ -1156,6 +1341,22 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
                                                 type="file"
                                                 onChange={(e) => handleInvoiceFile(index, e.target.files)}
                                             />
+                                            {invoiceAttachments[index]?.length > 0 && (
+                                                <div style={{ marginTop: "5px" }}>
+                                                    {invoiceAttachments[index].map((file: any, i: number) => (
+                                                        <div key={i}>
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ fontSize: "12px" }}
+                                                            >
+                                                                {file.FileName}
+                                                            </a>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </td>
 
                                         <td>
@@ -1163,6 +1364,23 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
                                                 type="file"
                                                 onChange={(e) => handleOtherFile(index, e.target.files)}
                                             />
+                                            {otherAttachmentsadvance[index]?.length > 0 && (
+                                                <div style={{ marginTop: "5px" }}>
+                                                    {otherAttachmentsadvance[index].map((file: any, i: number) => (
+                                                        <div key={i}>
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ fontSize: "12px" }}
+                                                            >
+                                                                {file.FileName}
+                                                            </a>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
                                         </td>
 
                                         <td>
@@ -1182,13 +1400,13 @@ if (totalInvoiceAmount > parseFloat(totalAmount)) {
 
                             </tbody>
                             <tfoot>
-                                    <tr>
-                                        <td colSpan={2}></td>
-                                        <td style={{ fontWeight: "bold" }}>Total Amount</td>
-                                        <td>{totalInvoiceAmount.toFixed(2)}</td>
-                                        <td colSpan={5}></td>
-                                    </tr>
-                                </tfoot>
+                                <tr>
+                                    <td colSpan={2}></td>
+                                    <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                    <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                    <td colSpan={5}></td>
+                                </tr>
+                            </tfoot>
                         </table>
 
                     </div>

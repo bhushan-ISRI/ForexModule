@@ -51,7 +51,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
 
     const parentItems = await spCrudOps.getRootData(
       "ForexRequest",
-      "ID,ForexNumber,EmployeeName,EmployeeCode,RequestedOn,Status,Location,VendorName,TotalAmount,Author/Id,ForexType",
+      "*,ID,ForexNumber,EmployeeName,EmployeeCode,RequestedOn,Status,Location,VendorName,TotalAmount,Author/Id,ForexType",
       "Author",
       "AuthorId eq " + props.id,
       { column: "ID", isAscending: false },
@@ -81,13 +81,13 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
     }
 
     // Status Filter
-  if (statusFilter !== "All") {
-  data = data.filter(
-    (item) =>
-      item.Status?.toLowerCase().trim() ===
-      statusFilter.toLowerCase().trim()
-  );
-}
+    if (statusFilter !== "All") {
+      data = data.filter(
+        (item) =>
+          item.Status?.toLowerCase().trim() ===
+          statusFilter.toLowerCase().trim()
+      );
+    }
 
     // Search Filter
     if (searchTerm) {
@@ -188,7 +188,8 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
             <option value="All">All Status</option>
 
             {/* <option value="Draft">Draft</option> */}
-            <option value="Pending">Pending</option>
+            <option value="Pending">Pending for RM Approval</option>
+            <option value="Pending">Pending for HOD Approval</option>
             <option value="Pending with Treasury for Verification">Pending with Treasury for Verification</option>
             <option value="Pending for Vouching">Pending for Vouching</option>
 
@@ -229,7 +230,17 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
                 <th>Request Date</th>
                 <th>Location</th>
                 <th>Vendor Name</th>
+                 {activeTab != "Advance" && (
                 <th>Amount</th>
+                 )}
+                {activeTab === "Advance" && (
+                  <>
+                    <th>Total Performa Invoice</th>
+                    <th>Advance Paid</th>
+                    <th>Amount Settled</th>
+                    <th>Balance</th>
+                  </>
+                )}
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -267,7 +278,17 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
                     <td>{formatDate(item.RequestedOn)}</td>
                     <td>{item.Location}</td>
                     <td>{item.VendorName}</td>
+                     {activeTab != "Advance" && (
                     <td>₹ {item.TotalAmount || "-"}</td>
+                     )}
+                    {activeTab === "Advance" && (
+                      <>
+                        <td>₹ {item.TotalAmount || "-"}</td>
+                        <td>₹ {item.INRAmount || "-"}</td>
+                        <td>₹ {item.INRAmount || "-"}</td>
+                        <td>₹ {(item.BalenceAmount) || "-"}</td>
+                      </>
+                    )}
 
                     <td>
 
@@ -296,13 +317,16 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
                           </Link>
 
                         ) : (
-
-                          <Link to={`/ViewRequest/${item.ID}`}>
-                            <img src={View} width={16} alt="View" />
-                          </Link>
+                          null
 
                         )}
 
+
+                      </td>
+                      <td>
+                        <Link to={`/ViewRequest/${item.ID}`}>
+                          <img src={View} width={16} alt="View" />
+                        </Link>
                       </td>
                     </td>
 
