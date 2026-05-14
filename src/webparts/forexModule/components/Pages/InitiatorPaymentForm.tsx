@@ -4,6 +4,8 @@ import { IForexModuleProps } from "../IForexModuleProps";
 import { useHistory, useParams } from "react-router-dom";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { SPHttpClient } from "@microsoft/sp-http";
+
+import logo from "../../assets/sona-comstarlogo.png";
 import { number } from "yup";
 /* ---------- Layout Helpers ---------- */
 
@@ -278,14 +280,14 @@ const TrackerForm = (props: IForexModuleProps) => {
             }
 
             const trackerData = await sp.getData(
-    "ForexAdvanceBillPayment",
-    "*,AttachmentFiles",
-    "AttachmentFiles",
-    `ForexIDId eq ${id}`,
-    { column: "ID", isAscending: true },
-    5000,
-    props
-);
+                "ForexAdvanceBillPayment",
+                "*,AttachmentFiles",
+                "AttachmentFiles",
+                `ForexIDId eq ${id}`,
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
 
             if (trackerData.length > 0) {
 
@@ -333,7 +335,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                 setBlAttachments(trackerBlAttachments);
 
                 const savedAmount = trackerRows.reduce(
-                    (sum, r) => sum + (parseFloat(r.invoiceAmount || "0")),
+                    (sum: number, r: { invoiceAmount: any; }) => sum + (parseFloat(r.invoiceAmount || "0")),
                     0
                 );
 
@@ -401,7 +403,7 @@ const TrackerForm = (props: IForexModuleProps) => {
         0
     );
     const totalInvoiceAmountNew = ShowInvoiceData.reduce(
-        (sum, r) => sum + (parseFloat(r.invoiceAmountnew) || 0),
+        (sum, r) => sum + (parseFloat(r.invoiceAmountnew || "0") || 0),
         0
     );
 
@@ -721,7 +723,6 @@ const TrackerForm = (props: IForexModuleProps) => {
 
     };
 
-
     const handleInvoiceFile = (index: number, files: FileList | null) => {
         if (!files) return;
 
@@ -755,155 +756,250 @@ const TrackerForm = (props: IForexModuleProps) => {
     };
 
     return (
-        <div className="forex-wrapper">
+        <>
 
-            <div className="forex-header">
-                <h2>Forex Payment - Advance Payment Tracker</h2>
-            </div>
-
-            <div className="forex-card">
-
-                {/* Requestor */}
-
-                <Section title="Requestor Information">
-                    <Grid>
-                        <Field label="Type"><input value={paymentType} readOnly /></Field>
-                        <Field label="Employee Code"><input value={employee.EmployeeCode} readOnly /></Field>
-                        <Field label="Employee Name"><input value={employee.EmployeeName} readOnly /></Field>
-                        <Field label="Division"><input value={employee.Division} readOnly /></Field>
-                        <Field label="Location"><input value={employee.Location} readOnly /></Field>
-                        <Field label="RM"><input value={employee.RM} readOnly /></Field>
-                        <Field label="HOD"><input value={employee.HOD} readOnly /></Field>
-                        <Field label="Contact No"><input value={employee.ContactNo} readOnly /></Field>
-                        <Field label="Employee Status"><input value={employee.EmployeeStatus} readOnly /></Field>
-                        <Field label="Email" full><input value={employee.Email} readOnly /></Field>
-                    </Grid>
-                </Section>
-
-                {/* Vendor */}
-
-                <CollapsibleSection title="Vendor - Beneficiary Details">
-                    <Grid>
-                        <Field label="Vendor Code"><input value={vendor.VendorCode} readOnly /></Field>
-                        <Field label="Vendor Name"><input value={vendor.VendorName} readOnly /></Field>
-                        <Field label="Address" full><input value={vendor.VendorAddress} readOnly /></Field>
-                        <Field label="City"><input value={vendor.City} readOnly /></Field>
-                        <Field label="Country"><input value={vendor.Country} readOnly /></Field>
-                        <Field label="Pincode"><input value={vendor.PostalCode} readOnly /></Field>
-                        <Field label="Bank Name"><input value={vendor.BankName} readOnly /></Field>
-                        <Field label="Bank Country"><input value={vendor.BankCountry} readOnly /></Field>
-                        <Field label="Bank Swift Code"><input value={vendor.SWIFTBICCode} readOnly /></Field>
-                        <Field label="Bank Branch"><input value={vendor.BankAddress} readOnly /></Field>
-                        <Field label="Bank IBAN / Account No" full>
-                            <input value={vendor.AccountNumberIBAN} readOnly />
-                        </Field>
-                    </Grid>
-                </CollapsibleSection>
-
-                {/* Advance Payment */}
-
-                <Section title="Advance Payment Request Details">
-                    <Grid>
-                        <Field label="Request Number"><input value={requestNumber} readOnly /></Field>
-                        <Field label="Currency"><input value={currency} readOnly /></Field>
-                        <Field label="Total Amount"><input value={totalAmount || totalInvoiceAmountNew.toFixed(2)} readOnly /></Field>
-                        <Field label="Foreign Bank Charges"><input value={foreignBankCharges} readOnly /></Field>
-                        <Field label="Requested On"><input type="date" value={requestedOn} readOnly /></Field>
-                    </Grid>
-                </Section>
-                <table className="data-table" style={{ marginTop: "10px" }}>
-
-                    <thead>
-                        <tr>
-                            <th>Sr.No.</th>
-                            <th>Performa Invoice No</th>
-                            <th>Performa Invoice Date</th>
-                            <th>Performa Invoice Amount</th>
-                            <th>Attach PO</th>
-                            <th>Attach PI</th>
-                            <th>Attach Other</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        {ShowInvoiceData.map((row, index) => (
-                            <tr key={index}>
-
-                                <td>{index + 1}</td>
-
-                                <td>{row.invoiceNo}</td>
-
-                                <td>{row.invoiceDate}</td>
-
-                                <td>{row.invoiceAmountnew}</td>
-
-                                {/* PO Attachments */}
-                                <td>
-                                    {poAttachments[index]?.length > 0 ? (
-                                        poAttachments[index].map((file: any, i: number) => (
-                                            <div key={i}>
-                                                <a
-                                                    href={file.ServerRelativeUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="upload-link"
-                                                >
-                                                    {file.FileName}
-                                                </a>
+            <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        <div className='Main-Boxpoup'>
+                            <div className="bordered">
+                                <a><img src={logo} /></a>
+                                <h1>Forex Payment - Advance Payment Tracker</h1>
+                            </div>
+                            <div className='borderedbox'>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Requestor Information</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Employee Code</label>
+                                            <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Employee Name</label>
+                                            <input type="text" value={employee.EmployeeName} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Division</label>
+                                            <input type="text" value={employee.Division} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Location</label>
+                                            <input type="text" value={employee.Location} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">RM</label>
+                                            <input type="text" value={employee.RM} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">HOD</label>
+                                            <input type="text" value={employee.HOD} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Contact No</label>
+                                            <input type="text" value={employee.ContactNo} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Employee Status</label>
+                                            <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Email</label>
+                                            <input type="text" value={employee.Email} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Type</label>
+                                            <input type="text" value={paymentType} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <CollapsibleSection title="Vendor - Beneficiary Details" style={{ marginTop: "10px" }}>
+                                    <div className='main-formcontainer'>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Vendor Code</label>
+                                                <input value={vendor.VendorCode} className="form-control readonly" />
                                             </div>
-                                        ))
-                                    ) : (
-                                        <span>-</span>
-                                    )}
-                                </td>
-
-                                {/* PI Attachments */}
-                                <td>
-                                    {piAttachments[index]?.length > 0 ? (
-                                        piAttachments[index].map((file: any, i: number) => (
-                                            <div key={i}>
-                                                <a
-                                                    href={file.ServerRelativeUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="upload-link"
-                                                >
-                                                    {file.FileName}
-                                                </a>
+                                            <div className='col-md-4'>
+                                                <label className="font">Vendor Name</label>
+                                                <input type="text" value={vendor.VendorName} className="form-control readonly" />
                                             </div>
-                                        ))
-                                    ) : (
-                                        <span>-</span>
-                                    )}
-                                </td>
-
-                                {/* Other Attachments */}
-                                <td>
-                                    {otherAttachments[index]?.length > 0 ? (
-                                        otherAttachments[index].map((file: any, i: number) => (
-                                            <div key={i}>
-                                                <a
-                                                    href={file.ServerRelativeUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="upload-link"
-                                                >
-                                                    {file.FileName}
-                                                </a>
+                                            <div className="col-md-4">
+                                                <label className="font">City</label>
+                                                <input type="text" value={vendor.City} className="form-control readonly" />
                                             </div>
-                                        ))
-                                    ) : (
-                                        <span>-</span>
-                                    )}
-                                </td>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Country</label>
+                                                <input type="text" value={vendor.Country} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Pincode</label>
+                                                <input type="text" value={vendor.PostalCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Name</label>
+                                                <input type="text" value={vendor.BankName} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Country</label>
+                                                <input type="text" value={vendor.BankCountry} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Swift Code</label>
+                                                <input type="text" value={vendor.SWIFTBICCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Branch Address</label>
+                                                <input type="text" value={vendor.BankAddress} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank IBAN / Account No</label>
+                                                <input type="text" value={vendor.AccountNumberIBAN} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Address</label>
+                                                <input type="text" value={vendor.VendorAddress} className="form-control textbox readonly" />
+                                            </div>
 
-                            </tr>
-                        ))}
+                                        </div>
+                                    </div>
+                                </CollapsibleSection>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Advance Payment Request Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Request Number</label>
+                                            <input type="text" value={requestNumber} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Currency</label>
+                                            <input type="text" value={currency} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Total Amount</label>
+                                            <input type="text" value={totalAmount || totalInvoiceAmountNew.toFixed(2)} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Foreign Bank Charges</label>
+                                            <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Requested On</label>
+                                            <input type="text" value={requestedOn} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{ overflowX: "auto" }}>
+                                    <table className="custom-table" style={{ marginTop: "10px" }}>
 
-                    </tbody>
+                                        <thead>
+                                            <tr>
+                                                <th>Sr.No.</th>
+                                                <th>Performa Invoice No</th>
+                                                <th>Performa Invoice Date</th>
+                                                <th>Performa Invoice Amount</th>
+                                                <th>Attach PO</th>
+                                                <th>Attach PI</th>
+                                                <th>Attach Other</th>
+                                            </tr>
+                                        </thead>
 
-                    {/* <tfoot>
+                                        <tbody>
+
+                                            {ShowInvoiceData.map((row, index) => (
+                                                <tr key={index}>
+
+                                                    <td>{index + 1}</td>
+
+                                                    <td>{row.invoiceNo}</td>
+
+                                                    <td>{row.invoiceDate}</td>
+
+                                                    <td>{row.invoiceAmountnew}</td>
+
+                                                    {/* PO Attachments */}
+                                                    <td>
+                                                        {poAttachments[index]?.length > 0 ? (
+                                                            poAttachments[index].map((file: any, i: number) => (
+                                                                <div key={i}>
+                                                                    <a
+                                                                        href={file.ServerRelativeUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="upload-link"
+                                                                    >
+                                                                        {file.FileName}
+                                                                    </a>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span>-</span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* PI Attachments */}
+                                                    <td>
+                                                        {piAttachments[index]?.length > 0 ? (
+                                                            piAttachments[index].map((file: any, i: number) => (
+                                                                <div key={i}>
+                                                                    <a
+                                                                        href={file.ServerRelativeUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="upload-link"
+                                                                    >
+                                                                        {file.FileName}
+                                                                    </a>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span>-</span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* Other Attachments */}
+                                                    <td>
+                                                        {otherAttachments[index]?.length > 0 ? (
+                                                            otherAttachments[index].map((file: any, i: number) => (
+                                                                <div key={i}>
+                                                                    <a
+                                                                        href={file.ServerRelativeUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="upload-link"
+                                                                    >
+                                                                        {file.FileName}
+                                                                    </a>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span>-</span>
+                                                        )}
+                                                    </td>
+
+                                                </tr>
+                                            ))}
+
+                                        </tbody>
+
+                                        {/* <tfoot>
                         <tr>
 
                             <td colSpan={2}></td>
@@ -917,521 +1013,506 @@ const TrackerForm = (props: IForexModuleProps) => {
                         </tr>
                     </tfoot> */}
 
-                </table>
+                                    </table>
+                                </div>
+                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
+                                    {workflowHistory.length > 0 ? (
+                                        <table className="custom-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Action By</th>
+                                                    {/* <th>Role</th> */}
+                                                    <th>Action</th>
+                                                    <th>Remark</th>
+                                                    <th>Date</th>
+                                                    {/* <th>Status</th> */}
+                                                </tr>
+                                            </thead>
 
-                <CollapsibleSection title="Workflow History">
+                                            <tbody>
+                                                {workflowHistory.map((item: any, index: number) => (
+                                                    <tr key={index}>
+                                                        <td>{item.CurrentApprover}</td>
+                                                        {/* <td>{item.Role || "-"}</td> */}
+                                                        <td>{item.ActionTaken}</td>
+                                                        <td>{item.Comment || "-"}</td>
+                                                        <td>
+                                                            {item.Date
+                                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                                : ""}
+                                                        </td>
+                                                        {/* <td>{item.CurrentStatus}</td> */}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p>No workflow history available</p>
+                                    )}
+                                </CollapsibleSection>
 
-                    {workflowHistory.length > 0 ? (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Action By</th>
-                                    {/* <th>Role</th> */}
-                                    <th>Action</th>
-                                    <th>Remark</th>
-                                    <th>Date</th>
-                                    {/* <th>Status</th> */}
-                                </tr>
-                            </thead>
+                                {paymentType === "Goods-Advance Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Bill Payment Details (For Goods Bill Payment)</label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className="col-md-12">
+                                                    <table className="custom-table">
 
-                            <tbody>
-                                {workflowHistory.map((item: any, index: number) => (
-                                    <tr key={index}>
-                                        <td>{item.CurrentApprover}</td>
-                                        {/* <td>{item.Role || "-"}</td> */}
-                                        <td>{item.ActionTaken}</td>
-                                        <td>{item.Comment || "-"}</td>
-                                        <td>
-                                            {item.Date
-                                                ? new Date(item.Date).toLocaleString("en-GB")
-                                                : ""}
-                                        </td>
-                                        {/* <td>{item.CurrentStatus}</td> */}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <p>No workflow history available</p>
-                    )}
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Sr.No. </th>
+                                                                <th>Invoice Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>BOE Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>BOE Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>MRN Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Bill of Lading Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Bill of Lading Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Attach Other </th>
+                                                                <th>Add/Delete entry</th>
+                                                            </tr>
+                                                        </thead>
 
-                </CollapsibleSection>
+                                                        <tbody>
 
-                {paymentType === "Goods-Advance Payment" && (
-                    <>
-                        <Section title="Bill Payment Details (For Goods Bill Payment)">
+                                                            {rows.map((row, index) => (
+                                                                <tr key={index}>
 
-                            {/* <p style={{ color: "red", fontSize: "12px" }}>
-                                User will enter manually, multiple invoice can be entered
-                            </p> */}
+                                                                    <td>{index + 1}</td>
 
-                            <table className="data-table">
+                                                                    <td>
+                                                                        <input
+                                                                            value={row.invoiceNo}
+                                                                            onChange={(e) => handleChange(index, "invoiceNo", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                <thead>
-                                    <tr>
-                                        <th>Sr.No. </th>
-                                        <th>Invoice Number <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>BOE Number <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>BOE Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>MRN Number <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>Bill of Lading Number <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>Bill of Lading Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
-                                        <th>Attach Other </th>
-                                        <th>Add/Delete entry</th>
-                                    </tr>
-                                </thead>
+                                                                    <td>
+                                                                        <input
+                                                                            type="date"
+                                                                            value={row.invoiceDate}
+                                                                            onChange={(e) => handleChange(index, "invoiceDate", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                <tbody>
+                                                                    <td>
+                                                                        <input
+                                                                            value={row.boeNo}
+                                                                            onChange={(e) => handleChange(index, "boeNo", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                    {rows.map((row, index) => (
-                                        <tr key={index}>
+                                                                    <td>
+                                                                        <input
+                                                                            type="date"
+                                                                            value={row.boeDate}
+                                                                            onChange={(e) => handleChange(index, "boeDate", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                            <td>{index + 1}</td>
+                                                                    <td>
+                                                                        <input
+                                                                            value={row.mrnNo}
+                                                                            onChange={(e) => handleChange(index, "mrnNo", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                            <td>
-                                                <input
-                                                    value={row.invoiceNo}
-                                                    onChange={(e) => handleChange(index, "invoiceNo", e.target.value)}
-                                                />
-                                            </td>
+                                                                    <td>
+                                                                        <input
+                                                                            value={row.blNo}
+                                                                            onChange={(e) => handleChange(index, "blNo", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                            <td>
-                                                <input
-                                                    type="date"
-                                                    value={row.invoiceDate}
-                                                    onChange={(e) => handleChange(index, "invoiceDate", e.target.value)}
-                                                />
-                                            </td>
+                                                                    <td>
+                                                                        <input
+                                                                            type="date"
+                                                                            value={row.blDate}
+                                                                            onChange={(e) => handleChange(index, "blDate", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                            <td>
-                                                <input
-                                                    value={row.boeNo}
-                                                    onChange={(e) => handleChange(index, "boeNo", e.target.value)}
-                                                />
-                                            </td>
+                                                                    <td>
+                                                                        <input
+                                                                            type="number"
+                                                                            value={row.invoiceAmount}
+                                                                            onChange={(e) => handleChange(index, "invoiceAmount", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                            <td>
-                                                <input
-                                                    type="date"
-                                                    value={row.boeDate}
-                                                    onChange={(e) => handleChange(index, "boeDate", e.target.value)}
-                                                />
-                                            </td>
+                                                                    {/* Invoice Upload */}
+                                                                    <td>
+                                                                        <input
+                                                                            type="file"
+                                                                            onChange={(e) => handleInvoiceFile(index, e.target.files)}
+                                                                        />
+                                                                        {invoiceAttachments[index]?.length > 0 && (
+                                                                            <div style={{ marginTop: "5px" }}>
+                                                                                {invoiceAttachments[index].map((file: any, i: number) => (
+                                                                                    <div key={i}>
+                                                                                        <a
+                                                                                            href={file.ServerRelativeUrl}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            style={{ fontSize: "12px" }}
+                                                                                        >
+                                                                                            {file.FileName}
+                                                                                        </a>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </td>
 
-                                            <td>
-                                                <input
-                                                    value={row.mrnNo}
-                                                    onChange={(e) => handleChange(index, "mrnNo", e.target.value)}
-                                                />
-                                            </td>
+                                                                    {/* Other Upload */}
+                                                                    <td>
+                                                                        <input
+                                                                            type="file"
+                                                                            onChange={(e) => handleOtherFile(index, e.target.files)}
+                                                                        />
+                                                                        {otherAttachmentsadvance[index]?.length > 0 && (
+                                                                            <div style={{ marginTop: "5px" }}>
+                                                                                {otherAttachmentsadvance[index].map((file: any, i: number) => (
+                                                                                    <div key={i}>
+                                                                                        <a
+                                                                                            href={file.ServerRelativeUrl}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            style={{ fontSize: "12px" }}
+                                                                                        >
+                                                                                            {file.FileName}
+                                                                                        </a>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
 
-                                            <td>
-                                                <input
-                                                    value={row.blNo}
-                                                    onChange={(e) => handleChange(index, "blNo", e.target.value)}
-                                                />
-                                            </td>
+                                                                    </td>
 
-                                            <td>
-                                                <input
-                                                    type="date"
-                                                    value={row.blDate}
-                                                    onChange={(e) => handleChange(index, "blDate", e.target.value)}
-                                                />
-                                            </td>
+                                                                    <td style={{ textAlign: "center" }}>
 
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    value={row.invoiceAmount}
-                                                    onChange={(e) => handleChange(index, "invoiceAmount", e.target.value)}
-                                                />
-                                            </td>
+                                                                        {index === rows.length - 1 && (
+                                                                            <span style={{ cursor: "pointer" }} onClick={addRow}>+</span>
+                                                                        )}
 
-                                            {/* Invoice Upload */}
-                                            <td>
-                                                <input
-                                                    type="file"
-                                                    onChange={(e) => handleInvoiceFile(index, e.target.files)}
-                                                />
-                                                {invoiceAttachments[index]?.length > 0 && (
-                                                    <div style={{ marginTop: "5px" }}>
-                                                        {invoiceAttachments[index].map((file: any, i: number) => (
-                                                            <div key={i}>
-                                                                <a
-                                                                    href={file.ServerRelativeUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    style={{ fontSize: "12px" }}
-                                                                >
-                                                                    {file.FileName}
-                                                                </a>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </td>
+                                                                        {rows.length > 1 && (
+                                                                            <span
+                                                                                style={{ cursor: "pointer", marginLeft: "8px" }}
+                                                                                onClick={() => deleteRow(index)}
+                                                                            >✖</span>
+                                                                        )}
 
-                                            {/* Other Upload */}
-                                            <td>
-                                                <input
-                                                    type="file"
-                                                    onChange={(e) => handleOtherFile(index, e.target.files)}
-                                                />
-                                                {otherAttachmentsadvance[index]?.length > 0 && (
-                                                    <div style={{ marginTop: "5px" }}>
-                                                        {otherAttachmentsadvance[index].map((file: any, i: number) => (
-                                                            <div key={i}>
-                                                                <a
-                                                                    href={file.ServerRelativeUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    style={{ fontSize: "12px" }}
-                                                                >
-                                                                    {file.FileName}
-                                                                </a>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                                    </td>
 
-                                            </td>
+                                                                </tr>
+                                                            ))}
 
-                                            <td style={{ textAlign: "center" }}>
+                                                        </tbody>
 
-                                                {index === rows.length - 1 && (
-                                                    <span style={{ cursor: "pointer" }} onClick={addRow}>+</span>
-                                                )}
+                                                        <tfoot>
+                                                            <tr>
+                                                                <td colSpan={7}></td>
+                                                                <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                                                <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                                                <td colSpan={3}></td>
+                                                            </tr>
+                                                        </tfoot>
 
-                                                {rows.length > 1 && (
-                                                    <span
-                                                        style={{ cursor: "pointer", marginLeft: "8px" }}
-                                                        onClick={() => deleteRow(index)}
-                                                    >✖</span>
-                                                )}
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div className="row mb-20">
+                                                <div className="col-md-12">
+                                                    <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
 
-                                            </td>
+                                                        {/* BOE TABLE */}
 
-                                        </tr>
-                                    ))}
+                                                        <div>
 
-                                </tbody>
+                                                            <p style={{ color: "red", fontSize: "12px" }}>
+                                                                Unique BOE no will be listed below
+                                                            </p>
 
-                                <tfoot>
-                                    <tr>
-                                        <td colSpan={7}></td>
-                                        <td style={{ fontWeight: "bold" }}>Total Amount</td>
-                                        <td>{totalInvoiceAmount.toFixed(2)}</td>
-                                        <td colSpan={3}></td>
-                                    </tr>
-                                </tfoot>
+                                                            <table className="custom-table">
 
-                            </table>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>BOE No</th>
+                                                                        <th>Attach Documents</th>
+                                                                    </tr>
+                                                                </thead>
 
-                        </Section>
+                                                                <tbody>
 
+                                                                    {uniqueBoeNumbers.map((boe, index) => (
 
+                                                                        <tr key={index}>
 
-                        <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
+                                                                            <td>{boe}</td>
 
-                            {/* BOE TABLE */}
+                                                                            <td>
 
-                            <div>
+                                                                                <input
+                                                                                    type="file"
+                                                                                    onChange={(e) => handleBoeUpload(index, e.target.files)}
+                                                                                />
 
-                                <p style={{ color: "red", fontSize: "12px" }}>
-                                    Unique BOE no will be listed below
-                                </p>
+                                                                                {boeAttachments[index]?.map((file: any, i: number) => (
+                                                                                    <div key={i}>
 
-                                <table className="data-table">
+                                                                                        <a
+                                                                                            href={file.ServerRelativeUrl || "#"}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            style={{ fontSize: "12px" }}
+                                                                                        >
+                                                                                            {file.FileName || file.name}
+                                                                                        </a>
 
-                                    <thead>
-                                        <tr>
-                                            <th>BOE No</th>
-                                            <th>Attach Documents</th>
-                                        </tr>
-                                    </thead>
+                                                                                    </div>
+                                                                                ))}
 
-                                    <tbody>
+                                                                            </td>
 
-                                        {uniqueBoeNumbers.map((boe, index) => (
+                                                                        </tr>
 
-                                            <tr key={index}>
+                                                                    ))}
 
-                                                <td>{boe}</td>
+                                                                </tbody>
 
-                                                <td>
-
-                                                    <input
-                                                        type="file"
-                                                        onChange={(e) => handleBoeUpload(index, e.target.files)}
-                                                    />
-
-                                                    {boeAttachments[index]?.map((file: any, i: number) => (
-                                                        <div key={i}>
-
-                                                            <a
-                                                                href={file.ServerRelativeUrl || "#"}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                style={{ fontSize: "12px" }}
-                                                            >
-                                                                {file.FileName || file.name}
-                                                            </a>
+                                                            </table>
 
                                                         </div>
-                                                    ))}
-
-                                                </td>
-
-                                            </tr>
-
-                                        ))}
-
-                                    </tbody>
-
-                                </table>
-
-                            </div>
 
 
-                            {/* BILL OF LADING TABLE */}
+                                                        {/* BILL OF LADING TABLE */}
 
-                            <div>
+                                                        <div>
 
-                                <p style={{ color: "red", fontSize: "12px" }}>
-                                    Unique Bill of lading no will be listed below
-                                </p>
+                                                            <p style={{ color: "red", fontSize: "12px" }}>
+                                                                Unique Bill of lading no will be listed below
+                                                            </p>
 
-                                <table className="data-table">
+                                                            <table className="custom-table">
 
-                                    <thead>
-                                        <tr>
-                                            <th>Bill of Lading</th>
-                                            <th>Attach Documents</th>
-                                        </tr>
-                                    </thead>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Bill of Lading</th>
+                                                                        <th>Attach Documents</th>
+                                                                    </tr>
+                                                                </thead>
 
-                                    <tbody>
+                                                                <tbody>
 
-                                        {uniqueBlNumbers.map((bl, index) => (
+                                                                    {uniqueBlNumbers.map((bl, index) => (
 
-                                            <tr key={index}>
+                                                                        <tr key={index}>
 
-                                                <td>{bl}</td>
+                                                                            <td>{bl}</td>
 
-                                                <td>
+                                                                            <td>
 
-                                                    <input
-                                                        type="file"
-                                                        onChange={(e) => handleBlUpload(index, e.target.files)}
-                                                    />
+                                                                                <input
+                                                                                    type="file"
+                                                                                    onChange={(e) => handleBlUpload(index, e.target.files)}
+                                                                                />
 
-                                                    {blAttachments[index]?.map((file: any, i: number) => (
-                                                        <div key={i}>
+                                                                                {blAttachments[index]?.map((file: any, i: number) => (
+                                                                                    <div key={i}>
 
-                                                            <a
-                                                                href={file.ServerRelativeUrl || "#"}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                style={{ fontSize: "12px" }}
-                                                            >
-                                                                {file.FileName || file.name}
-                                                            </a>
+                                                                                        <a
+                                                                                            href={file.ServerRelativeUrl || "#"}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            style={{ fontSize: "12px" }}
+                                                                                        >
+                                                                                            {file.FileName || file.name}
+                                                                                        </a>
+
+                                                                                    </div>
+                                                                                ))}
+                                                                            </td>
+
+                                                                        </tr>
+
+                                                                    ))}
+
+                                                                </tbody>
+
+                                                            </table>
 
                                                         </div>
-                                                    ))}
-                                                </td>
 
-                                            </tr>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
 
-                                        ))}
+                                {paymentType === "Service-Advance Payment" && (
+                                    <>
+                                        <p> <b>Bill Payment Details (for Service Bill Payment)</b></p>
 
-                                    </tbody>
+                                        <table className="custom-table">
 
-                                </table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Sr.No.</th>
+                                                    <th>Invoice Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                                    <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                    <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                                    <th>MRN Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                                    <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                    <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
+                                                    <th>Attach Other Document</th>
+                                                    <th>Add/Delete entry</th>
+                                                </tr>
+                                            </thead>
 
+                                            <tbody>
+
+                                                {rows.map((row, index) => (
+                                                    <tr key={index}>
+
+                                                        <td>{index + 1}</td>
+
+                                                        <td>
+                                                            <input
+                                                                value={row.invoiceNo}
+                                                                onChange={(e) => handleChange(index, "invoiceNo", e.target.value)}
+                                                            />
+                                                        </td>
+
+                                                        <td>
+                                                            <input
+                                                                type="date"
+                                                                value={row.invoiceDate}
+                                                                onChange={(e) => handleChange(index, "invoiceDate", e.target.value)}
+                                                            />
+                                                        </td>
+
+                                                        <td>
+                                                            <input
+                                                                value={row.invoiceAmount}
+                                                                onChange={(e) => handleChange(index, "invoiceAmount", e.target.value)}
+                                                            />
+                                                        </td>
+
+                                                        <td>
+                                                            <input
+                                                                value={row.mrnNo}
+                                                                onChange={(e) => handleChange(index, "mrnNo", e.target.value)}
+                                                            />
+                                                        </td>
+
+                                                        <td>
+                                                            <input
+                                                                type="date"
+                                                                value={row.mrnDate || ""}
+                                                                onChange={(e) => handleChange(index, "mrnDate", e.target.value)}
+                                                            />
+                                                        </td>
+
+                                                        <td>
+                                                            <input
+                                                                type="file"
+                                                                onChange={(e) => handleInvoiceFile(index, e.target.files)}
+                                                            />
+                                                            {invoiceAttachments[index]?.length > 0 && (
+                                                                <div style={{ marginTop: "5px" }}>
+                                                                    {invoiceAttachments[index].map((file: any, i: number) => (
+                                                                        <div key={i}>
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                style={{ fontSize: "12px" }}
+                                                                            >
+                                                                                {file.FileName}
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </td>
+
+                                                        <td>
+                                                            <input
+                                                                type="file"
+                                                                onChange={(e) => handleOtherFile(index, e.target.files)}
+                                                            />
+                                                            {otherAttachmentsadvance[index]?.length > 0 && (
+                                                                <div style={{ marginTop: "5px" }}>
+                                                                    {otherAttachmentsadvance[index].map((file: any, i: number) => (
+                                                                        <div key={i}>
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                style={{ fontSize: "12px" }}
+                                                                            >
+                                                                                {file.FileName}
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                        </td>
+
+                                                        <td>
+
+                                                            {rows.length > 1 && (
+                                                                <span onClick={() => deleteRow(index)}>✖</span>
+                                                            )}
+
+                                                            {index === rows.length - 1 && (
+                                                                <span style={{ marginLeft: "8px" }} onClick={addRow}>+</span>
+                                                            )}
+
+                                                        </td>
+
+                                                    </tr>
+                                                ))}
+
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colSpan={2}></td>
+                                                    <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                                    <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                                    <td colSpan={5}></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </>
+                                )}
+
+                                <div className='row my-3'>
+                                    <div className='col-md-12'>
+                                        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                                            <button onClick={onSubmit} className="Submit-btn">
+                                                Submit
+                                            </button>
+                                            
+                                            <button onClick={() => history.goBack()} className="Exit-btn">
+                                                Exit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-
                         </div>
-                    </>
-                )}
-
-
-
-                {paymentType === "Service-Advance Payment" && (
-
-                    <div style={{ marginTop: "30px" }}>
-
-                        {/* <div style={{ background: "#fff8b3", padding: "4px", fontSize: "12px" }}>
-                            <b>Only for Service: Advance Payment from row 65-72</b>
-                        </div> */}
-
-                        <p>
-                            <b>Bill Payment Details (for Service Bill Payment)</b>
-                            {/* <span style={{ color: "red" }}>
-                                (User will enter manually, multiple invoice can be entered)
-                            </span> */}
-                        </p>
-
-                        <table className="data-table">
-
-                            <thead>
-                                <tr>
-                                    <th>Sr.No.</th>
-                                    <th>Invoice Number <span className="required" style={{ color: "red" }}>*</span></th>
-                                    <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                    <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
-                                    <th>MRN Number <span className="required" style={{ color: "red" }}>*</span></th>
-                                    <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                    <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
-                                    <th>Attach Other Document</th>
-                                    <th>Add/Delete entry</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-
-                                {rows.map((row, index) => (
-                                    <tr key={index}>
-
-                                        <td>{index + 1}</td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceNo}
-                                                onChange={(e) => handleChange(index, "invoiceNo", e.target.value)}
-                                            />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.invoiceDate}
-                                                onChange={(e) => handleChange(index, "invoiceDate", e.target.value)}
-                                            />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceAmount}
-                                                onChange={(e) => handleChange(index, "invoiceAmount", e.target.value)}
-                                            />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.mrnNo}
-                                                onChange={(e) => handleChange(index, "mrnNo", e.target.value)}
-                                            />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.mrnDate || ""}
-                                                onChange={(e) => handleChange(index, "mrnDate", e.target.value)}
-                                            />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="file"
-                                                onChange={(e) => handleInvoiceFile(index, e.target.files)}
-                                            />
-                                            {invoiceAttachments[index]?.length > 0 && (
-                                                <div style={{ marginTop: "5px" }}>
-                                                    {invoiceAttachments[index].map((file: any, i: number) => (
-                                                        <div key={i}>
-                                                            <a
-                                                                href={file.ServerRelativeUrl}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                style={{ fontSize: "12px" }}
-                                                            >
-                                                                {file.FileName}
-                                                            </a>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="file"
-                                                onChange={(e) => handleOtherFile(index, e.target.files)}
-                                            />
-                                            {otherAttachmentsadvance[index]?.length > 0 && (
-                                                <div style={{ marginTop: "5px" }}>
-                                                    {otherAttachmentsadvance[index].map((file: any, i: number) => (
-                                                        <div key={i}>
-                                                            <a
-                                                                href={file.ServerRelativeUrl}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                style={{ fontSize: "12px" }}
-                                                            >
-                                                                {file.FileName}
-                                                            </a>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                        </td>
-
-                                        <td>
-
-                                            {rows.length > 1 && (
-                                                <span onClick={() => deleteRow(index)}>✖</span>
-                                            )}
-
-                                            {index === rows.length - 1 && (
-                                                <span style={{ marginLeft: "8px" }} onClick={addRow}>+</span>
-                                            )}
-
-                                        </td>
-
-                                    </tr>
-                                ))}
-
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colSpan={2}></td>
-                                    <td style={{ fontWeight: "bold" }}>Total Amount</td>
-                                    <td>{totalInvoiceAmount.toFixed(2)}</td>
-                                    <td colSpan={5}></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-
                     </div>
-
-                )}
-
-                {/* Approver Remarks */}
-
-                {/* <div style={{ marginTop: "20px" }}>
-
-                    <label><b>Approver's Remarks:</b></label>
-
-                    <textarea
-                        style={{ width: "70%", height: "40px", marginLeft: "10px" }}
-                    />
-
-                </div> */}
-
-                <div className="button-row">
-                    <button className="btn-submit" onClick={onSubmit}>Submit</button>
-                    <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
                 </div>
-
             </div>
-        </div>
+        </>
     );
 };
 

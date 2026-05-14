@@ -8,6 +8,8 @@ import { Attachment } from "@pnp/sp/attachments";
 import { View } from "@pnp/sp/views";
 //import USESPCRUD from "../../service/BAL/spcrud";
 
+import logo from "../../assets/sona-comstarlogo.png";
+
 interface InvoiceRow {
     invoiceNo: string;
     invoiceDate: string;
@@ -738,499 +740,539 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
 
     return (
-        <div className="forex-wrapper">
 
-            {/* ================= HEADER ================= */}
-            <div className="forex-header">
-                <h2>Forex Payment View Form</h2>
-            </div>
+        <>
 
-            <div className="forex-card">
-                {/* =============================Approvers================== */}
-                <Section title="Approval Flow">
-                    <div className="approval-ribbon">
+            <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        <div className='Main-Boxpoup'>
+                            <div className="bordered">
+                                <a><img src={logo} /></a>
+                                <h1>Forex Payment View Form</h1>
+                            </div>
+                            <div className="approval-ribbon">
 
-                        <div className="ribbon-step initiator">
-                            {employee.EmployeeName}
-                        </div>
-
-                        {approverDetails.map((approver, index) => {
-
-                            let stepClass = approver.Status || "pending";
-
-                            return (
-                                <div key={index} className={`ribbon-step ${stepClass}`}>
-                                    {approver.Role} - {approver.Name}
+                                <div className="ribbon-step initiator">
+                                    {employee.EmployeeName}
                                 </div>
-                            );
 
-                        })}
+                                {approverDetails.map((approver, index) => {
 
-                    </div>
-                </Section>
+                                    let stepClass = approver.Status || "pending";
 
-                {/* ================= REQUESTOR ================= */}
-                <Section title="Requestor Information">
-                    <Grid>
-                        <Field label="Type">
-                            <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} disabled>
-                                <option value="Goods-Bill Payment">Goods-Bill Payment</option>
-                                <option value="Service-Bill Payment">Service-Bill Payment</option>
-                                <option value="Goods-Advance Payment">Goods-Advance Payment</option>
-                                <option value="Service-Advance Payment">Service-Advance Payment</option>
-                            </select>
-                        </Field>
-                    </Grid>
-                    <Grid style={{ marginTop: "20px" }}>
-                        <Field label="Employee Code">
-                            <input type="text" value={employee.EmployeeCode} readOnly />
-                        </Field>
+                                    return (
+                                        <div key={index} className={`ribbon-step ${stepClass}`}>
+                                            {approver.Role} - {approver.Name}
+                                        </div>
+                                    );
 
-                        <Field label="Employee Name">
-                            <input type="text" value={employee.EmployeeName} readOnly />
-                        </Field>
+                                })}
 
-                        <Field label="Division">
-                            <input type="text" value={employee.Division} readOnly />
-                        </Field>
+                            </div>
+                            <div className='borderedbox'>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Requestor Information</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <Field label="Type" required>
+                                                <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext">
+                                                    <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                    <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                    <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                    <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                </select>
+                                            </Field>
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Employee Code</label>
+                                            <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Employee Name</label>
+                                            <input type="text" value={employee.EmployeeName} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Division</label>
+                                            <input type="text" value={employee.Division} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Location</label>
+                                            <input type="text" value={employee.Location} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">RM</label>
+                                            <input type="text" value={employee.RM} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">HOD</label>
+                                            <input type="text" value={employee.HOD} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Contact No</label>
+                                            <input type="text" value={employee.ContactNo} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Employee Status</label>
+                                            <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Email</label>
+                                            <input type="text" value={employee.Email} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                </div>
 
-                        <Field label="Location">
-                            <input type="text" value={employee.Location} readOnly />
-                        </Field>
-
-                        <Field label="RM">
-                            <input type="text" value={employee.RM} readOnly />
-                        </Field>
-
-                        <Field label="HOD">
-                            <input type="text" value={employee.HOD} readOnly />
-                        </Field>
-
-                        <Field label="Contact No">
-                            <input type="text" value={employee.ContactNo} readOnly />
-                        </Field>
-
-                        <Field label="Employee Status">
-                            <input type="text" value={employee.EmployeeStatus} readOnly />
-                        </Field>
-
-                        <Field label="Email" full>
-                            <input type="email" value={employee.Email} readOnly />
-                        </Field>
-                    </Grid>
-
-                </Section>
-
-                {/* ================= VENDOR ================= */}
-
-                <CollapsibleSection title="Vendor / Beneficiary Details">
-                    <Section >
-                        <Grid>
-                            <Field label="Vendor Code">
-                                <input
-                                    value={vendor.VendorCode}
-                                    onChange={(e) => {
-                                        const code = e.target.value;
-                                        setVendor({ ...vendor, VendorCode: code });
-                                    }}
-                                    onBlur={(e) => getVendorData(e.target.value)}   // fetch when user leaves field
-                                    disabled />
-                            </Field>
-                            <Field label="Vendor Name">
-                                <input value={vendor.VendorName} readOnly />
-                            </Field>
-                            <Field label="Address" full><input value={vendor.VendorAddress} readOnly /></Field>
-                            <Field label="City">
-                                <input value={vendor.City} readOnly />
-                            </Field>
-
-                            <Field label="Country">
-                                <input value={vendor.Country} readOnly />
-                            </Field>
-                            <Field label="Pincode"><input value={vendor.PostalCode} readOnly /></Field>
-                            <Field label="Bank Name">
-                                <input value={vendor.BankName} readOnly />
-                            </Field>
-                            <Field label="Bank Country"><input value={vendor.BankCountry} readOnly /></Field>
-                            <Field label="Bank Swift Code"><input value={vendor.SWIFTBICCode} readOnly /></Field>
-                            <Field label="Bank Branch Address"><input value={vendor.BankAddress} readOnly /></Field>
-                            <Field label="Bank IBAN / Account No" full><input value={vendor.AccountNumberIBAN} readOnly /></Field>
-                        </Grid>
-                    </Section>
-
-                    {/* ================= TAX INFO ================= */}
-                    <Section title="Tax & Regulatory Information">
-                        <Grid>
-                            <Field label="Nature of Payment"><input value={paymentType} readOnly /></Field>
-                            <Field label="Tax Document Available?" >
-                                <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled>
-                                    <option>Yes</option>
-                                    <option>No</option>
-                                </select>
-                            </Field>
-                            {taxDocumentView === "No" && (
-                                <Field >
-                                    <span style={{ color: "red" }}>
-                                        (if No, withholding tax will be applicable)
-                                    </span>
-                                </Field>
-                            )}
-
-                            {taxDocumentView === "Yes" && (
-                                <Field label="DTAA Applicable?">
-                                    <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)} disabled>
-                                        <option value="">Select</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
-                                    </select>
-                                </Field>
-                            )}
-                        </Grid>
-                    </Section>
-                    {taxDocumentView === "Yes" && (
-                        <>
-                            {/* 🔹 Permanent Establishment Declaration */}
-                            <Section title="Permanent Establishment Declaration">
-                                <Grid>
-
-                                    <Field label="Document Available">
-                                        <select
-                                            value={permanentEstablishmentDeclaration.DocumentAvailable || ""}
-                                            disabled
-                                        >
-                                            <option value="">Select</option>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                        </select>
-                                    </Field>
-
-                                    <Field label="Document Number">
-                                        <input
-                                            value={permanentEstablishmentDeclaration.DocumentNumber || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Document Date">
-                                        <input
-                                            type="date"
-                                            value={permanentEstablishmentDeclaration.DocumentDate || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Validity Start Date">
-                                        <input
-                                            type="date"
-                                            value={permanentEstablishmentDeclaration.ValidityStartDate || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Validity End Date">
-                                        <input
-                                            type="date"
-                                            value={permanentEstablishmentDeclaration.ValidityEndDate || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="View Document">
-                                        <span><a href={permanentEstablishmentDeclaration.Attachmenturl || "#"} target="_blank">{permanentEstablishmentDeclaration.Attachmentfilename || "No Document Available"}</a></span>
-                                    </Field>
-
-                                </Grid>
-                            </Section>
-
-                            {/* 🔹 Tax Residency Certificate */}
-                            <Section title="Tax Residency Certificate">
-                                <Grid>
-
-                                    <Field label="Document Available">
-                                        <select
-                                            value={taxResidencyCertificate.DocumentAvailable || ""}
-                                            disabled
-                                        >
-                                            <option value="">Select</option>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                        </select>
-                                    </Field>
-
-                                    <Field label="Document Number">
-                                        <input
-                                            value={taxResidencyCertificate.DocumentNumber || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Country of Tax Residence">
-                                        <input
-                                            value={taxResidencyCertificate.CountryOfTaxResidence || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Tax Identification Number">
-                                        <input
-                                            value={taxResidencyCertificate.TaxIdentificationNumber || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Validity Start Date">
-                                        <input
-                                            type="date"
-                                            value={taxResidencyCertificate.ValidityStartDate || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Validity End Date">
-                                        <input
-                                            type="date"
-                                            value={taxResidencyCertificate.ValidityEndDate || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="View Document">
-                                        <span><a href={taxResidencyCertificate.Attachmenturl || "#"} target="_blank">{taxResidencyCertificate.Attachmentfilename || "No Document Available"}</a></span>
-                                    </Field>
-
-                                </Grid>
-                            </Section>
-
-                            {/* 🔹 Form 10F */}
-                            <Section title="Form 10F">
-                                <Grid>
-
-                                    <Field label="Document Available">
-                                        <select
-                                            value={form10F.DocumentAvailable || ""}
-                                            disabled
-                                        >
-                                            <option value="">Select</option>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                        </select>
-                                    </Field>
-
-                                    <Field label="Document Number">
-                                        <input
-                                            value={form10F.DocumentNumber || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Acknowledgment Number">
-                                        <input
-                                            value={form10F.AcknowledgmentNumber || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Document Date">
-                                        <input
-                                            type="date"
-                                            value={form10F.DocumentDate || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Validity Start Date">
-                                        <input
-                                            type="date"
-                                            value={form10F.ValidityStartDate || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="Validity End Date">
-                                        <input
-                                            type="date"
-                                            value={form10F.ValidityEndDate || ""}
-                                            readOnly
-                                        />
-                                    </Field>
-
-                                    <Field label="View Document">
-                                        <span><a href={form10F.Attachmenturl || "#"} target="_blank">{form10F.Attachmentfilename || "No Document Available"}</a></span>
-                                    </Field>
-
-                                </Grid>
-                            </Section>
-
-                        </>
-                    )}
-                </CollapsibleSection>
-
-                <CollapsibleSection title="Summary of WHT Applicability" >
-                    <Grid>
-                        <div className="date-summary">
-                            <span className="label">From</span>
-                            <span className="value">{fromdate}</span>
-                            <span className="label">To</span>
-                            <span className="value">{todate}</span>
-                        </div>
-                    </Grid>
-                    <Grid>
-
-                        <Field label="Eligible amount that can be transmitted without WHT">
-                            <input type="number" value={eligibleAmountWithWHT || ""} readOnly />
-                        </Field>
-
-
-                        <Field label="Paid Amount">
-                            <input type="number" value={paidAmount || ""} readOnly />
-                        </Field>
-
-                        <Field label="Balance eligible amount(Without with holding Tax)">
-                            <input type="number" value={ballenceEligibleAmount || ""} readOnly />
-                        </Field>
-                    </Grid>
-
-                </CollapsibleSection>
-
-                {/* ================= FOREX DETAILS ================= */}
-                {/* ==============================Goods-Bill Payment============================== */}
-                {paymentType === "Goods-Bill Payment" && (
-                    <Section title="Forex Payment Request Details">
-                        <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
-                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} readOnly /></Field>
-                            {/* <Field label="PO/Contract No"><input /></Field>
-                            <Field label="PO Date"><input type="date" /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" /></Field> */}
-                        </Grid>
-
-                        <table className="data-table" style={{ marginTop: "10px" }}>
-                            <thead>
-                                <tr>
-                                    <th>Sr.No</th>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>BOE No</th>
-                                    <th>BOE Date</th>
-                                    <th>MRN No</th>
-                                    <th>Bill of Lading No</th>
-                                    <th>Bill of Lading Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>Attach Invoice</th>
-                                    <th>Attach Other Docs</th>
-                                    {/* <th>Add/Delete Entry</th> */}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row, index) => (
-                                    <tr key={index}>
-                                        <td>{index + 1}</td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceNo}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceNo", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.invoiceDate}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceDate", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.boeNo}
-                                                onChange={(e) =>
-                                                    handleChange(index, "boeNo", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.boeDate}
-                                                onChange={(e) =>
-                                                    handleChange(index, "boeDate", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.mrnNo}
-                                                onChange={(e) =>
-                                                    handleChange(index, "mrnNo", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.blNo}
-                                                onChange={(e) =>
-                                                    handleChange(index, "blNo", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.blDate}
-                                                onChange={(e) =>
-                                                    handleChange(index, "blDate", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="number"
-                                                value={row.invoiceAmount}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceAmount", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <div>
-                                                {invoiceAttachments[index]?.map((file: any, i: number) => (
-                                                    <div key={i}>
-                                                        <a href={file.ServerRelativeUrl} target="_blank">
-                                                            {file.FileName}
-                                                        </a>
-                                                    </div>
-                                                ))}
-
+                                <CollapsibleSection title="Vendor / Beneficiary Details" style={{ marginTop: "10px" }}>
+                                    <div className="heading1" style={{ marginTop: "10px" }}>
+                                        <label>Vendor / Beneficiary Details</label>
+                                    </div>
+                                    <div className='main-formcontainer'>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Vendor Code</label>
+                                                <input value={vendor.VendorCode} onChange={(e) => {
+                                                    const code = e.target.value;
+                                                    setVendor({ ...vendor, VendorCode: code });
+                                                }}
+                                                    onBlur={(e) => getVendorData(e.target.value)}
+                                                    className="form-control readonly"
+                                                />
                                             </div>
-                                        </td>
-
-                                        <td>
-                                            <div>
-                                                {otherAttachments[index]?.map((file: any, i: number) => (
-                                                    <div key={i}>
-                                                        <a href={file.ServerRelativeUrl} target="_blank">
-                                                            {file.FileName}
-                                                        </a>
-                                                    </div>
-                                                ))}
+                                            <div className='col-md-4'>
+                                                <label className="font">Vendor Name</label>
+                                                <input type="text" value={vendor.VendorName} className="form-control readonly" />
                                             </div>
-                                        </td>
+                                            <div className="col-md-4">
+                                                <label className="font">City</label>
+                                                <input type="text" value={vendor.City} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Country</label>
+                                                <input type="text" value={vendor.Country} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Pincode</label>
+                                                <input type="text" value={vendor.PostalCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Name</label>
+                                                <input type="text" value={vendor.BankName} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Country</label>
+                                                <input type="text" value={vendor.BankCountry} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Swift Code</label>
+                                                <input type="text" value={vendor.SWIFTBICCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Branch Address</label>
+                                                <input type="text" value={vendor.BankAddress} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank IBAN / Account No</label>
+                                                <input type="text" value={vendor.AccountNumberIBAN} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Address</label>
+                                                <input type="text" value={vendor.VendorAddress} className="form-control textbox readonly" />
+                                            </div>
 
-                                        {/* <td style={{ textAlign: "center" }}>
+                                        </div>
+                                    </div>
+                                    <div className="heading1" style={{ marginTop: "10px" }}>
+                                        <label>Tax & Regulatory Information</label>
+                                    </div>
+                                    <div className='main-formcontainer'>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Nature of Payment</label>
+                                                <input type="text" value={paymentType} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className='font fontblock'>Tax Document Available?</label>
+                                                <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled
+                                                    style={{
+                                                        color: "black",
+                                                        backgroundColor: "white",
+                                                        opacity: 1,
+                                                        WebkitTextFillColor: "black" // important for Chrome
+                                                    }} className="form-controltext readonly" >
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                </select>
+                                                {taxDocumentView === "No" && (
+                                                    <Field >
+                                                        <span style={{ color: "red" }}>
+                                                            (if No, withholding tax will be applicable)
+                                                        </span>
+                                                    </Field>
+                                                )}
+                                            </div>
+                                            {taxDocumentView === "Yes" && (
+                                                <div className="col-md-4">
+                                                    <label className="font fontblock">DTAA Applicable?</label>
+                                                    <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)} disabled
+                                                        style={{
+                                                            color: "black",
+                                                            backgroundColor: "white",
+                                                            opacity: 1,
+                                                            WebkitTextFillColor: "black" // important for Chrome
+                                                        }} className="form-controltext readonly" >
+                                                        <option value="">Select</option>
+                                                        <option value="Yes">Yes</option>
+                                                        <option value="No">No</option>
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {taxDocumentView === "Yes" && (
+                                        <>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Permanent Establishment Declaration</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Document Available</label>
+                                                        <select
+                                                            value={permanentEstablishmentDeclaration.DocumentAvailable || ""}
+                                                            className="form-controltext readonly">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes">Yes</option>
+                                                            <option value="No">No</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Document Number</label>
+                                                        <input type="text" value={permanentEstablishmentDeclaration.DocumentNumber || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Document Date</label>
+                                                        <input type="date" value={permanentEstablishmentDeclaration.DocumentDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font">Validity Start Date</label>
+                                                        <input type="date" value={permanentEstablishmentDeclaration.ValidityStartDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity End Date</label>
+                                                        <input type="date" value={permanentEstablishmentDeclaration.ValidityEndDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font fontblock'>View Document</label>
+                                                        <span><a href={permanentEstablishmentDeclaration.Attachmenturl || "#"} target="_blank">{permanentEstablishmentDeclaration.Attachmentfilename || "No Document Available"}</a></span>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Tax Residency Certificate</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Document Available</label>
+                                                        <select
+                                                            value={taxResidencyCertificate.DocumentAvailable || ""}
+                                                            className="form-controltext readonly">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes">Yes</option>
+                                                            <option value="No">No</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Document Number</label>
+                                                        <input type="text" value={taxResidencyCertificate.DocumentNumber || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Country of Tax Residence</label>
+                                                        <input type="text" value={taxResidencyCertificate.CountryOfTaxResidence || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Tax Identification Number</label>
+                                                        <input type="text" value={taxResidencyCertificate.TaxIdentificationNumber || "" || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity Start Date</label>
+                                                        <input type="date" value={taxResidencyCertificate.ValidityStartDate || "" || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity End Date</label>
+                                                        <input type="date" value={taxResidencyCertificate.ValidityEndDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">View Document</label>
+                                                        <span><a href={taxResidencyCertificate.Attachmenturl || "#"} target="_blank">{taxResidencyCertificate.Attachmentfilename || "No Document Available"}</a></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Form 10F</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Document Available</label>
+                                                        <select
+                                                            value={form10F.DocumentAvailable || ""}
+                                                            className="form-controltext readonly">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes">Yes</option>
+                                                            <option value="No">No</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Document Number</label>
+                                                        <input type="text" value={form10F.DocumentNumber || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Acknowledgment Number</label>
+                                                        <input type="text" value={form10F.AcknowledgmentNumber || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Document Date</label>
+                                                        <input type="date" value={form10F.DocumentDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity Start Date</label>
+                                                        <input type="date" value={form10F.ValidityStartDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity End Date</label>
+                                                        <input type="date" value={form10F.ValidityEndDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">View Document</label>
+                                                        <span><a href={form10F.Attachmenturl || "#"} target="_blank">{form10F.Attachmentfilename || "No Document Available"}</a></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </CollapsibleSection>
+
+                                <CollapsibleSection title="Summary of WHT Applicability" style={{ marginTop: "10px" }}>
+                                    <div className='main-formcontainer'>
+                                        <div className='row mb-20'>
+                                            <div className="col-md-4">
+                                                <div className="date-summary">
+                                                    <span className="label">From</span>
+                                                    <span className="value">{fromdate}</span>
+                                                    <span className="label">To</span>
+                                                    <span className="value">{todate}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            {paymentType !== "Service-Bill Payment" &&
+                                                paymentType !== "Service-Advance Payment" && (
+                                                    <div className="col-md-4">
+                                                        <label className="font">Eligible amount that can be transmitted without WHT</label>
+                                                        <input type="number" value={eligibleAmountWithWHT} onChange={(e) => setEligibleAmountWithWHT(e.target.value)}
+                                                            className="form-control readonly"
+                                                        />
+                                                    </div>
+                                                )}
+                                            <div className="col-md-4">
+                                                <label className="font">Paid Amount</label>
+                                                <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)}
+                                                    className="form-control readonly"
+                                                />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Balance eligible amount (Without withholding Tax)</label>
+                                                <input type="number" value={ballenceEligibleAmount} onChange={(e) => setBallenceEligibleAmount(e.target.value)}
+                                                    className="form-control readonly"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CollapsibleSection>
+
+                                {paymentType === "Goods-Bill Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Forex Payment Request Details</label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Request Number </label>
+                                                    <input type="text" value={requestNumber} className="form-control readonly" />
+                                                </div>
+                                                <div className='col-md-4'>
+                                                    <label className="font">Requested On </label>
+                                                    <input type="text" value={requestedOn} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Currency</label>
+                                                    <input type="text" value={currency} className="form-control readonly" />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Total Amount</label>
+                                                    <input type="text" value={totalAmount} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Foreign Bank Charges </label>
+                                                    <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table" style={{ marginTop: "10px" }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr.No</th>
+                                                        <th>Invoice No</th>
+                                                        <th>Invoice Date</th>
+                                                        <th>BOE No</th>
+                                                        <th>BOE Date</th>
+                                                        <th>MRN No</th>
+                                                        <th>Bill of Lading No</th>
+                                                        <th>Bill of Lading Date</th>
+                                                        <th>Invoice Amount</th>
+                                                        <th>Attach Invoice</th>
+                                                        <th>Attach Other Docs</th>
+                                                        {/* <th>Add/Delete Entry</th> */}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+                                                            <td>{index + 1}</td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceNo", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.invoiceDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceDate", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.boeNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "boeNo", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.boeDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "boeDate", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.mrnNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "mrnNo", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.blNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "blNo", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.blDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "blDate", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    type="number"
+                                                                    value={row.invoiceAmount}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceAmount", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <div>
+                                                                    {invoiceAttachments[index]?.map((file: any, i: number) => (
+                                                                        <div key={i}>
+                                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                                {file.FileName}
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+
+                                                                </div>
+                                                            </td>
+
+                                                            <td>
+                                                                <div>
+                                                                    {otherAttachments[index]?.map((file: any, i: number) => (
+                                                                        <div key={i}>
+                                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                                {file.FileName}
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+
+                                                            {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1267,10 +1309,10 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             )}
                                         </td> */}
 
-                                    </tr>
-                                ))}
-                            </tbody>
-                            {/* <tfoot>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {/* <tfoot>
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1281,184 +1323,203 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <td colSpan={3}></td>
                                 </tr>
                             </tfoot> */}
-                        </table>
-                        <div style={{ display: "flex", gap: "40px", marginTop: "30px" }}>
+                                            </table>
+                                        </div>
+                                        <div style={{ display: "flex", gap: "40px", marginTop: "30px" }}>
 
-                            {/* BOE TABLE */}
-                            <div style={{ flex: 1 }}>
-                                <p style={{ color: "red", fontSize: "13px" }}>
-                                    Unique BOE no will be listed below
-                                </p>
+                                            {/* BOE TABLE */}
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ color: "red", fontSize: "13px" }}>
+                                                    Unique BOE no will be listed below
+                                                </p>
 
-                                <table className="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>BOE No</th>
-                                            <th>Attach Documents</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {uniqueBoeNumbers.map((boe, index) => (
-                                            <tr key={index}>
-                                                <td>{boe}</td>
-                                                <td>
-                                                    <div>
-                                                        {boeLibraryFiles
-                                                            .filter(file => file.BOENo === boe)
-                                                            .map((file, i) => (
-                                                                <div key={i}>
-                                                                    <a href={file.FileRef} target="_blank">
-                                                                        {file.FileLeafRef}
-                                                                    </a>
-                                                                </div>
-                                                            ))}
-                                                    </div>                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {/* BILL OF LADING TABLE */}
-                            <div style={{ flex: 1 }}>
-                                <p style={{ color: "red", fontSize: "13px" }}>
-                                    Unique Bill of lading no will be listed below
-                                </p>
+                                                <table className="custom-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>BOE No</th>
+                                                            <th>Attach Documents</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {uniqueBoeNumbers.map((boe, index) => (
+                                                            <tr key={index}>
+                                                                <td>{boe}</td>
+                                                                <td>
+                                                                    <div>
+                                                                        {boeLibraryFiles
+                                                                            .filter(file => file.BOENo === boe)
+                                                                            .map((file, i) => (
+                                                                                <div key={i}>
+                                                                                    <a href={file.FileRef} target="_blank">
+                                                                                        {file.FileLeafRef}
+                                                                                    </a>
+                                                                                </div>
+                                                                            ))}
+                                                                    </div>                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {/* BILL OF LADING TABLE */}
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ color: "red", fontSize: "13px" }}>
+                                                    Unique Bill of lading no will be listed below
+                                                </p>
 
-                                <table className="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Bill of Lading Number</th>
-                                            <th>Attach Documents</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {uniqueBlNumbers.map((bl, index) => (
-                                            <tr key={index}>
-                                                <td>{bl}</td>
-                                                <td>
-                                                    <div>
-                                                        {bolLibraryFiles
-                                                            .filter(file => file.BOLNo === bl)
-                                                            .map((file, i) => (
-                                                                <div key={i}>
-                                                                    <a href={file.FileRef} target="_blank">
-                                                                        {file.FileLeafRef}
-                                                                    </a>
-                                                                </div>
-                                                            ))}
-                                                    </div>                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                <table className="custom-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Bill of Lading Number</th>
+                                                            <th>Attach Documents</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {uniqueBlNumbers.map((bl, index) => (
+                                                            <tr key={index}>
+                                                                <td>{bl}</td>
+                                                                <td>
+                                                                    <div>
+                                                                        {bolLibraryFiles
+                                                                            .filter(file => file.BOLNo === bl)
+                                                                            .map((file, i) => (
+                                                                                <div key={i}>
+                                                                                    <a href={file.FileRef} target="_blank">
+                                                                                        {file.FileLeafRef}
+                                                                                    </a>
+                                                                                </div>
+                                                                            ))}
+                                                                    </div>                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
 
-                        </div>
+                                        </div>
+                                    </>
+                                )}
 
-                    </Section>
-                )}
-                {/* ==============================service-Bill Payment============================== */}
-                {paymentType === "Service-Bill Payment" && (
-                    <Section title="Forex Payment Request Details">
-                        <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
-                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
-                            {/* <Field label="PO/Contract No"><input /></Field>
-                            <Field label="PO Date"><input type="date" /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" /></Field> */}
-                        </Grid>
-
-                        <table className="data-table" style={{ marginTop: "10px" }}>
-                            <thead>
-                                <tr>
-                                    <th>Sr No</th>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>MRN No</th>
-                                    <th>MRN Date</th>
-                                    <th>Attach Invoice</th>
-                                    <th>Attach Other Document</th>
-                                    {/* <th>Add/Delete Entry</th> */}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row, index) => (
-                                    <tr key={index}>
-                                        <td>{index + 1}</td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceNo}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceNo", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.invoiceDate}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceDate", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceAmount}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceAmount", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.mrnNo}
-                                                onChange={(e) =>
-                                                    handleChange(index, "mrnNo", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.mrnDate}
-                                                onChange={(e) =>
-                                                    handleChange(index, "mrnDate", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-                                        <td>
-                                            {invoiceAttachments[index]?.map((file: any, i: number) => (
-                                                <div key={i}>
-                                                    <a href={file.ServerRelativeUrl} target="_blank">
-                                                        {file.FileName}
-                                                    </a>
+                                {paymentType === "Service-Bill Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Forex Payment Request Details</label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Request Number</label>
+                                                    <input type="text" value={requestNumber} className="form-control readonly" />
                                                 </div>
-                                            ))}
-                                        </td>
-
-                                        <td>
-                                            {otherAttachments[index]?.map((file: any, i: number) => (
-                                                <div key={i}>
-                                                    <a href={file.ServerRelativeUrl} target="_blank">
-                                                        {file.FileName}
-                                                    </a>
+                                                <div className='col-md-4'>
+                                                    <label className="font">Requested On</label>
+                                                    <input type="text" value={requestedOn} className="form-control readonly" />
                                                 </div>
-                                            ))}
-                                        </td>
+                                                <div className="col-md-4">
+                                                    <label className="font">Currency</label>
+                                                    <input type="text" value={currency} className="form-control readonly" />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Total Amount</label>
+                                                    <input type="text" value={totalAmount} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Foreign Bank Charges </label>
+                                                    <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table" style={{ marginTop: "10px" }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr No</th>
+                                                        <th>Invoice No</th>
+                                                        <th>Invoice Date</th>
+                                                        <th>Invoice Amount</th>
+                                                        <th>MRN No</th>
+                                                        <th>MRN Date</th>
+                                                        <th>Attach Invoice</th>
+                                                        <th>Attach Other Document</th>
+                                                        {/* <th>Add/Delete Entry</th> */}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+                                                            <td>{index + 1}</td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceNo", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.invoiceDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceDate", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceAmount}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceAmount", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.mrnNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "mrnNo", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.mrnDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "mrnDate", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+                                                            <td>
+                                                                {invoiceAttachments[index]?.map((file: any, i: number) => (
+                                                                    <div key={i}>
+                                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                                            {file.FileName}
+                                                                        </a>
+                                                                    </div>
+                                                                ))}
+                                                            </td>
+
+                                                            <td>
+                                                                {otherAttachments[index]?.map((file: any, i: number) => (
+                                                                    <div key={i}>
+                                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                                            {file.FileName}
+                                                                        </a>
+                                                                    </div>
+                                                                ))}
+                                                            </td>
 
 
 
 
-                                        {/* <td style={{ textAlign: "center" }}>
+                                                            {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1495,10 +1556,10 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             )}
                                         </td> */}
 
-                                    </tr>
-                                ))}
-                            </tbody>
-                            {/* <tfoot>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1509,111 +1570,144 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <td colSpan={5}></td>
                                 </tr>
                             </tfoot> */}
-                        </table>
-                    </Section>
-                )}
+                                            </table>
+                                        </div>
+                                    </>
+                                )}
 
-                {/* ==============================Goods - Advance Payment || Service - Advance Payment============================== */}
-                {paymentType === "Service-Advance Payment" && (
-
-                    <Section title="Forex Payment Request Details">
-                        <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
-                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly /></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly /></Field>
-                        </Grid>
-
-                        <table className="data-table" style={{ marginTop: "10px" }}>
-                            <thead>
-                                <tr>
-                                    <th>Sr No</th>
-                                    <th>Performa Invoice No</th>
-                                    <th>Performa Invoice Date</th>
-                                    <th>Performa Invoice Amount</th>
-                                    <th>Attach PO</th>
-                                    <th>Attach PI</th>
-                                    <th>Attach Other Document</th>
-                                    {/* <th>Add/Delete Entry</th> */}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row, index) => (
-                                    <tr key={index}>
-                                        <td>{index + 1}</td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceNo}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceNo", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.invoiceDate}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceDate", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceAmount}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceAmount", e.target.value)
-                                                }
-                                                readOnly />
-                                        </td>
-
-
-                                        <td>
-                                            <div>
-                                                {poAttachments[index]?.map((file: any, i: number) => (
-                                                    <div key={i}>
-                                                        <a href={file.ServerRelativeUrl} target="_blank">
-                                                            {file.FileName}
-                                                        </a>
-                                                    </div>
-                                                ))}
-
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div>
-                                                {piAttachments[index]?.map((file: any, i: number) => (
-                                                    <div key={i}>
-                                                        <a href={file.ServerRelativeUrl} target="_blank">
-                                                            {file.FileName}
-                                                        </a>
-                                                    </div>
-                                                ))}
-
-                                            </div>
-                                        </td>
-
-                                        <td>
-                                            {otherAttachments[index]?.map((file: any, i: number) => (
-                                                <div key={i}>
-                                                    <a href={file.ServerRelativeUrl} target="_blank">
-                                                        {file.FileName}
-                                                    </a>
+                                {paymentType === "Service-Advance Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Forex Payment Request Details</label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Request Number</label>
+                                                    <input type="text" value={requestNumber} className="form-control readonly" />
                                                 </div>
-                                            ))}
-                                        </td>
+                                                <div className='col-md-4'>
+                                                    <label className="font">Requested On</label>
+                                                    <input type="text" value={requestedOn} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Currency</label>
+                                                    <input type="text" value={currency} className="form-control readonly" />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Total Amount</label>
+                                                    <input type="text" value={totalAmount} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Foreign Bank Charges </label>
+                                                    <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">PO/Contract No </label>
+                                                    <input type="text" value={poContractNo} className="form-control readonly" />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>PO Date</label>
+                                                    <input type="date" value={poDate} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Expected Settlement Date </label>
+                                                    <input type="date" value={expectedSettlementDate} className="form-control readonly" />
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table" style={{ marginTop: "10px" }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr No</th>
+                                                        <th>Performa Invoice No</th>
+                                                        <th>Performa Invoice Date</th>
+                                                        <th>Performa Invoice Amount</th>
+                                                        <th>Attach PO</th>
+                                                        <th>Attach PI</th>
+                                                        <th>Attach Other Document</th>
+                                                        {/* <th>Add/Delete Entry</th> */}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+                                                            <td>{index + 1}</td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceNo", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.invoiceDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceDate", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceAmount}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceAmount", e.target.value)
+                                                                    }
+                                                                    readOnly />
+                                                            </td>
+
+
+                                                            <td>
+                                                                <div>
+                                                                    {poAttachments[index]?.map((file: any, i: number) => (
+                                                                        <div key={i}>
+                                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                                {file.FileName}
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div>
+                                                                    {piAttachments[index]?.map((file: any, i: number) => (
+                                                                        <div key={i}>
+                                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                                {file.FileName}
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+
+                                                                </div>
+                                                            </td>
+
+                                                            <td>
+                                                                {otherAttachments[index]?.map((file: any, i: number) => (
+                                                                    <div key={i}>
+                                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                                            {file.FileName}
+                                                                        </a>
+                                                                    </div>
+                                                                ))}
+                                                            </td>
 
 
 
 
-                                        {/* <td style={{ textAlign: "center" }}>
+                                                            {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1650,10 +1744,10 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             )}
                                         </td> */}
 
-                                    </tr>
-                                ))}
-                            </tbody>
-                            {/* <tfoot>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1664,108 +1758,143 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <td colSpan={4}></td>
                                 </tr>
                             </tfoot> */}
-                        </table>
-                    </Section>
-                )}
-                {paymentType === "Goods-Advance Payment" && (
+                                            </table>
+                                        </div>
+                                    </>
+                                )}
 
-                    <Section title="Forex Payment Request Details">
-                        <Grid>
-                            <Field label="Request Number"><input value={requestNumber} onChange={(e) => { setRequestNumber(e.target.value) }} readOnly /></Field>
-                            <Field label="Requested On"><input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} readOnly /></Field>
-                            <Field label="Currency"><input value={currency} onChange={(e) => { setCurrency(e.target.value) }} readOnly /></Field>
-                            <Field label="Total Amount"><input type="number" value={totalAmount} onChange={(e) => { setTotalAmount(e.target.value) }} readOnly /></Field>
-                            <Field label="Foreign Bank Charges"><input type="text" value={foreignBankCharges} onChange={(e) => { setForeignBankCharges(e.target.value) }} readOnly /></Field>
-                            <Field label="PO/Contract No"><input value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} readOnly /></Field>
-                            <Field label="PO Date"><input type="date" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} readOnly /></Field>
-                            <Field label="Expected Settlement Date"><input type="date" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} readOnly /></Field>
-                        </Grid>
-
-                        <table className="data-table" style={{ marginTop: "10px" }}>
-                            <thead>
-                                <tr>
-                                    <th>Sr No</th>
-                                    <th>Performa Invoice No</th>
-                                    <th>Performa Invoice Date</th>
-                                    <th>Performa Invoice Amount</th>
-                                    <th>Attach PO</th>
-                                    <th>Attach PI</th>
-                                    <th>Attach Other Document</th>
-                                    {/* <th>Add/Delete Entry</th> */}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row, index) => (
-                                    <tr key={index}>
-                                        <td>{index + 1}</td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceNo}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceNo", e.target.value)
-                                                }
-                                            />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                type="date"
-                                                value={row.invoiceDate}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceDate", e.target.value)
-                                                }
-                                            />
-                                        </td>
-
-                                        <td>
-                                            <input
-                                                value={row.invoiceAmount}
-                                                onChange={(e) =>
-                                                    handleChange(index, "invoiceAmount", e.target.value)
-                                                }
-                                            />
-                                        </td>
-
-
-                                        <td>
-                                            <div>
-                                                {poAttachments[index]?.map((file: any, i: number) => (
-                                                    <div key={i}>
-                                                        <a href={file.ServerRelativeUrl} target="_blank">
-                                                            {file.FileName}
-                                                        </a>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div>
-                                                {piAttachments[index]?.map((file: any, i: number) => (
-                                                    <div key={i}>
-                                                        <a href={file.ServerRelativeUrl} target="_blank">
-                                                            {file.FileName}
-                                                        </a>
-                                                    </div>
-                                                ))}
-
-                                            </div>
-                                        </td>
-
-                                        <td>
-                                            {otherAttachments[index]?.map((file: any, i: number) => (
-                                                <div key={i}>
-                                                    <a href={file.ServerRelativeUrl} target="_blank">
-                                                        {file.FileName}
-                                                    </a>
+                                {paymentType === "Goods-Advance Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Forex Payment Request Details</label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Request Number</label>
+                                                    <input type="text" value={requestNumber} className="form-control readonly" />
                                                 </div>
-                                            ))}
-                                        </td>
+                                                <div className='col-md-4'>
+                                                    <label className="font">Requested On</label>
+                                                    <input type="text" value={requestedOn} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Currency</label>
+                                                    <input type="text" value={currency} className="form-control readonly" />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Total Amount</label>
+                                                    <input type="text" value={totalAmount} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Foreign Bank Charges </label>
+                                                    <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">PO/Contract No </label>
+                                                    <input type="text" value={poContractNo} className="form-control readonly" />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>PO Date</label>
+                                                    <input type="date" value={poDate} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Expected Settlement Date </label>
+                                                    <input type="date" value={expectedSettlementDate} className="form-control readonly" />
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table" style={{ marginTop: "10px" }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr No</th>
+                                                        <th>Performa Invoice No</th>
+                                                        <th>Performa Invoice Date</th>
+                                                        <th>Performa Invoice Amount</th>
+                                                        <th>Attach PO</th>
+                                                        <th>Attach PI</th>
+                                                        <th>Attach Other Document</th>
+                                                        {/* <th>Add/Delete Entry</th> */}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+                                                            <td>{index + 1}</td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceNo", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.invoiceDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceDate", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceAmount}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceAmount", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
+
+
+                                                            <td>
+                                                                <div>
+                                                                    {poAttachments[index]?.map((file: any, i: number) => (
+                                                                        <div key={i}>
+                                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                                {file.FileName}
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div>
+                                                                    {piAttachments[index]?.map((file: any, i: number) => (
+                                                                        <div key={i}>
+                                                                            <a href={file.ServerRelativeUrl} target="_blank">
+                                                                                {file.FileName}
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+
+                                                                </div>
+                                                            </td>
+
+                                                            <td>
+                                                                {otherAttachments[index]?.map((file: any, i: number) => (
+                                                                    <div key={i}>
+                                                                        <a href={file.ServerRelativeUrl} target="_blank">
+                                                                            {file.FileName}
+                                                                        </a>
+                                                                    </div>
+                                                                ))}
+                                                            </td>
 
 
 
 
-                                        {/* <td style={{ textAlign: "center" }}>
+                                                            {/* <td style={{ textAlign: "center" }}>
                                             {index === rows.length - 1 && (
                                                 <button
                                                     type="button"
@@ -1802,10 +1931,10 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             )}
                                         </td> */}
 
-                                    </tr>
-                                ))}
-                            </tbody>
-                            {/* <tfoot>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {/* <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -1816,187 +1945,127 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <td colSpan={4}></td>
                                 </tr>
                             </tfoot> */}
-                        </table>
-                    </Section>
-                )}
+                                            </table>
+                                        </div>
+                                    </>
+                                )}
+
+                                {paymentType === "Goods-Advance Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Bill Payment Details (For Goods Bill Payment)</label>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table">
+
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr.No.</th>
+                                                        <th>Invoice Number</th>
+                                                        <th>Invoice Date</th>
+                                                        <th>BOE Number</th>
+                                                        <th>BOE Date</th>
+                                                        <th>MRN Number</th>
+                                                        <th>Bill of Lading Number</th>
+                                                        <th>Bill of Lading Date</th>
+                                                        <th>Invoice Amount</th>
+                                                        <th>Attach Invoice</th>
+                                                        <th>Attach Other</th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+
+                                                    {rowsAdvance.map((row, index) => (
+                                                        <tr key={index}>
+
+                                                            <td>{index + 1}</td>
+
+                                                            <td><span>{row.invoiceNo}</span></td>
+
+                                                            <td><span>{row.invoiceDate}</span></td>
+
+                                                            <td><span>{row.boeNo}</span></td>
+
+                                                            <td><span>{row.boeDate}</span></td>
+
+                                                            <td><span>{row.mrnNo}</span></td>
+
+                                                            <td><span>{row.blNo}</span></td>
+
+                                                            <td><span>{row.blDate}</span></td>
+
+                                                            <td><span>{row.invoiceAmount}</span></td>
+
+                                                            {/* Invoice Upload */}
+                                                            <td>
+
+                                                                {poAttachmentsTrackeradvance[index]?.length > 0 ? (
+
+                                                                    poAttachmentsTrackeradvance[index].map((file: any, i: number) => (
+
+                                                                        <div key={i}>
+
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                download
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="upload-link"
+                                                                            >
+                                                                                📥 {file.FileName || file.name}
+                                                                            </a>
+
+                                                                        </div>
+
+                                                                    ))
+
+                                                                ) : (
+
+                                                                    <span>-</span>
+
+                                                                )}
+
+                                                            </td>
+
+                                                            {/* Other Upload */}
+                                                            <td>
+
+                                                                {piAttachmentsTrackeradvance[index]?.length > 0 ? (
+
+                                                                    piAttachmentsTrackeradvance[index].map((file: any, i: number) => (
+
+                                                                        <div key={i}>
+
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                download
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="upload-link"
+                                                                            >
+                                                                                📥 {file.FileName || file.name}
+                                                                            </a>
+
+                                                                        </div>
+
+                                                                    ))
+
+                                                                ) : (
+
+                                                                    <span>-</span>
+
+                                                                )}
+
+                                                            </td>
 
 
+                                                        </tr>
+                                                    ))}
 
-                {/* ================= CORRESPONDENT ================= */}
-                {/* <CollapsibleSection title="Correspondent Bank Details">
-                    <Grid>
-                        <Field label="Bank Name"><input value={bankname} onChange={(e) => { setBankName(e.target.value) }} readOnly/></Field>
-                        <Field label="Swift Code"><input value={bankswiftcode} onChange={(e) => { setBankSwiftCode(e.target.value) }} readOnly/></Field>
-                        <Field label="Bank Account No"><input value={bankaccountno} onChange={(e) => { setBankAccountNo(e.target.value) }} readOnly/></Field>
-                        <Field label="Remarks" full><textarea rows={3} value={remarks} onChange={(e) => { setRemarks(e.target.value) }} readOnly></textarea></Field>
-                    </Grid>
-                </CollapsibleSection> */}
-                {/* <Section title="Approval Remarks">
+                                                </tbody>
 
-                    <Grid>
-
-                        {approverDetails.map((a, i) => (
-
-                            <Field key={i} label={`${a.Role} Remarks`} full>
-
-                                <textarea value={a.Comment || ""} readOnly />
-
-                            </Field>
-
-                        ))}
-
-                    </Grid>
-
-                </Section> */}
-                {/* <CollapsibleSection title="Payment Details">
-
-                    <Grid>
-
-                        <Field label="Foreign Currency">
-                            <input value={foreignCurrency} readOnly />
-                        </Field>
-
-                        <Field label="Foreign Currency Amount">
-                            <input value={foreignCurrencyAmount} readOnly />
-                        </Field>
-
-                        <Field label="Exchange Rate">
-                            <input value={exchangeRate} readOnly />
-                        </Field>
-
-                        <Field label="INR Amount">
-                            <input value={inrAmount} readOnly />
-                        </Field>
-
-                        <Field label="Payment Date">
-                            <input type="date" value={paymentDate} readOnly />
-                        </Field>
-
-                        <Field label="Payment Reference Number">
-                            <input value={paymentReferenceNumber} readOnly />
-                        </Field>
-
-                    </Grid>
-
-                </CollapsibleSection> */}
-                {paymentType === "Goods-Advance Payment" && (
-                    <>
-                        <Section title="Bill Payment Details (For Goods Bill Payment)">
-
-                            {/* <p style={{ color: "red", fontSize: "12px" }}>
-                                Tracker data submitted by user
-                            </p> */}
-
-                            <table className="data-table">
-
-                                <thead>
-                                    <tr>
-                                        <th>Sr.No.</th>
-                                        <th>Invoice Number</th>
-                                        <th>Invoice Date</th>
-                                        <th>BOE Number</th>
-                                        <th>BOE Date</th>
-                                        <th>MRN Number</th>
-                                        <th>Bill of Lading Number</th>
-                                        <th>Bill of Lading Date</th>
-                                        <th>Invoice Amount</th>
-                                        <th>Attach Invoice</th>
-                                        <th>Attach Other</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-
-                                    {rowsAdvance.map((row, index) => (
-                                        <tr key={index}>
-
-                                            <td>{index + 1}</td>
-
-                                            <td><span>{row.invoiceNo}</span></td>
-
-                                            <td><span>{row.invoiceDate}</span></td>
-
-                                            <td><span>{row.boeNo}</span></td>
-
-                                            <td><span>{row.boeDate}</span></td>
-
-                                            <td><span>{row.mrnNo}</span></td>
-
-                                            <td><span>{row.blNo}</span></td>
-
-                                            <td><span>{row.blDate}</span></td>
-
-                                            <td><span>{row.invoiceAmount}</span></td>
-
-                                            {/* Invoice Upload */}
-                                            <td>
-
-                                                {poAttachmentsTrackeradvance[index]?.length > 0 ? (
-
-                                                    poAttachmentsTrackeradvance[index].map((file: any, i: number) => (
-
-                                                        <div key={i}>
-
-                                                            <a
-                                                                href={file.ServerRelativeUrl}
-                                                                download
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="upload-link"
-                                                            >
-                                                                📥 {file.FileName || file.name}
-                                                            </a>
-
-                                                        </div>
-
-                                                    ))
-
-                                                ) : (
-
-                                                    <span>-</span>
-
-                                                )}
-
-                                            </td>
-
-                                            {/* Other Upload */}
-                                            <td>
-
-                                                {piAttachmentsTrackeradvance[index]?.length > 0 ? (
-
-                                                    piAttachmentsTrackeradvance[index].map((file: any, i: number) => (
-
-                                                        <div key={i}>
-
-                                                            <a
-                                                                href={file.ServerRelativeUrl}
-                                                                download
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="upload-link"
-                                                            >
-                                                                📥 {file.FileName || file.name}
-                                                            </a>
-
-                                                        </div>
-
-                                                    ))
-
-                                                ) : (
-
-                                                    <span>-</span>
-
-                                                )}
-
-                                            </td>
-
-
-                                        </tr>
-                                    ))}
-
-                                </tbody>
-
-                                {/* <tfoot>
+                                                {/* <tfoot>
                                     <tr>
                                         <td colSpan={7}></td>
                                         <td style={{ fontWeight: "bold" }}>Total Amount</td>
@@ -2005,102 +2074,98 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     </tr>
                                 </tfoot> */}
 
-                            </table>
+                                            </table>
+                                        </div>
+                                        <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
 
-                        </Section>
+                                            {/* BOE TABLE */}
 
-                        {/* BOE + BL DOCUMENTS */}
+                                            <div>
 
-                        <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
-
-                            {/* BOE TABLE */}
-
-                            <div>
-
-                                {/* <p style={{ color: "red", fontSize: "12px" }}>
+                                                {/* <p style={{ color: "red", fontSize: "12px" }}>
                                     Unique BOE no listed below
                                 </p> */}
 
-                                <table className="data-table">
+                                                <table className="custom-table">
 
-                                    <thead>
-                                        <tr>
-                                            <th>BOE No</th>
-                                            <th>Attach Documents</th>
-                                        </tr>
-                                    </thead>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>BOE No</th>
+                                                            <th>Attach Documents</th>
+                                                        </tr>
+                                                    </thead>
 
-                                    <tbody>
+                                                    <tbody>
 
-                                        {uniqueBoeNumbersadvancetracker.map((boe, index) => (
-                                            <tr key={index}>
+                                                        {uniqueBoeNumbersadvancetracker.map((boe, index) => (
+                                                            <tr key={index}>
 
-                                                <td>{boe}</td>
+                                                                <td>{boe}</td>
 
-                                                <td>
+                                                                <td>
 
-                                                    {boeAttachmentstrackeradvance[index]?.length > 0 ? (
+                                                                    {boeAttachmentstrackeradvance[index]?.length > 0 ? (
 
-                                                        boeAttachmentstrackeradvance[index].map((file: any, i: number) => (
-                                                            <div key={i} style={{ fontSize: "12px" }}>
+                                                                        boeAttachmentstrackeradvance[index].map((file: any, i: number) => (
+                                                                            <div key={i} style={{ fontSize: "12px" }}>
 
-                                                                <a
-                                                                    href={file.ServerRelativeUrl}
-                                                                    target="_blank"
-                                                                    download
-                                                                    rel="noopener noreferrer"
-                                                                    className="upload-link"
-                                                                >
-                                                                    📄 {file.FileName}
-                                                                </a>
+                                                                                <a
+                                                                                    href={file.ServerRelativeUrl}
+                                                                                    target="_blank"
+                                                                                    download
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="upload-link"
+                                                                                >
+                                                                                    📄 {file.FileName}
+                                                                                </a>
 
-                                                            </div>
-                                                        ))
+                                                                            </div>
+                                                                        ))
 
-                                                    ) : (
+                                                                    ) : (
 
-                                                        <span>-</span>
+                                                                        <span>-</span>
 
-                                                    )}
-                                                </td>
+                                                                    )}
+                                                                </td>
 
-                                            </tr>
-                                        ))}
+                                                            </tr>
+                                                        ))}
 
-                                    </tbody>
+                                                    </tbody>
 
-                                </table>
+                                                </table>
 
-                            </div>
+                                            </div>
 
 
-                            {/* BL TABLE */}
+                                            {/* BL TABLE */}
 
-                            <div>
-                                {/* 
+                                            <div>
+                                                {/* 
                                 <p style={{ color: "red", fontSize: "12px" }}>
                                     Unique Bill of Lading listed below
                                 </p> */}
 
-                                <table className="data-table">
+                                                <table className="custom-table">
 
-                                    <thead>
-                                        <tr>
-                                            <th>Bill of Lading</th>
-                                            <th>Attach Documents</th>
-                                        </tr>
-                                    </thead>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Bill of Lading</th>
+                                                            <th>Attach Documents</th>
+                                                        </tr>
+                                                    </thead>
 
-                                    <tbody>
+                                                    <tbody>
 
-                                        {uniqueBlNumbersadvancetracker.map((bl, index) => (
-                                            <tr key={index}>
+                                                        {uniqueBlNumbersadvancetracker.map((bl, index) => (
+                                                            <tr key={index}>
 
-                                                <td>{bl}</td>
+                                                                <td>{bl}</td>
 
-                                                <td>
+                                                                <td>
 
-                                                    {/* <input
+                                                                    {/* <input
                                                         type="file"
                                                         onChange={(e) => handleBlUpload(index, e.target.files)}
                                                     />
@@ -2110,169 +2175,162 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                             {file.name}
                                                         </div>
                                                     ))} */}
-                                                    {blAttachmentstrackeradvance[index]?.length > 0 ? (
+                                                                    {blAttachmentstrackeradvance[index]?.length > 0 ? (
 
-                                                        blAttachmentstrackeradvance[index].map((file: any, i: number) => (
-                                                            <div key={i} style={{ fontSize: "12px" }}>
+                                                                        blAttachmentstrackeradvance[index].map((file: any, i: number) => (
+                                                                            <div key={i} style={{ fontSize: "12px" }}>
 
-                                                                <a
-                                                                    href={file.ServerRelativeUrl}
-                                                                    target="_blank"
-                                                                    download
-                                                                    rel="noopener noreferrer"
-                                                                    className="upload-link"
-                                                                >
-                                                                    📄 {file.FileName}
-                                                                </a>
+                                                                                <a
+                                                                                    href={file.ServerRelativeUrl}
+                                                                                    target="_blank"
+                                                                                    download
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="upload-link"
+                                                                                >
+                                                                                    📄 {file.FileName}
+                                                                                </a>
 
-                                                            </div>
-                                                        ))
+                                                                            </div>
+                                                                        ))
 
-                                                    ) : (
+                                                                    ) : (
 
-                                                        <span>-</span>
+                                                                        <span>-</span>
 
-                                                    )}
+                                                                    )}
 
-                                                </td>
+                                                                </td>
 
-                                            </tr>
-                                        ))}
+                                                            </tr>
+                                                        ))}
 
-                                    </tbody>
+                                                    </tbody>
 
-                                </table>
+                                                </table>
 
-                            </div>
+                                            </div>
 
-                        </div>
+                                        </div>
+                                    </>
+                                )}
 
-                    </>
-                )}
+                                {paymentType === "Service-Advance Payment" && (
+                                    <>
+                                        <p>
+                                            <b>Bill Payment Details (for Service Bill Payment)</b>
+                                        </p>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="data-table">
 
-                {paymentType === "Service-Advance Payment" && (
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr.No.</th>
+                                                        <th>Invoice Number</th>
+                                                        <th>Invoice Date</th>
+                                                        <th>Invoice Amount</th>
+                                                        <th>MRN Number</th>
+                                                        <th>MRN Date</th>
+                                                        <th>Invoice Document</th>
+                                                        <th>Other Document</th>
+                                                    </tr>
+                                                </thead>
 
-                    <div style={{ marginTop: "30px" }}>
+                                                <tbody>
 
-                        {/* <div style={{ background: "#fff8b3", padding: "4px", fontSize: "12px" }}>
-                            <b>Only for Service: Advance Payment</b>
-                        </div> */}
+                                                    {rowsAdvance.map((row, index) => (
+                                                        <tr key={index}>
 
-                        <p>
-                            <b>Bill Payment Details (for Service Bill Payment)</b>
-                        </p>
+                                                            <td>{index + 1}</td>
 
-                        <table className="data-table">
+                                                            <td>
+                                                                <span>{row.invoiceNo}</span>
+                                                            </td>
 
-                            <thead>
-                                <tr>
-                                    <th>Sr.No.</th>
-                                    <th>Invoice Number</th>
-                                    <th>Invoice Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>MRN Number</th>
-                                    <th>MRN Date</th>
-                                    <th>Invoice Document</th>
-                                    <th>Other Document</th>
-                                </tr>
-                            </thead>
+                                                            <td>
+                                                                <span>{row.invoiceDate}</span>
+                                                            </td>
 
-                            <tbody>
+                                                            <td>
+                                                                <span>{row.invoiceAmount}</span>
+                                                            </td>
 
-                                {rowsAdvance.map((row, index) => (
-                                    <tr key={index}>
+                                                            <td>
+                                                                <span>{row.mrnNo}</span>
+                                                            </td>
 
-                                        <td>{index + 1}</td>
+                                                            <td>
+                                                                <span>{row.mrnDate}</span>
+                                                            </td>
 
-                                        <td>
-                                            <span>{row.invoiceNo}</span>
-                                        </td>
+                                                            {/* Invoice Attachments */}
 
-                                        <td>
-                                            <span>{row.invoiceDate}</span>
-                                        </td>
+                                                            <td>
 
-                                        <td>
-                                            <span>{row.invoiceAmount}</span>
-                                        </td>
+                                                                {poAttachmentsTrackeradvance[index]?.length > 0 ? (
 
-                                        <td>
-                                            <span>{row.mrnNo}</span>
-                                        </td>
+                                                                    poAttachmentsTrackeradvance[index].map((file: any, i: number) => (
 
-                                        <td>
-                                            <span>{row.mrnDate}</span>
-                                        </td>
+                                                                        <div key={i}>
 
-                                        {/* Invoice Attachments */}
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                download
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="upload-link"
+                                                                            >
+                                                                                📥 {file.FileName || file.name}
+                                                                            </a>
 
-                                        <td>
+                                                                        </div>
 
-                                            {poAttachmentsTrackeradvance[index]?.length > 0 ? (
+                                                                    ))
 
-                                                poAttachmentsTrackeradvance[index].map((file: any, i: number) => (
+                                                                ) : (
 
-                                                    <div key={i}>
+                                                                    <span>-</span>
 
-                                                        <a
-                                                            href={file.ServerRelativeUrl}
-                                                            download
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="upload-link"
-                                                        >
-                                                            📥 {file.FileName || file.name}
-                                                        </a>
+                                                                )}
 
-                                                    </div>
+                                                            </td>
 
-                                                ))
+                                                            {/* Other Attachments */}
 
-                                            ) : (
+                                                            <td>
 
-                                                <span>-</span>
+                                                                {piAttachmentsTrackeradvance[index]?.length > 0 ? (
 
-                                            )}
+                                                                    piAttachmentsTrackeradvance[index].map((file: any, i: number) => (
 
-                                        </td>
+                                                                        <div key={i}>
 
-                                        {/* Other Attachments */}
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                download
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="upload-link"
+                                                                            >
+                                                                                📥 {file.FileName || file.name}
+                                                                            </a>
 
-                                        <td>
+                                                                        </div>
 
-                                            {piAttachmentsTrackeradvance[index]?.length > 0 ? (
+                                                                    ))
 
-                                                piAttachmentsTrackeradvance[index].map((file: any, i: number) => (
+                                                                ) : (
 
-                                                    <div key={i}>
+                                                                    <span>-</span>
 
-                                                        <a
-                                                            href={file.ServerRelativeUrl}
-                                                            download
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="upload-link"
-                                                        >
-                                                            📥 {file.FileName || file.name}
-                                                        </a>
+                                                                )}
 
-                                                    </div>
+                                                            </td>
 
-                                                ))
+                                                        </tr>
+                                                    ))}
 
-                                            ) : (
-
-                                                <span>-</span>
-
-                                            )}
-
-                                        </td>
-
-                                    </tr>
-                                ))}
-
-                            </tbody>
-                            {/* <tfoot>
+                                                </tbody>
+                                                {/* <tfoot>
                                 <tr>
                                     <td colSpan={2}></td>
                                     <td style={{ fontWeight: "bold" }}>Total Amount</td>
@@ -2280,143 +2338,91 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <td colSpan={5}></td>
                                 </tr>
                             </tfoot> */}
-                        </table>
+                                            </table>
+                                        </div>
+                                    </>
+                                )}
 
-                    </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Vouching Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Validation Date</label>
+                                            <input type="date" value={validationDateshow} className="form-control readonly" />
+                                        </div>
+                                        {(paymentType.includes("Advance")) && (
+                                            <div className='col-md-4'>
+                                                <label className="font">Voucher Number</label>
+                                                <input type="text" value={voucherNumbershow} className="form-control readonly" />
+                                            </div>
+                                        )}
+                                    </div>
 
-                )}
-                <Section title="Vouching Details">
+                                </div>
 
-                    <Grid>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Payment Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Foreign Currency</label>
+                                            <input type="date" value={foreignCurrency} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Foreign Currency Amount</label>
+                                            <input type="text" value={foreignAmountpayment} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Exchange Rate</label>
+                                            <input type="number" value={exchangeRatepayment} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>INR Amount</label>
+                                            <input type="text" value={inrAmountpayment} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className="row mb-20">
+                                        <div className="col-md-12">
+                                            <p style={{ color: "red", fontSize: "12px" }}>
+                                                (if difference in foreign currency & Amount system to display alert message only)
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Payment Date</label>
+                                            <input type="date" value={paymentDatepayment} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Payment reference number</label>
+                                            <input type="number" value={paymentReferencepayment} className="form-control readonly" />
+                                        </div>
+                                        {isServicePayment && (
+                                            <div className='col-md-4'>
+                                                <label className="font">Form145</label>
+                                                {form15CA.length > 0 && (
+                                                    <div style={{ marginTop: "10px" }}>
+                                                        {form15CA.map((file, index) => (
+                                                            <div
+                                                                key={index}
+                                                                style={{
+                                                                    display: "flex",
+                                                                    justifyContent: "space-between",
+                                                                    alignItems: "center",
+                                                                    marginBottom: "5px",
+                                                                    padding: "6px 10px",
+                                                                    border: "1px solid #ddd",
+                                                                    borderRadius: "4px",
+                                                                }}
+                                                            >
+                                                                <span>{file.name}</span>
 
-                        <Field label="Validation Date" required>
-                            <input
-                                type="text"
-                                value={validationDateshow}
-                                // onChange={(e) => setValidationDate(e.target.value)}
-                                readOnly
-                            />
-                        </Field>
-
-                        {/* Hide Voucher Number for Non Advance */}
-                        {(paymentType.includes("Advance")) && (
-                            <Field label="Voucher Number" required>
-                                <input
-                                    value={voucherNumbershow}
-                                // onChange={(e) => setVoucherNumber(e.target.value)}
-                                />
-                            </Field>
-                        )}
-
-
-
-                    </Grid>
-
-                </Section>
-
-                <Section title="Payment Details">
-
-                    <Grid>
-
-                        <Field label="Foreign Currency" required>
-                            {/* <Dropdown
-                                                        options={foreignCurrencyOptions}
-                                                        selectedKey={foreignCurrency}
-                                                        onChange={(e, option) => {
-                                                            if (option) {
-                                                                setForeignCurrency(option.key as string);
-                                                            }
-                                                        }}
-                                                    /> */}
-                            <input type="text" value={foreignCurrency} readOnly style={{ marginTop: "5px" }} />
-                        </Field>
-
-                        <Field label="Foreign Currency Amount" required>
-                            <input
-                                type="number"
-                                value={foreignAmountpayment}
-                                // onChange={(e) => setForeignAmount(e.target.value)}
-                                readOnly
-                            />
-                        </Field>
-
-                        <Field label="Exchange Rate" required>
-                            <input
-                                type="number"
-                                value={exchangeRatepayment}
-                                // onChange={(e) => setExchangeRate(e.target.value)}
-                                readOnly
-                            />
-                        </Field>
-
-                        <Field label="INR Amount" required>
-                            <input
-                                type="number"
-                                value={inrAmountpayment}
-                                // onChange={(e) => setInrAmount(e.target.value)}
-                                readOnly
-                            />
-                        </Field>
-
-                    </Grid>
-
-                    <p style={{ color: "red", fontSize: "12px" }}>
-                        (if difference in foreign currency & Amount system to display alert message only)
-                    </p>
-
-                    <Grid>
-
-                        <Field label="Payment Date">
-                            <input
-                                type="date"
-                                value={paymentDatepayment}
-                                // onChange={(e) => setPaymentDate(e.target.value)}
-                                readOnly
-                            />
-                        </Field>
-
-                        <Field label="Payment reference number" >
-                            <input
-                                value={paymentReferencepayment}
-                                // onChange={(e) => setPaymentReference(e.target.value)}
-                                readOnly
-                            />
-                        </Field>
-
-                        {/* 15CA only for Service */}
-                        {isServicePayment && (
-                            <Field label="Form145" required>
-                                {/* <input
-                                    type="file"
-                                    multiple
-                                    onChange={(e) => {
-                                        const files = e.target.files
-                                            ? Array.from(e.target.files)
-                                            : [];
-
-                                        setForm15CA((prev) => [...prev, ...files]);
-                                    }}
-                                /> */}
-
-                                {/* File List */}
-                                {form15CA.length > 0 && (
-                                    <div style={{ marginTop: "10px" }}>
-                                        {form15CA.map((file, index) => (
-                                            <div
-                                                key={index}
-                                                style={{
-                                                    display: "flex",
-                                                    justifyContent: "space-between",
-                                                    alignItems: "center",
-                                                    marginBottom: "5px",
-                                                    padding: "6px 10px",
-                                                    border: "1px solid #ddd",
-                                                    borderRadius: "4px",
-                                                }}
-                                            >
-                                                <span>{file.name}</span>
-
-                                                {/* <button
+                                                                {/* <button
                                                     type="button"
                                                     onClick={() => remove15CAFile(index)}
                                                     style={{
@@ -2430,47 +2436,35 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 >
                                                     Delete
                                                 </button> */}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
-                                )}
-                            </Field>
-                        )}
+                                    <div className='row mb-20'>
+                                        {isServicePayment && (
+                                            <div className='col-md-4'>
+                                                <label className="font">Form146</label>
+                                                {form15CB.length > 0 && (
+                                                    <div style={{ marginTop: "10px" }}>
+                                                        {form15CB.map((file, index) => (
+                                                            <div
+                                                                key={index}
+                                                                style={{
+                                                                    display: "flex",
+                                                                    justifyContent: "space-between",
+                                                                    alignItems: "center",
+                                                                    marginBottom: "5px",
+                                                                    padding: "6px 10px",
+                                                                    border: "1px solid #ddd",
+                                                                    borderRadius: "4px",
+                                                                }}
+                                                            >
+                                                                <span>{file.name}</span>
 
-                        {/* 15CB only for Service */}
-                        {isServicePayment && (
-                            <Field label="Form146 " required>
-                                {/* <input
-                                    type="file"
-                                    multiple
-                                    onChange={(e) => {
-                                        const files = e.target.files
-                                            ? Array.from(e.target.files)
-                                            : [];
-
-                                        setForm15CB((prev) => [...prev, ...files]);
-                                    }}
-                                /> */}
-
-                                {/* File List */}
-                                {form15CB.length > 0 && (
-                                    <div style={{ marginTop: "10px" }}>
-                                        {form15CB.map((file, index) => (
-                                            <div
-                                                key={index}
-                                                style={{
-                                                    display: "flex",
-                                                    justifyContent: "space-between",
-                                                    alignItems: "center",
-                                                    marginBottom: "5px",
-                                                    padding: "6px 10px",
-                                                    border: "1px solid #ddd",
-                                                    borderRadius: "4px",
-                                                }}
-                                            >
-                                                <span>{file.name}</span>
-
-                                                {/* <button
+                                                                {/* <button
                                                     type="button"
                                                     onClick={() => remove15CBFile(index)}
                                                     style={{
@@ -2484,51 +2478,33 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 >
                                                     Delete
                                                 </button> */}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </Field>
-                        )}
+                                        )}
+                                        {isGoodsPayment && (
+                                            <div className="col-md-4">
+                                                <label className="font">Attach Swift Copy (Applicable for Goods)</label>
+                                                {swiftCopy.length > 0 && (
+                                                    <div style={{ marginTop: "10px" }}>
+                                                        {swiftCopy.map((file, index) => (
+                                                            <div
+                                                                key={index}
+                                                                style={{
+                                                                    display: "flex",
+                                                                    justifyContent: "space-between",
+                                                                    alignItems: "center",
+                                                                    marginBottom: "5px",
+                                                                    padding: "6px 10px",
+                                                                    border: "1px solid #ddd",
+                                                                    borderRadius: "4px",
+                                                                }}
+                                                            >
+                                                                <span>{file.name}</span>
 
-                    </Grid>
-
-                    <Grid>
-
-                        {/* Swift Copy only for Goods */}
-                        {isGoodsPayment && (
-                            <Field label="Attach Swift Copy (Applicable for Goods)" required>
-                                {/* <input
-                                    type="file"
-                                    multiple
-                                    onChange={(e) => {
-                                        const files = e.target.files
-                                            ? Array.from(e.target.files)
-                                            : [];
-
-                                        setSwiftCopy((prev) => [...prev, ...files]);
-                                    }}
-                                /> */}
-
-                                {/* File List */}
-                                {swiftCopy.length > 0 && (
-                                    <div style={{ marginTop: "10px" }}>
-                                        {swiftCopy.map((file, index) => (
-                                            <div
-                                                key={index}
-                                                style={{
-                                                    display: "flex",
-                                                    justifyContent: "space-between",
-                                                    alignItems: "center",
-                                                    marginBottom: "5px",
-                                                    padding: "6px 10px",
-                                                    border: "1px solid #ddd",
-                                                    borderRadius: "4px",
-                                                }}
-                                            >
-                                                <span>{file.name}</span>
-
-                                                {/* <button
+                                                                {/* <button
                                                     type="button"
                                                     onClick={() => removeSwiftCopyFile(index)}
                                                     style={{
@@ -2542,60 +2518,68 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                 >
                                                     Delete
                                                 </button> */}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
-                                )}
-                            </Field>
-                        )}
-                    </Grid>
+                                </div>
 
-                </Section>
-                <CollapsibleSection title="Workflow History">
+                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
 
-                    {workflowHistory.length > 0 ? (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Action By</th>
-                                    {/* <th>Role</th> */}
-                                    <th>Action</th>
-                                    <th>Remark</th>
-                                    <th>Date</th>
-                                    {/* <th>Status</th> */}
-                                </tr>
-                            </thead>
+                                    {workflowHistory.length > 0 ? (
+                                        <table className="custom-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Action By</th>
+                                                    {/* <th>Role</th> */}
+                                                    <th>Action</th>
+                                                    <th>Remark</th>
+                                                    <th>Date</th>
+                                                    {/* <th>Status</th> */}
+                                                </tr>
+                                            </thead>
 
-                            <tbody>
-                                {workflowHistory.map((item: any, index: number) => (
-                                    <tr key={index}>
-                                        <td>{item.CurrentApprover}</td>
-                                        {/* <td>{item.Role || "-"}</td> */}
-                                        <td>{item.ActionTaken}</td>
-                                        <td>{item.Comment || "-"}</td>
-                                        <td>
-                                            {item.Date
-                                                ? new Date(item.Date).toLocaleString("en-GB")
-                                                : ""}
-                                        </td>
-                                        {/* <td>{item.CurrentStatus}</td> */}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <p>No workflow history available</p>
-                    )}
+                                            <tbody>
+                                                {workflowHistory.map((item: any, index: number) => (
+                                                    <tr key={index}>
+                                                        <td>{item.CurrentApprover}</td>
+                                                        {/* <td>{item.Role || "-"}</td> */}
+                                                        <td>{item.ActionTaken}</td>
+                                                        <td>{item.Comment || "-"}</td>
+                                                        <td>
+                                                            {item.Date
+                                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                                : ""}
+                                                        </td>
+                                                        {/* <td>{item.CurrentStatus}</td> */}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p>No workflow history available</p>
+                                    )}
 
-                </CollapsibleSection>
-                <div className="button-row">
-                    {/* <button className="btn-submit" onClick={onsubmit}>Submit</button> */}
-                    <button className="btn-exit" onClick={() => history.push("/")}>Exit</button>
+                                </CollapsibleSection>
+
+                                <div className='row my-3'>
+                                    <div className='col-md-12'>
+                                        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                                            <button onClick={() => history.push("/")} className="Exit-btn">
+                                                Exit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-
             </div>
-
             {showVendorPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box">
@@ -2624,7 +2608,8 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 </div>
             )}
 
-        </div>
+
+        </>
     );
 };
 

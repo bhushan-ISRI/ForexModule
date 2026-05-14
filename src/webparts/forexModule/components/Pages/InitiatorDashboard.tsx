@@ -136,19 +136,36 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
   );
 
   return (
+    <>
 
-    <div className="dashboard-wrapper">
-
-      {/* Header */}
       <div className="header">
-        <div className="left-banner">
-          <div className="logo-text">
-            <h2>Forex Initiation Dashboard</h2>
+        <h2> Forex Initiation Dashboard </h2>
+      </div>
+      <div className="mainsecondapprove">
+        <div className="mainsecondsmall">
+          <div>
+            <input placeholder="Search" value={searchTerm} className="form-control" style={{ width: "250px;" }} onChange={(e) => setSearchTerm(e.target.value)} />
+          </div>
+          <div>
+            <select value={statusFilter} className="form-controltext" style={{ width: "250px" }} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="All">All Status</option>
+              <option value="Pending">Pending for RM Approval</option>
+              <option value="Pending">Pending for HOD Approval</option>
+              <option value="Pending with Treasury for Verification">Pending with Treasury for Verification</option>
+              <option value="Pending for Vouching">Pending for Vouching</option>
+              <option value="Sent Back">Sent Back</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Paid And Closed">Paid and Closed</option>
+              <option value="Paid and Pending for Settlement">Paid and Pending for Settlement</option>
+            </select>
           </div>
         </div>
+        <div>
+          {activeTab !== "Advance" && (
+            <Link to="/NewRequest" className="create-button"> + New Request </Link>
+          )}
+        </div>
       </div>
-
-      {/* 🔹 Tabs */}
       <div className="dashboard-tabs">
 
         <button
@@ -166,218 +183,166 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
         </button>
 
       </div>
+      <div style={{ overflowX: "auto" }}>
+        <table className="custom-table">
 
-      {/* Filters */}
-      <div className="filter-section">
+          <thead>
 
-        <div className="filter-left">
+            <tr>
+              <th>Request No.</th>
+              <th>Request Type</th>
+              <th>EmployeeCode</th>
+              <th>Employee Name</th>
+              <th>Request Date</th>
+              <th>Location</th>
+              <th>Vendor Name</th>
+              {activeTab != "Advance" && (
+                <th>Amount</th>
+              )}
+              {activeTab === "Advance" && (
+                <>
+                  <th>Total Performa Invoice</th>
+                  <th>Advance Paid</th>
+                  <th>Amount Settled</th>
+                  <th>Balance</th>
+                </>
+              )}
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
 
-          <input
-            type="text"
-            placeholder="Search..."
-            className="form-control"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          </thead>
 
-          <select
-            className="form-control"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="All">All Status</option>
+          <tbody>
 
-            {/* <option value="Draft">Draft</option> */}
-            <option value="Pending">Pending for RM Approval</option>
-            <option value="Pending">Pending for HOD Approval</option>
-            <option value="Pending with Treasury for Verification">Pending with Treasury for Verification</option>
-            <option value="Pending for Vouching">Pending for Vouching</option>
-
-            {/* <option value="Approved">Approved</option> */}
-            <option value="Sent Back">Sent Back</option>
-            <option value="Rejected">Rejected</option>
-
-            <option value="Paid And Closed">Paid and Closed</option>
-            <option value="Paid and Pending for Settlement">Paid and Pending for Settlement</option>
-            {/* <option value="Verified and Closed with Bank">Verified and Closed with Bank</option> */}
-            {/* <option value="Closed">Closed</option> */}
-          </select>
-
-        </div>
-
-        {activeTab !== "Advance" && (
-          <Link to="/NewRequest" className="create-button">
-            + New Request
-          </Link>
-        )}
-
-      </div>
-
-      {/* Table */}
-      <div className="table-section">
-
-        <div className="table-vert-scroll">
-
-          <table className="custom-table">
-
-            <thead>
+            {loading ? (
 
               <tr>
-                <th>Request No.</th>
-                <th>Request Type</th>
-                <th>EmployeeCode</th>
-                <th>Employee Name</th>
-                <th>Request Date</th>
-                <th>Location</th>
-                <th>Vendor Name</th>
-                 {activeTab != "Advance" && (
-                <th>Amount</th>
-                 )}
-                {activeTab === "Advance" && (
-                  <>
-                    <th>Total Performa Invoice</th>
-                    <th>Advance Paid</th>
-                    <th>Amount Settled</th>
-                    <th>Balance</th>
-                  </>
-                )}
-                <th>Status</th>
-                <th>Action</th>
+                <td colSpan={9} className="text-center">
+                  Loading data...
+                </td>
               </tr>
 
-            </thead>
+            ) : paginatedData.length === 0 ? (
 
-            <tbody>
+              <tr>
+                <td colSpan={9} className="text-center">
+                  No records found
+                </td>
+              </tr>
 
-              {loading ? (
+            ) : (
 
-                <tr>
-                  <td colSpan={9} className="text-center">
-                    Loading data...
-                  </td>
-                </tr>
+              paginatedData.map((item) => (
 
-              ) : paginatedData.length === 0 ? (
+                <tr key={item.ID}>
 
-                <tr>
-                  <td colSpan={9} className="text-center">
-                    No records found
-                  </td>
-                </tr>
-
-              ) : (
-
-                paginatedData.map((item) => (
-
-                  <tr key={item.ID}>
-
-                    <td>{item.ForexNumber}</td>
-                    <td>{item.ForexType}</td>
-                    <td>{item.EmployeeCode}</td>
-                    <td>{item.EmployeeName}</td>
-                    <td>{formatDate(item.RequestedOn)}</td>
-                    <td>{item.Location}</td>
-                    <td>{item.VendorName}</td>
-                     {activeTab != "Advance" && (
+                  <td>{item.ForexNumber}</td>
+                  <td>{item.ForexType}</td>
+                  <td>{item.EmployeeCode}</td>
+                  <td>{item.EmployeeName}</td>
+                  <td>{formatDate(item.RequestedOn)}</td>
+                  <td>{item.Location}</td>
+                  <td>{item.VendorName}</td>
+                  {activeTab != "Advance" && (
                     <td>₹ {item.TotalAmount || "-"}</td>
-                     )}
-                    {activeTab === "Advance" && (
-                      <>
-                        <td>₹ {item.TotalAmount || "-"}</td>
-                        <td>₹ {item.INRAmount || "-"}</td>
-                        <td>₹ {item.INRAmount || "-"}</td>
-                        <td>₹ {(item.BalenceAmount) || "-"}</td>
-                      </>
-                    )}
+                  )}
+                  {activeTab === "Advance" && (
+                    <>
+                      <td>₹ {item.TotalAmount || "-"}</td>
+                      <td>₹ {item.INRAmount || "-"}</td>
+                      <td>₹ {item.INRAmount || "-"}</td>
+                      <td>₹ {(item.BalenceAmount) || "-"}</td>
+                    </>
+                  )}
+
+                  <td>
+
+                    <span
+                      className={`status-badge ${item.Status?.replace(" ", "-")}`}
+                    >
+                      {item.Status}
+                    </span>
+
+                  </td>
+
+                  <td>
 
                     <td>
 
-                      <span
-                        className={`status-badge ${item.Status?.replace(" ", "-")}`}
-                      >
-                        {item.Status}
-                      </span>
+                      {activeTab === "Advance" ? (
 
-                    </td>
-
-                    <td>
-
-                      <td>
-
-                        {activeTab === "Advance" ? (
-
-                          <Link to={`/AdvancePaymentTracker/${item.ID}`}>
-                            <img src={Edit} width={16} alt="Edit" />
-                          </Link>
-
-                        ) : item.Status === "Sent Back" || item.Status === "Draft" ? (
-
-                          <Link to={`/EditRequest/${item.ID}`}>
-                            <img src={Edit} width={16} alt="Edit" />
-                          </Link>
-
-                        ) : (
-                          null
-
-                        )}
-
-
-                      </td>
-                      <td>
-                        <Link to={`/ViewRequest/${item.ID}`}>
-                          <img src={View} width={16} alt="View" />
+                        <Link to={`/AdvancePaymentTracker/${item.ID}`}>
+                          <img src={Edit} width={16} alt="Edit" />
                         </Link>
-                      </td>
+
+                      ) : item.Status === "Sent Back" || item.Status === "Draft" ? (
+
+                        <Link to={`/EditRequest/${item.ID}`}>
+                          <img src={Edit} width={16} alt="Edit" />
+                        </Link>
+
+                      ) : (
+                        null
+
+                      )}
+
+
                     </td>
+                    <td>
+                      <Link to={`/ViewRequest/${item.ID}`}>
+                        <img src={View} width={16} alt="View" />
+                      </Link>
+                    </td>
+                  </td>
 
-                  </tr>
+                </tr>
 
-                ))
+              ))
 
-              )}
+            )}
 
-            </tbody>
+          </tbody>
 
-          </table>
+        </table>
+      </div>
+      <div style={{ marginTop: "10px", textAlign: "end" }}>
+        <button className="px-3 py-1 border rounded"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          <img src={Left} alt="" width={15} />
+        </button>
 
-        </div>
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter((page) => Math.abs(page - currentPage) <= 2)
+          .map((page) => (
 
-        {/* Pagination */}
-        <div className="pagination">
+            <button
+              style={{
+                margin: "0 10px",
+                backgroundColor: "rgb(60, 62, 69)",
+                color: "rgb(255, 255, 255)",
+                fontWeight: "bold"
+              }}
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={currentPage === page ? "active" : "px-3 py-1 border rounded"}
+            >
+              {page}
+            </button>
 
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <img src={Left} width={14} />
-          </button>
+          ))}
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .filter((page) => Math.abs(page - currentPage) <= 2)
-            .map((page) => (
-
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={currentPage === page ? "active" : ""}
-              >
-                {page}
-              </button>
-
-            ))}
-
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            <img src={Right} width={14} />
-          </button>
-
-        </div>
-
+        <button className="px-3 py-1 border rounded"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <img src={Right} alt="" width={15} />
+        </button>
       </div>
 
-    </div>
+    </>
 
   );
 

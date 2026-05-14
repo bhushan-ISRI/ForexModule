@@ -39,7 +39,10 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
    
       <div className="container-fluid" style={{ display: 'flex', width: '100%' }}>
         {!hideSidebar && <Sidebar {...props} />}
-        <div className="main">
+        <div className="main" style={{
+            width: hideSidebar ? "100%" : "calc(100% - 250px)",
+            transition: "width 0.3s ease"
+          }}>
           <Switch>
             <Route exact path="/" render={() => <InitiatorDashboard {...props} />} />
             <Route exact path="/NewRequest" render={() => <NewRequest {...props} />} />

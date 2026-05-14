@@ -4,6 +4,8 @@ import { IForexModuleProps } from "../IForexModuleProps";
 import { useHistory, useParams } from "react-router-dom";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { SPHttpClient } from "@microsoft/sp-http";
+
+import logo from "../../assets/sona-comstarlogo.png";
 /* ---------- Layout Helpers ---------- */
 
 const Section = ({ title, children }: any) => (
@@ -320,8 +322,8 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
         (sum, r) => sum + (parseFloat(r.invoiceAmount) || 0),
         0
     );
-     const totalInvoiceAmountnew = ShowInvoiceData.reduce(
-        (sum, r) => sum + (parseFloat(r.invoiceAmountnew) || 0),
+    const totalInvoiceAmountnew = ShowInvoiceData.reduce(
+        (sum, r) => sum + (parseFloat(r.invoiceAmountnew || "0") || 0),
         0
     );
 
@@ -542,7 +544,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
             {
                 Status: "Paid & Closed",
                 TreasuryApproverRemark: approverRemark,
-               ClosedWithADBank: isClosedWithAD ? "Yes" : "No",
+                ClosedWithADBank: isClosedWithAD ? "Yes" : "No",
                 ReferenceNumber: referenceNumber,
                 WorkFlowHistory: JSON.stringify(updatedHistory), // 🔥 IMPORTANT
                 CurrentApproverId: null
@@ -556,393 +558,494 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
     };
 
     return (
-        <div className="forex-wrapper">
+        <>
 
-            <div className="forex-header">
-                <h2>Forex Payment - Advance Payment Tracker Approval Form</h2>
-            </div>
+            <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        <div className='Main-Boxpoup'>
+                            <div className="bordered">
+                                <a><img src={logo} /></a>
+                                <h1>Forex Payment - Advance Payment Tracker Approval Form</h1>
+                            </div>
+                            <div className='borderedbox'>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Requestor Information</label>
+                                </div>
 
-            <div className="forex-card">
-
-                {/* Requestor */}
-
-                <Section title="Requestor Information">
-                    <Grid>
-                        <Field label="Type"><input value={paymentType} readOnly /></Field>
-                        <Field label="Employee Code"><input value={employee.EmployeeCode} readOnly /></Field>
-                        <Field label="Employee Name"><input value={employee.EmployeeName} readOnly /></Field>
-                        <Field label="Division"><input value={employee.Division} readOnly /></Field>
-                        <Field label="Location"><input value={employee.Location} readOnly /></Field>
-                        <Field label="RM"><input value={employee.RM} readOnly /></Field>
-                        <Field label="HOD"><input value={employee.HOD} readOnly /></Field>
-                        <Field label="Contact No"><input value={employee.ContactNo} readOnly /></Field>
-                        <Field label="Employee Status"><input value={employee.EmployeeStatus} readOnly /></Field>
-                        <Field label="Email" full><input value={employee.Email} readOnly /></Field>
-                    </Grid>
-                </Section>
-
-                {/* Vendor */}
-
-                <CollapsibleSection title="Vendor - Beneficiary Details">
-                    <Grid>
-                        <Field label="Vendor Code"><input value={vendor.VendorCode} readOnly /></Field>
-                        <Field label="Vendor Name"><input value={vendor.VendorName} readOnly /></Field>
-                        <Field label="Address" full><input value={vendor.VendorAddress} readOnly /></Field>
-                        <Field label="City"><input value={vendor.City} readOnly /></Field>
-                        <Field label="Country"><input value={vendor.Country} readOnly /></Field>
-                        <Field label="Pincode"><input value={vendor.PostalCode} readOnly /></Field>
-                        <Field label="Bank Name"><input value={vendor.BankName} readOnly /></Field>
-                        <Field label="Bank Country"><input value={vendor.BankCountry} readOnly /></Field>
-                        <Field label="Bank Swift Code"><input value={vendor.SWIFTBICCode} readOnly /></Field>
-                        <Field label="Bank Branch"><input value={vendor.BankAddress} readOnly /></Field>
-                        <Field label="Bank IBAN / Account No" full>
-                            <input value={vendor.AccountNumberIBAN} readOnly />
-                        </Field>
-                    </Grid>
-                </CollapsibleSection>
-
-                {/* Advance Payment */}
-
-                <Section title="Advance Payment Request Details">
-                    <Grid>
-                        <Field label="Request Number"><input value={requestNumber} readOnly /></Field>
-                        <Field label="Currency"><input value={currency} readOnly /></Field>
-                        <Field label="Total Amount"><input value={totalAmount} readOnly /></Field>
-                        <Field label="Foreign Bank Charges"><input value={foreignBankCharges} readOnly /></Field>
-                        <Field label="Requested On"><input type="date" value={requestedOn} readOnly /></Field>
-                    </Grid>
-                </Section>
-                <table className="data-table" style={{ marginTop: "10px" }}>
-
-                    <thead>
-                        <tr>
-                            <th>Sr.No.</th>
-                            <th>Performa Invoice No</th>
-                            <th>Performa Invoice Date</th>
-                            <th>Performa Invoice Amount</th>
-                            <th>Attach PO</th>
-                            <th>Attach PI</th>
-                            <th>Attach Other</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        {ShowInvoiceData.map((row, index) => (
-                            <tr key={index}>
-
-                                <td>{index + 1}</td>
-
-                                <td>{row.invoiceNo}</td>
-
-                                <td>{row.invoiceDate}</td>
-
-                                <td>{row.invoiceAmountnew}</td>
-
-                                {/* PO Attachments */}
-                                <td>
-                                    {poAttachments[index]?.length > 0 ? (
-                                        poAttachments[index].map((file: any, i: number) => (
-                                            <div key={i}>
-                                                <a
-                                                    href={file.ServerRelativeUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="upload-link"
-                                                >
-                                                    {file.FileName}
-                                                </a>
+                                <div className='main-formcontainer'>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Type</label>
+                                            <input type="text" value={paymentType} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Employee Code</label>
+                                            <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Employee Name</label>
+                                            <input type="text" value={employee.EmployeeName} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Division</label>
+                                            <input type="text" value={employee.Division} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Location</label>
+                                            <input type="text" value={employee.Location} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">RM</label>
+                                            <input type="text" value={employee.RM} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">HOD</label>
+                                            <input type="text" value={employee.HOD} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Contact No</label>
+                                            <input type="text" value={employee.ContactNo} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Employee Status</label>
+                                            <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Email</label>
+                                            <input type="text" value={employee.Email} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <CollapsibleSection title="Vendor / Beneficiary Details" style={{ marginTop: "10px" }}>
+                                    <div className="heading1" style={{ marginTop: "10px" }}>
+                                        <label>Vendor / Beneficiary Details</label>
+                                    </div>
+                                    <div className='main-formcontainer'>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Vendor Code</label>
+                                                <input value={vendor.VendorCode} onChange={(e) => {
+                                                    const code = e.target.value;
+                                                    setVendor({ ...vendor, VendorCode: code });
+                                                }}
+                                                    onBlur={(e) => getVendorData(e.target.value)}
+                                                    className="form-control readonly"
+                                                />
                                             </div>
-                                        ))
-                                    ) : (
-                                        <span>-</span>
-                                    )}
-                                </td>
-
-                                {/* PI Attachments */}
-                                <td>
-                                    {piAttachments[index]?.length > 0 ? (
-                                        piAttachments[index].map((file: any, i: number) => (
-                                            <div key={i}>
-                                                <a
-                                                    href={file.ServerRelativeUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="upload-link"
-                                                >
-                                                    {file.FileName}
-                                                </a>
+                                            <div className='col-md-4'>
+                                                <label className="font">Vendor Name</label>
+                                                <input type="text" value={vendor.VendorName} className="form-control readonly" />
                                             </div>
-                                        ))
-                                    ) : (
-                                        <span>-</span>
-                                    )}
-                                </td>
-
-                                {/* Other Attachments */}
-                                <td>
-                                    {otherAttachments[index]?.length > 0 ? (
-                                        otherAttachments[index].map((file: any, i: number) => (
-                                            <div key={i}>
-                                                <a
-                                                    href={file.ServerRelativeUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="upload-link"
-                                                >
-                                                    {file.FileName}
-                                                </a>
+                                            <div className="col-md-4">
+                                                <label className="font">City</label>
+                                                <input type="text" value={vendor.City} className="form-control readonly" />
                                             </div>
-                                        ))
-                                    ) : (
-                                        <span>-</span>
-                                    )}
-                                </td>
-
-                            </tr>
-                        ))}
-
-                    </tbody>
-
-                    <tfoot>
-                        <tr>
-
-                            <td colSpan={2}></td>
-
-                            <td style={{ fontWeight: "bold" }}>Total Amount</td>
-
-                            <td>{totalInvoiceAmountnew.toFixed(2)}</td>
-
-                            <td colSpan={3}></td>
-
-                        </tr>
-                    </tfoot>
-
-                </table>
-
-
-                {paymentType === "Goods-Advance Payment" && (
-                    <>
-                        <Section title="Bill Payment Details (For Goods Bill Payment)">
-
-                            <p style={{ color: "red", fontSize: "12px" }}>
-                                Tracker data submitted by user
-                            </p>
-
-                            <table className="data-table">
-
-                                <thead>
-                                    <tr>
-                                        <th>Sr.No.</th>
-                                        <th>Invoice Number</th>
-                                        <th>Invoice Date</th>
-                                        <th>BOE Number</th>
-                                        <th>BOE Date</th>
-                                        <th>MRN Number</th>
-                                        <th>Bill of Lading Number</th>
-                                        <th>Bill of Lading Date</th>
-                                        <th>Invoice Amount</th>
-                                        <th>Attach Invoice</th>
-                                        <th>Attach Other</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-
-                                    {rows.map((row, index) => (
-                                        <tr key={index}>
-
-                                            <td>{index + 1}</td>
-
-                                            <td><span>{row.invoiceNo}</span></td>
-
-                                            <td><span>{row.invoiceDate}</span></td>
-
-                                            <td><span>{row.boeNo}</span></td>
-
-                                            <td><span>{row.boeDate}</span></td>
-
-                                            <td><span>{row.mrnNo}</span></td>
-
-                                            <td><span>{row.blNo}</span></td>
-
-                                            <td><span>{row.blDate}</span></td>
-
-                                            <td><span>{row.invoiceAmount}</span></td>
-
-                                            {/* Invoice Upload */}
-                                            <td>
-
-                                                {poAttachmentsAdvance[index]?.length > 0 ? (
-
-                                                    poAttachmentsAdvance[index].map((file: any, i: number) => (
-
-                                                        <div key={i}>
-
-                                                            <a
-                                                                href={file.ServerRelativeUrl}
-                                                                download
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="upload-link"
-                                                            >
-                                                                📥 {file.FileName || file.name}
-                                                            </a>
-
-                                                        </div>
-
-                                                    ))
-
-                                                ) : (
-
-                                                    <span>-</span>
-
-                                                )}
-
-                                            </td>
-
-                                            {/* Other Upload */}
-                                            <td>
-
-                                                {piAttachmentsAddvance[index]?.length > 0 ? (
-
-                                                    piAttachmentsAddvance[index].map((file: any, i: number) => (
-
-                                                        <div key={i}>
-
-                                                            <a
-                                                                href={file.ServerRelativeUrl}
-                                                                download
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="upload-link"
-                                                            >
-                                                                📥 {file.FileName || file.name}
-                                                            </a>
-
-                                                        </div>
-
-                                                    ))
-
-                                                ) : (
-
-                                                    <span>-</span>
-
-                                                )}
-
-                                            </td>
-
-
-                                        </tr>
-                                    ))}
-
-                                </tbody>
-
-                                <tfoot>
-                                    <tr>
-                                        <td colSpan={7}></td>
-                                        <td style={{ fontWeight: "bold" }}>Total Amount</td>
-                                        <td>{totalInvoiceAmount.toFixed(2)}</td>
-                                        <td colSpan={2}></td>
-                                    </tr>
-                                </tfoot>
-
-                            </table>
-
-                        </Section>
-
-                        {/* BOE + BL DOCUMENTS */}
-
-                        <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
-
-                            {/* BOE TABLE */}
-
-                            <div>
-
-                                <p style={{ color: "red", fontSize: "12px" }}>
-                                    Unique BOE no listed below
-                                </p>
-
-                                <table className="data-table">
-
-                                    <thead>
-                                        <tr>
-                                            <th>BOE No</th>
-                                            <th>Attach Documents</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-
-                                        {uniqueBoeNumbers.map((boe, index) => (
-                                            <tr key={index}>
-
-                                                <td>{boe}</td>
-
-                                                <td>
-
-                                                    {boeAttachments[index]?.length > 0 ? (
-
-                                                        boeAttachments[index].map((file: any, i: number) => (
-                                                            <div key={i} style={{ fontSize: "12px" }}>
-
-                                                                <a
-                                                                    href={file.ServerRelativeUrl}
-                                                                    target="_blank"
-                                                                    download
-                                                                    rel="noopener noreferrer"
-                                                                    className="upload-link"
-                                                                >
-                                                                    📄 {file.FileName}
-                                                                </a>
-
-                                                            </div>
-                                                        ))
-
-                                                    ) : (
-
-                                                        <span>-</span>
-
-                                                    )}
-                                                </td>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Country</label>
+                                                <input type="text" value={vendor.Country} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Pincode</label>
+                                                <input type="text" value={vendor.PostalCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Name</label>
+                                                <input type="text" value={vendor.BankName} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Country</label>
+                                                <input type="text" value={vendor.BankCountry} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Swift Code</label>
+                                                <input type="text" value={vendor.SWIFTBICCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank Branch Address</label>
+                                                <input type="text" value={vendor.BankAddress} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className="font">Bank IBAN / Account No</label>
+                                                <input type="text" value={vendor.AccountNumberIBAN} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Address</label>
+                                                <input type="text" value={vendor.VendorAddress} className="form-control textbox readonly" />
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </CollapsibleSection>
+
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Advance Payment Request Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className="font">Request Number</label>
+                                            <input type="text" value={requestNumber} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Currency</label>
+                                            <input type="text" value={currency} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Total Amount</label>
+                                            <input type="text" value={totalAmount} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className="font">Foreign Bank Charges</label>
+                                            <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Requested On</label>
+                                            <input type="text" value={requestedOn} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ overflowX: "auto" }}>
+                                    <table className="custom-table" style={{ marginTop: "10px" }}>
+
+                                        <thead>
+                                            <tr>
+                                                <th>Sr.No.</th>
+                                                <th>Performa Invoice No</th>
+                                                <th>Performa Invoice Date</th>
+                                                <th>Performa Invoice Amount</th>
+                                                <th>Attach PO</th>
+                                                <th>Attach PI</th>
+                                                <th>Attach Other</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+
+                                            {ShowInvoiceData.map((row, index) => (
+                                                <tr key={index}>
+
+                                                    <td>{index + 1}</td>
+
+                                                    <td>{row.invoiceNo}</td>
+
+                                                    <td>{row.invoiceDate}</td>
+
+                                                    <td>{row.invoiceAmountnew}</td>
+
+                                                    {/* PO Attachments */}
+                                                    <td>
+                                                        {poAttachments[index]?.length > 0 ? (
+                                                            poAttachments[index].map((file: any, i: number) => (
+                                                                <div key={i}>
+                                                                    <a
+                                                                        href={file.ServerRelativeUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="upload-link"
+                                                                    >
+                                                                        {file.FileName}
+                                                                    </a>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span>-</span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* PI Attachments */}
+                                                    <td>
+                                                        {piAttachments[index]?.length > 0 ? (
+                                                            piAttachments[index].map((file: any, i: number) => (
+                                                                <div key={i}>
+                                                                    <a
+                                                                        href={file.ServerRelativeUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="upload-link"
+                                                                    >
+                                                                        {file.FileName}
+                                                                    </a>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span>-</span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* Other Attachments */}
+                                                    <td>
+                                                        {otherAttachments[index]?.length > 0 ? (
+                                                            otherAttachments[index].map((file: any, i: number) => (
+                                                                <div key={i}>
+                                                                    <a
+                                                                        href={file.ServerRelativeUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="upload-link"
+                                                                    >
+                                                                        {file.FileName}
+                                                                    </a>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span>-</span>
+                                                        )}
+                                                    </td>
+
+                                                </tr>
+                                            ))}
+
+                                        </tbody>
+
+                                        <tfoot>
+                                            <tr>
+
+                                                <td colSpan={2}></td>
+
+                                                <td style={{ fontWeight: "bold" }}>Total Amount</td>
+
+                                                <td>{totalInvoiceAmountnew.toFixed(2)}</td>
+
+                                                <td colSpan={3}></td>
 
                                             </tr>
-                                        ))}
+                                        </tfoot>
 
-                                    </tbody>
+                                    </table>
+                                </div>
 
-                                </table>
+                                {paymentType === "Goods-Advance Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Bill Payment Details (For Goods Bill Payment)</label>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr.No.</th>
+                                                        <th>Invoice Number</th>
+                                                        <th>Invoice Date</th>
+                                                        <th>BOE Number</th>
+                                                        <th>BOE Date</th>
+                                                        <th>MRN Number</th>
+                                                        <th>Bill of Lading Number</th>
+                                                        <th>Bill of Lading Date</th>
+                                                        <th>Invoice Amount</th>
+                                                        <th>Attach Invoice</th>
+                                                        <th>Attach Other</th>
+                                                    </tr>
+                                                </thead>
 
-                            </div>
+                                                <tbody>
+
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+
+                                                            <td>{index + 1}</td>
+
+                                                            <td><span>{row.invoiceNo}</span></td>
+
+                                                            <td><span>{row.invoiceDate}</span></td>
+
+                                                            <td><span>{row.boeNo}</span></td>
+
+                                                            <td><span>{row.boeDate}</span></td>
+
+                                                            <td><span>{row.mrnNo}</span></td>
+
+                                                            <td><span>{row.blNo}</span></td>
+
+                                                            <td><span>{row.blDate}</span></td>
+
+                                                            <td><span>{row.invoiceAmount}</span></td>
+
+                                                            {/* Invoice Upload */}
+                                                            <td>
+
+                                                                {poAttachmentsAdvance[index]?.length > 0 ? (
+
+                                                                    poAttachmentsAdvance[index].map((file: any, i: number) => (
+
+                                                                        <div key={i}>
+
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                download
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="upload-link"
+                                                                            >
+                                                                                📥 {file.FileName || file.name}
+                                                                            </a>
+
+                                                                        </div>
+
+                                                                    ))
+
+                                                                ) : (
+
+                                                                    <span>-</span>
+
+                                                                )}
+
+                                                            </td>
+
+                                                            {/* Other Upload */}
+                                                            <td>
+
+                                                                {piAttachmentsAddvance[index]?.length > 0 ? (
+
+                                                                    piAttachmentsAddvance[index].map((file: any, i: number) => (
+
+                                                                        <div key={i}>
+
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                download
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="upload-link"
+                                                                            >
+                                                                                📥 {file.FileName || file.name}
+                                                                            </a>
+
+                                                                        </div>
+
+                                                                    ))
+
+                                                                ) : (
+
+                                                                    <span>-</span>
+
+                                                                )}
+
+                                                            </td>
 
 
-                            {/* BL TABLE */}
+                                                        </tr>
+                                                    ))}
 
-                            <div>
+                                                </tbody>
 
-                                <p style={{ color: "red", fontSize: "12px" }}>
-                                    Unique Bill of Lading listed below
-                                </p>
+                                                <tfoot>
+                                                    <tr>
+                                                        <td colSpan={7}></td>
+                                                        <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                                        <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                                        <td colSpan={2}></td>
+                                                    </tr>
+                                                </tfoot>
 
-                                <table className="data-table">
+                                            </table>
+                                        </div>
+                                        <div style={{ display: "flex", gap: "40px", marginTop: "20px" }}>
 
-                                    <thead>
-                                        <tr>
-                                            <th>Bill of Lading</th>
-                                            <th>Attach Documents</th>
-                                        </tr>
-                                    </thead>
+                                            {/* BOE TABLE */}
 
-                                    <tbody>
+                                            <div>
 
-                                        {uniqueBlNumbers.map((bl, index) => (
-                                            <tr key={index}>
+                                                <p style={{ color: "red", fontSize: "12px" }}>
+                                                    Unique BOE no listed below
+                                                </p>
 
-                                                <td>{bl}</td>
+                                                <table className="custom-table">
 
-                                                <td>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>BOE No</th>
+                                                            <th>Attach Documents</th>
+                                                        </tr>
+                                                    </thead>
 
-                                                    {/* <input
+                                                    <tbody>
+
+                                                        {uniqueBoeNumbers.map((boe, index) => (
+                                                            <tr key={index}>
+
+                                                                <td>{boe}</td>
+
+                                                                <td>
+
+                                                                    {boeAttachments[index]?.length > 0 ? (
+
+                                                                        boeAttachments[index].map((file: any, i: number) => (
+                                                                            <div key={i} style={{ fontSize: "12px" }}>
+
+                                                                                <a
+                                                                                    href={file.ServerRelativeUrl}
+                                                                                    target="_blank"
+                                                                                    download
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="upload-link"
+                                                                                >
+                                                                                    📄 {file.FileName}
+                                                                                </a>
+
+                                                                            </div>
+                                                                        ))
+
+                                                                    ) : (
+
+                                                                        <span>-</span>
+
+                                                                    )}
+                                                                </td>
+
+                                                            </tr>
+                                                        ))}
+
+                                                    </tbody>
+
+                                                </table>
+
+                                            </div>
+
+
+                                            {/* BL TABLE */}
+
+                                            <div>
+
+                                                <p style={{ color: "red", fontSize: "12px" }}>
+                                                    Unique Bill of Lading listed below
+                                                </p>
+
+                                                <table className="custom-table">
+
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Bill of Lading</th>
+                                                            <th>Attach Documents</th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody>
+
+                                                        {uniqueBlNumbers.map((bl, index) => (
+                                                            <tr key={index}>
+
+                                                                <td>{bl}</td>
+
+                                                                <td>
+
+                                                                    {/* <input
                                                         type="file"
                                                         onChange={(e) => handleBlUpload(index, e.target.files)}
                                                     />
@@ -952,290 +1055,293 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                                             {file.name}
                                                         </div>
                                                     ))} */}
-                                                    {blAttachments[index]?.length > 0 ? (
+                                                                    {blAttachments[index]?.length > 0 ? (
 
-                                                        blAttachments[index].map((file: any, i: number) => (
-                                                            <div key={i} style={{ fontSize: "12px" }}>
+                                                                        blAttachments[index].map((file: any, i: number) => (
+                                                                            <div key={i} style={{ fontSize: "12px" }}>
 
-                                                                <a
-                                                                    href={file.ServerRelativeUrl}
-                                                                    target="_blank"
-                                                                    download
-                                                                    rel="noopener noreferrer"
-                                                                    className="upload-link"
-                                                                >
-                                                                    📄 {file.FileName}
-                                                                </a>
+                                                                                <a
+                                                                                    href={file.ServerRelativeUrl}
+                                                                                    target="_blank"
+                                                                                    download
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="upload-link"
+                                                                                >
+                                                                                    📄 {file.FileName}
+                                                                                </a>
 
-                                                            </div>
-                                                        ))
+                                                                            </div>
+                                                                        ))
 
-                                                    ) : (
+                                                                    ) : (
 
-                                                        <span>-</span>
+                                                                        <span>-</span>
 
-                                                    )}
+                                                                    )}
 
-                                                </td>
+                                                                </td>
 
-                                            </tr>
-                                        ))}
+                                                            </tr>
+                                                        ))}
 
-                                    </tbody>
+                                                    </tbody>
 
-                                </table>
+                                                </table>
+
+                                            </div>
+
+                                        </div>
+                                    </>
+                                )}
+
+                                {paymentType === "Service-Advance Payment" && (
+                                    <>
+                                        <p>
+                                            <b>Bill Payment Details (for Service Bill Payment)</b>
+                                        </p>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table">
+
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr.No.</th>
+                                                        <th>Invoice Number</th>
+                                                        <th>Invoice Date</th>
+                                                        <th>Invoice Amount</th>
+                                                        <th>MRN Number</th>
+                                                        <th>MRN Date</th>
+                                                        <th>Invoice Document</th>
+                                                        <th>Other Document</th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+
+                                                            <td>{index + 1}</td>
+
+                                                            <td>
+                                                                <span>{row.invoiceNo}</span>
+                                                            </td>
+
+                                                            <td>
+                                                                <span>{row.invoiceDate}</span>
+                                                            </td>
+
+                                                            <td>
+                                                                <span>{row.invoiceAmount}</span>
+                                                            </td>
+
+                                                            <td>
+                                                                <span>{row.mrnNo}</span>
+                                                            </td>
+
+                                                            <td>
+                                                                <span>{row.mrnDate}</span>
+                                                            </td>
+
+                                                            {/* Invoice Attachments */}
+
+                                                            <td>
+
+                                                                {poAttachmentsAdvance[index]?.length > 0 ? (
+
+                                                                    poAttachmentsAdvance[index].map((file: any, i: number) => (
+
+                                                                        <div key={i}>
+
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                download
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="upload-link"
+                                                                            >
+                                                                                📥 {file.FileName || file.name}
+                                                                            </a>
+
+                                                                        </div>
+
+                                                                    ))
+
+                                                                ) : (
+
+                                                                    <span>-</span>
+
+                                                                )}
+
+                                                            </td>
+
+                                                            {/* Other Attachments */}
+
+                                                            <td>
+
+                                                                {piAttachmentsAddvance[index]?.length > 0 ? (
+
+                                                                    piAttachmentsAddvance[index].map((file: any, i: number) => (
+
+                                                                        <div key={i}>
+
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                download
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="upload-link"
+                                                                            >
+                                                                                📥 {file.FileName || file.name}
+                                                                            </a>
+
+                                                                        </div>
+
+                                                                    ))
+
+                                                                ) : (
+
+                                                                    <span>-</span>
+
+                                                                )}
+
+                                                            </td>
+
+                                                        </tr>
+                                                    ))}
+
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <td colSpan={2}></td>
+                                                        <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                                        <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                                        <td colSpan={5}></td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </>
+                                )}
+
+                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
+
+                                    {workflowHistory.length > 0 ? (
+                                        <table className="custom-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Action By</th>
+                                                    {/* <th>Role</th> */}
+                                                    <th>Action</th>
+                                                    <th>Remark</th>
+                                                    <th>Date</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                {workflowHistory.map((item: any, index: number) => (
+                                                    <tr key={index}>
+                                                        <td>{item.CurrentApprover}</td>
+                                                        {/* <td>{item.Role || "-"}</td> */}
+                                                        <td>{item.ActionTaken}</td>
+                                                        <td>{item.Comment || "-"}</td>
+                                                        <td>
+                                                            {item.Date
+                                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                                : ""}
+                                                        </td>
+                                                        <td>{item.CurrentStatus}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p>No workflow history available</p>
+                                    )}
+
+                                </CollapsibleSection>
+
+                                <div style={{ marginTop: "20px" }}>
+                                    <label><b>Approver's Remarks:</b></label>
+                                    <textarea
+                                        style={{ width: "70%", height: "40px", marginLeft: "10px" }}
+                                        value={approverRemark}
+                                        onChange={(e) => setApproverRemark(e.target.value)}
+                                    />
+
+                                </div>
+
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Bank Closure Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className="font">Closed with AD bank</label>
+                                            <input
+                                                type="checkbox"
+                                                checked={isClosedWithAD}
+                                                onChange={(e) => {
+                                                    setIsClosedWithAD(e.target.checked);
+
+                                                    // Clear reference if unchecked
+                                                    if (!e.target.checked) {
+                                                        setReferenceNumber("");
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Reference Number (on selection of checkbox)</label>
+                                            <input
+                                                type="text"
+                                                value={referenceNumber}
+                                                disabled={!isClosedWithAD}
+                                                onChange={(e) => setReferenceNumber(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Total Amount</label>
+                                            <input type="text" value={totalAmount} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className="font">Foreign Bank Charges</label>
+                                            <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                        </div>
+                                        <div className='col-md-4'>
+                                            <label className="font">Requested On</label>
+                                            <input type="text" value={requestedOn} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className='row my-3'>
+                                    <div className='col-md-12'>
+                                        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                                            <button onClick={approveRequest} className="Submit-btn">
+                                                Approve
+                                            </button>
+                                            <button onClick={rejectRequest} className="Reject-btn">
+                                                Reject
+                                            </button>
+
+                                            <button  onClick={() => history.push("/")} className="Exit-btn">
+                                                Exit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
 
                             </div>
-
                         </div>
-
-                    </>
-                )}
-
-
-                {paymentType === "Service-Advance Payment" && (
-
-                    <div style={{ marginTop: "30px" }}>
-
-                        {/* <div style={{ background: "#fff8b3", padding: "4px", fontSize: "12px" }}>
-                            <b>Only for Service: Advance Payment</b>
-                        </div> */}
-
-                        <p>
-                            <b>Bill Payment Details (for Service Bill Payment)</b>
-                        </p>
-
-                        <table className="data-table">
-
-                            <thead>
-                                <tr>
-                                    <th>Sr.No.</th>
-                                    <th>Invoice Number</th>
-                                    <th>Invoice Date</th>
-                                    <th>Invoice Amount</th>
-                                    <th>MRN Number</th>
-                                    <th>MRN Date</th>
-                                    <th>Invoice Document</th>
-                                    <th>Other Document</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-
-                                {rows.map((row, index) => (
-                                    <tr key={index}>
-
-                                        <td>{index + 1}</td>
-
-                                        <td>
-                                            <span>{row.invoiceNo}</span>
-                                        </td>
-
-                                        <td>
-                                            <span>{row.invoiceDate}</span>
-                                        </td>
-
-                                        <td>
-                                            <span>{row.invoiceAmount}</span>
-                                        </td>
-
-                                        <td>
-                                            <span>{row.mrnNo}</span>
-                                        </td>
-
-                                        <td>
-                                            <span>{row.mrnDate}</span>
-                                        </td>
-
-                                        {/* Invoice Attachments */}
-
-                                        <td>
-
-                                            {poAttachmentsAdvance[index]?.length > 0 ? (
-
-                                                poAttachmentsAdvance[index].map((file: any, i: number) => (
-
-                                                    <div key={i}>
-
-                                                        <a
-                                                            href={file.ServerRelativeUrl}
-                                                            download
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="upload-link"
-                                                        >
-                                                            📥 {file.FileName || file.name}
-                                                        </a>
-
-                                                    </div>
-
-                                                ))
-
-                                            ) : (
-
-                                                <span>-</span>
-
-                                            )}
-
-                                        </td>
-
-                                        {/* Other Attachments */}
-
-                                        <td>
-
-                                            {piAttachmentsAddvance[index]?.length > 0 ? (
-
-                                                piAttachmentsAddvance[index].map((file: any, i: number) => (
-
-                                                    <div key={i}>
-
-                                                        <a
-                                                            href={file.ServerRelativeUrl}
-                                                            download
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="upload-link"
-                                                        >
-                                                            📥 {file.FileName || file.name}
-                                                        </a>
-
-                                                    </div>
-
-                                                ))
-
-                                            ) : (
-
-                                                <span>-</span>
-
-                                            )}
-
-                                        </td>
-
-                                    </tr>
-                                ))}
-
-                            </tbody>
-                                 <tfoot>
-                                    <tr>
-                                        <td colSpan={2}></td>
-                                        <td style={{ fontWeight: "bold" }}>Total Amount</td>
-                                        <td>{totalInvoiceAmount.toFixed(2)}</td>
-                                        <td colSpan={5}></td>
-                                    </tr>
-                                </tfoot>
-                        </table>
-
                     </div>
-
-                )}
-
-                <CollapsibleSection title="Workflow History">
-
-                    {workflowHistory.length > 0 ? (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Action By</th>
-                                    {/* <th>Role</th> */}
-                                    <th>Action</th>
-                                    <th>Remark</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {workflowHistory.map((item: any, index: number) => (
-                                    <tr key={index}>
-                                        <td>{item.CurrentApprover}</td>
-                                        {/* <td>{item.Role || "-"}</td> */}
-                                        <td>{item.ActionTaken}</td>
-                                        <td>{item.Comment || "-"}</td>
-                                        <td>
-                                            {item.Date
-                                                ? new Date(item.Date).toLocaleString("en-GB")
-                                                : ""}
-                                        </td>
-                                        <td>{item.CurrentStatus}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <p>No workflow history available</p>
-                    )}
-
-                </CollapsibleSection>
-                {/* Approver Remarks */}
-
-                <div style={{ marginTop: "20px" }}>
-
-                    <label><b>Approver's Remarks:</b></label>
-
-                    <textarea
-                        style={{ width: "70%", height: "40px", marginLeft: "10px" }}
-                        value={approverRemark}
-                        onChange={(e) => setApproverRemark(e.target.value)}
-                    />
-
                 </div>
-                <Section title="Bank Closure Details">
-                    <Grid>
-
-                        <Field label="Closed with AD bank">
-                            <input
-                                type="checkbox"
-                                checked={isClosedWithAD}
-                                onChange={(e) => {
-                                    setIsClosedWithAD(e.target.checked);
-
-                                    // Clear reference if unchecked
-                                    if (!e.target.checked) {
-                                        setReferenceNumber("");
-                                    }
-                                }}
-                            />
-                        </Field>
-
-                        <Field label="Reference Number (on selection of checkbox)">
-                            <input
-                                type="text"
-                                value={referenceNumber}
-                                disabled={!isClosedWithAD}
-                                onChange={(e) => setReferenceNumber(e.target.value)}
-                            />
-                        </Field>
-
-                    </Grid>
-                </Section>
-
-                <div className="button-row">
-
-                    <button
-                        className="btn-submit"
-                        onClick={approveRequest}
-                    >
-                        Approve
-                    </button>
-
-                    <button
-                        className="btn-Reject"
-                        onClick={rejectRequest}
-                        style={{ background: "#d9534f !important" }}
-                    >
-                        Reject
-                    </button>
-
-                    <button
-                        className="btn-exit"
-                        onClick={() => history.push("/")}>
-                        Exit
-                    </button>
-
-                </div>
-
             </div>
-        </div>
+        </>
     );
 };
 

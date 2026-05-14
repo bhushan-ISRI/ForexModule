@@ -7,6 +7,8 @@ import "../../components/Pages/Css/ApprovedRejectedbyme.scss";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { useHistory } from "react-router-dom";
 
+import logo from "../../assets/sona-comstarlogo.png";
+
 const ModernForexDashboard: React.FC<IForexModuleProps> = (props) => {
 
   const [listData, setListData] = useState<any[]>([]);
@@ -203,155 +205,155 @@ const ModernForexDashboard: React.FC<IForexModuleProps> = (props) => {
   // =========================================
   // FILTERS
   // =========================================
- useEffect(() => {
+  useEffect(() => {
 
-  // =====================================
-  // DEFAULT DATA = ONLY MY ACTIONED ITEMS
-  // =====================================
-  let data = listData.filter((item) => {
+    // =====================================
+    // DEFAULT DATA = ONLY MY ACTIONED ITEMS
+    // =====================================
+    let data = listData.filter((item) => {
 
-    let history: any[] = [];
+      let history: any[] = [];
 
-    try {
+      try {
 
-      history =
-        typeof item.WorkFlowHistory === "string"
-          ? JSON.parse(item.WorkFlowHistory)
-          : item.WorkFlowHistory || [];
+        history =
+          typeof item.WorkFlowHistory === "string"
+            ? JSON.parse(item.WorkFlowHistory)
+            : item.WorkFlowHistory || [];
 
-    } catch {
+      } catch {
 
-      history = [];
+        history = [];
+      }
+
+      return history.some(
+        (h: any) =>
+          ["Approved", "Rejected", "Sent Back"].includes(h.ActionTaken) &&
+          (h.CurrentApprover || "")
+            .toLowerCase()
+            .trim() === currentUser
+      );
+    });
+
+    // =====================================
+    // STATUS FILTER
+    // =====================================
+    if (statusFilter !== "All") {
+
+      if (statusFilter === "ApprovedByMe") {
+
+        data = data.filter((item) => {
+
+          let history: any[] = [];
+
+          try {
+
+            history =
+              typeof item.WorkFlowHistory === "string"
+                ? JSON.parse(item.WorkFlowHistory)
+                : item.WorkFlowHistory || [];
+
+          } catch {
+
+            history = [];
+          }
+
+          return history.some(
+            (h: any) =>
+              h.ActionTaken === "Approved" &&
+              (h.CurrentApprover || "")
+                .toLowerCase()
+                .trim() === currentUser
+          );
+        });
+      }
+
+      else if (statusFilter === "RejectedByMe") {
+
+        data = data.filter((item) => {
+
+          let history: any[] = [];
+
+          try {
+
+            history =
+              typeof item.WorkFlowHistory === "string"
+                ? JSON.parse(item.WorkFlowHistory)
+                : item.WorkFlowHistory || [];
+
+          } catch {
+
+            history = [];
+          }
+
+          return history.some(
+            (h: any) =>
+              h.ActionTaken === "Rejected" &&
+              (h.CurrentApprover || "")
+                .toLowerCase()
+                .trim() === currentUser
+          );
+        });
+      }
+
+      else if (statusFilter === "SentBackByMe") {
+
+        data = data.filter((item) => {
+
+          let history: any[] = [];
+
+          try {
+
+            history =
+              typeof item.WorkFlowHistory === "string"
+                ? JSON.parse(item.WorkFlowHistory)
+                : item.WorkFlowHistory || [];
+
+          } catch {
+
+            history = [];
+          }
+
+          return history.some(
+            (h: any) =>
+              h.ActionTaken === "Sent Back" &&
+              (h.CurrentApprover || "")
+                .toLowerCase()
+                .trim() === currentUser
+          );
+        });
+      }
     }
 
-    return history.some(
-      (h: any) =>
-        ["Approved", "Rejected", "Sent Back"].includes(h.ActionTaken) &&
-        (h.CurrentApprover || "")
+    // =====================================
+    // SEARCH FILTER
+    // =====================================
+    if (searchTerm) {
+
+      const lowerSearch = searchTerm.toLowerCase();
+
+      data = data.filter((item) =>
+        Object.values({
+          requestNo: item.ForexNumber,
+          employee: item.EmployeeName,
+          vendor: item.VendorName,
+          status: item.Status,
+          location: item.Location,
+          amount: item.TotalAmount,
+          //status: item.Status,
+          requestDate: formatDate(item.RequestedOn),
+          forexType: item.ForexType
+
+        })
+          .join(" ")
           .toLowerCase()
-          .trim() === currentUser
-    );
-  });
-
-  // =====================================
-  // STATUS FILTER
-  // =====================================
-  if (statusFilter !== "All") {
-
-    if (statusFilter === "ApprovedByMe") {
-
-      data = data.filter((item) => {
-
-        let history: any[] = [];
-
-        try {
-
-          history =
-            typeof item.WorkFlowHistory === "string"
-              ? JSON.parse(item.WorkFlowHistory)
-              : item.WorkFlowHistory || [];
-
-        } catch {
-
-          history = [];
-        }
-
-        return history.some(
-          (h: any) =>
-            h.ActionTaken === "Approved" &&
-            (h.CurrentApprover || "")
-              .toLowerCase()
-              .trim() === currentUser
-        );
-      });
+          .includes(lowerSearch)
+      );
     }
 
-    else if (statusFilter === "RejectedByMe") {
+    setFilteredData(data);
 
-      data = data.filter((item) => {
-
-        let history: any[] = [];
-
-        try {
-
-          history =
-            typeof item.WorkFlowHistory === "string"
-              ? JSON.parse(item.WorkFlowHistory)
-              : item.WorkFlowHistory || [];
-
-        } catch {
-
-          history = [];
-        }
-
-        return history.some(
-          (h: any) =>
-            h.ActionTaken === "Rejected" &&
-            (h.CurrentApprover || "")
-              .toLowerCase()
-              .trim() === currentUser
-        );
-      });
-    }
-
-    else if (statusFilter === "SentBackByMe") {
-
-      data = data.filter((item) => {
-
-        let history: any[] = [];
-
-        try {
-
-          history =
-            typeof item.WorkFlowHistory === "string"
-              ? JSON.parse(item.WorkFlowHistory)
-              : item.WorkFlowHistory || [];
-
-        } catch {
-
-          history = [];
-        }
-
-        return history.some(
-          (h: any) =>
-            h.ActionTaken === "Sent Back" &&
-            (h.CurrentApprover || "")
-              .toLowerCase()
-              .trim() === currentUser
-        );
-      });
-    }
-  }
-
-  // =====================================
-  // SEARCH FILTER
-  // =====================================
-  if (searchTerm) {
-
-    const lowerSearch = searchTerm.toLowerCase();
-
-    data = data.filter((item) =>
-      Object.values({
-        requestNo: item.ForexNumber,
-        employee: item.EmployeeName,
-        vendor: item.VendorName,
-        status: item.Status,
-        location: item.Location,
-        amount: item.TotalAmount,
-        //status: item.Status,
-        requestDate: formatDate(item.RequestedOn),
-        forexType: item.ForexType
-
-      })
-        .join(" ")
-        .toLowerCase()
-        .includes(lowerSearch)
-    );
-  }
-
-  setFilteredData(data);
-
-}, [listData, searchTerm, statusFilter]);
+  }, [listData, searchTerm, statusFilter]);
 
   // =========================================
   // RESET PAGE ON FILTER CHANGE
@@ -371,216 +373,224 @@ const ModernForexDashboard: React.FC<IForexModuleProps> = (props) => {
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
   return (
+    <>
 
-    <div className="approved-rejected-dashboard">   
-
-      <div className="dashboard-header">
-
-        <div>
-          <h2>Forex Workflow Dashboard</h2>
-          <p>Track approvals, rejections and workflow status</p>
+      <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+        <div className='row'>
+          <div className='col-md-12'>
+            <div className='Main-Boxpoup'>
+              <div className="bordered">
+                <a><img src={logo} /></a>
+                <h1>Forex Workflow Dashboard</h1>
+              </div>
+              <div className="sub-header">
+                <p>Track approvals, rejections and workflow status</p>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* <Link to="/NewRequest" className="new-request-btn">
-          + New Request
-        </Link> */}
-
       </div>
 
-      {/* =============================== */}
-      {/* CARDS */}
-      {/* =============================== */}
-      <div className="dashboard-cards">
 
-        <div className="dashboard-card total">
-          <h3>Total Requests</h3>
-          <h1>{dashboardCounts.total}</h1>
+      <div className="approved-rejected-dashboard">
+
+        {/* =============================== */}
+        {/* CARDS */}
+        {/* =============================== */}
+        <div className="dashboard-cards">
+
+          <div className="dashboard-card total">
+            <h3>Total Requests</h3>
+            <h1>{dashboardCounts.total}</h1>
+          </div>
+
+          <div className="dashboard-card approved">
+            <h3>Approved By Me</h3>
+            <h1>{dashboardCounts.approvedByMe}</h1>
+          </div>
+
+          <div className="dashboard-card rejected">
+            <h3>Rejected By Me</h3>
+            <h1>{dashboardCounts.rejectedByMe}</h1>
+          </div>
+
+          <div className="dashboard-card sentback">
+            <h3>Sent Back By Me</h3>
+            <h1>{dashboardCounts.sentBackByMe}</h1>
+          </div>
+
         </div>
 
-        <div className="dashboard-card approved">
-          <h3>Approved By Me</h3>
-          <h1>{dashboardCounts.approvedByMe}</h1>
+        {/* =============================== */}
+        {/* FILTERS */}
+        {/* =============================== */}
+        <div className="filter-section">
+
+          <input
+            type="text"
+            placeholder="Search request..."
+            className="form-control"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <select
+            className="form-control"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All</option>
+            <option value="Pending">Pending</option>
+            <option value="ApprovedByMe">Approved By Me</option>
+            <option value="RejectedByMe">Rejected By Me</option>
+            <option value="SentBackByMe">Sent Back By Me</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Sent Back">Sent Back</option>
+            <option value="Paid">Paid</option>
+          </select>
+
         </div>
 
-        <div className="dashboard-card rejected">
-          <h3>Rejected By Me</h3>
-          <h1>{dashboardCounts.rejectedByMe}</h1>
-        </div>
+        {/* =============================== */}
+        {/* TABLE */}
+        {/* =============================== */}
+        <div className="table-wrapper">
 
-        <div className="dashboard-card sentback">
-          <h3>Sent Back By Me</h3>
-          <h1>{dashboardCounts.sentBackByMe}</h1>
-        </div>
+          <table className="custom-table">
 
-      </div>
-
-      {/* =============================== */}
-      {/* FILTERS */}
-      {/* =============================== */}
-      <div className="filter-section">
-
-        <input
-          type="text"
-          placeholder="Search request..."
-          className="form-control"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <select
-          className="form-control"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="All">All</option>
-          <option value="Pending">Pending</option>
-          <option value="ApprovedByMe">Approved By Me</option>
-          <option value="RejectedByMe">Rejected By Me</option>
-          <option value="SentBackByMe">Sent Back By Me</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Sent Back">Sent Back</option>
-          <option value="Paid">Paid</option>
-        </select>
-
-      </div>
-
-      {/* =============================== */}
-      {/* TABLE */}
-      {/* =============================== */}
-      <div className="table-wrapper">
-
-        <table className="custom-table">
-
-          <thead>
-            <tr>
-              <th>Request No</th>
-              <th>Type</th>
-              <th>Employee</th>
-              <th>Vendor</th>
-              <th>Location</th>
-              <th>Amount</th>
-              <th>Status</th>
-              {/* <th>Pending At</th> */}
-              <th>Date</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-
-            {loading ? (
-
+            <thead>
               <tr>
-                <td colSpan={10}>Loading...</td>
+                <th>Request No</th>
+                <th>Type</th>
+                <th>Employee</th>
+                <th>Vendor</th>
+                <th>Location</th>
+                <th>Amount</th>
+                <th>Status</th>
+                {/* <th>Pending At</th> */}
+                <th>Date</th>
+                <th>Action</th>
               </tr>
+            </thead>
 
-            ) : paginatedData.length === 0 ? (
+            <tbody>
 
-              <tr>
-                <td colSpan={10}>No Records Found</td>
-              </tr>
+              {loading ? (
 
-            ) : (
+                <tr>
+                  <td colSpan={10}>Loading...</td>
+                </tr>
 
-              paginatedData.map((item) => (
+              ) : paginatedData.length === 0 ? (
 
-                <tr key={item.ID}>
+                <tr>
+                  <td colSpan={10}>No Records Found</td>
+                </tr>
 
-                  <td>{item.ForexNumber}</td>
+              ) : (
 
-                  <td>{item.ForexType}</td>
+                paginatedData.map((item) => (
 
-                  <td>{item.EmployeeName}</td>
+                  <tr key={item.ID}>
 
-                  <td>{item.VendorName}</td>
+                    <td>{item.ForexNumber}</td>
 
-                  <td>{item.Location}</td>
+                    <td>{item.ForexType}</td>
 
-                  <td>₹ {item.TotalAmount}</td>
+                    <td>{item.EmployeeName}</td>
 
-                  <td>
-                    <span
-                      className={`status-badge ${item.Status?.replace(/\s/g, '-')}`}
-                    >
-                      {item.Status}
-                    </span>
-                  </td>
+                    <td>{item.VendorName}</td>
 
-                  {/* <td>
+                    <td>{item.Location}</td>
+
+                    <td>₹ {item.TotalAmount}</td>
+
+                    <td>
+                      <span
+                        className={`status-badge ${item.Status?.replace(/\s/g, '-')}`}
+                      >
+                        {item.Status}
+                      </span>
+                    </td>
+
+                    {/* <td>
                      {getCurrentApprover(item.AllApprovers)} 
                   </td> */}
 
-                  <td>
-                    {formatDate(item.RequestedOn)}
-                  </td>
+                    <td>
+                      {formatDate(item.RequestedOn)}
+                    </td>
 
-                  <td>
+                    <td>
 
-                    <Link to={`/ViewRequest/${item.ID}`}>
-                      View
-                    </Link>
+                      <Link to={`/ViewRequest/${item.ID}`}>
+                        View
+                      </Link>
 
-                  </td>
+                    </td>
 
-                </tr>
+                  </tr>
 
-              ))
-            )}
+                ))
+              )}
 
-          </tbody>
+            </tbody>
 
-        </table>
+          </table>
 
-        {/* =============================== */}
-        {/* PAGINATION */}
-        {/* =============================== */}
-        {!loading && totalPages > 1 && (
+          {/* =============================== */}
+          {/* PAGINATION */}
+          {/* =============================== */}
+          {!loading && totalPages > 1 && (
 
-          <div className="pagination-wrapper">
-
-            <button
-              className="page-btn"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => prev - 1)}
-            >
-              Previous
-            </button>
-
-            {[...Array(totalPages)].map((_, index) => (
+            <div className="pagination-wrapper">
 
               <button
-                key={index}
-                className={`page-number ${
-                  currentPage === index + 1 ? "active-page" : ""
-                }`}
-                onClick={() => setCurrentPage(index + 1)}
+                className="page-btn"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
               >
-                {index + 1}
+                Previous
               </button>
 
-            ))}
+              {[...Array(totalPages)].map((_, index) => (
 
-            <button
-              className="page-btn"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => prev + 1)}
-            >
-              Next
-            </button>
+                <button
+                  key={index}
+                  className={`page-number ${currentPage === index + 1 ? "active-page" : ""
+                    }`}
+                  onClick={() => setCurrentPage(index + 1)}
+                >
+                  {index + 1}
+                </button>
 
+              ))}
+
+              <button
+                className="page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+              >
+                Next
+              </button>
+
+            </div>
+
+          )}
+
+        </div>
+        <div className='row my-3'>
+          <div className='col-md-12'>
+            <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+              <button onClick={() => history.push("/")} className="Exit-btn">
+                Exit
+              </button>
+            </div>
           </div>
-
-        )}
+        </div>
 
       </div>
-      <a
-    onClick={() => history.push("/")}
-    className="exit-btn"
->
-    Exit
-</a>
-
-    </div>
+    </>
   );
 };
 
