@@ -1299,14 +1299,15 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                                 value={referenceNumber}
                                                 disabled={!isClosedWithAD}
                                                 onChange={(e) => setReferenceNumber(e.target.value)}
+                                                className="form-control"
                                             />
                                         </div>
-                                        <div className='col-md-4'>
+                                        {/* <div className='col-md-4'>
                                             <label className="font">Total Amount</label>
                                             <input type="text" value={totalAmount} className="form-control readonly" />
-                                        </div>
+                                        </div> */}
                                     </div>
-                                    <div className='row mb-20'>
+                                    {/* <div className='row mb-20'>
                                         <div className='col-md-4'>
                                             <label className="font">Foreign Bank Charges</label>
                                             <input type="text" value={foreignBankCharges} className="form-control readonly" />
@@ -1315,7 +1316,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                             <label className="font">Requested On</label>
                                             <input type="text" value={requestedOn} className="form-control readonly" />
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
 
                                 <div className='row my-3'>

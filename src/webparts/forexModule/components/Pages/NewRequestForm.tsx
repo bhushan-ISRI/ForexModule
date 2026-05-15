@@ -55,6 +55,27 @@ const Field = ({ label, children, full, required }: any) => (
         {children}
     </div>
 );
+const CollapsibleSection = ({ title, children }: any) => {
+    const [open, setOpen] = React.useState(false);
+
+    return (
+        <div className="form-section collapsible">
+            <div
+                className="form-section-header"
+                onClick={() => setOpen(!open)}
+            >
+                <span>{title}</span>
+                <i className={`fas fa-chevron-${open ? "up" : "down"}`}></i>
+            </div>
+
+            {open && (
+                <div className="form-section-body">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
 const NewRequest = (props: IForexModuleProps) => {
     const history = useHistory();
     const spCrudOps = SPCRUDOPS();
@@ -1623,6 +1644,7 @@ const NewRequest = (props: IForexModuleProps) => {
 
                                     </div>
                                 </div>
+                                <CollapsibleSection title="Tax & Regulatory Information" style={{ marginTop: "10px" }}>
                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Tax & Regulatory Information</label>
                                 </div>
@@ -1802,6 +1824,9 @@ const NewRequest = (props: IForexModuleProps) => {
                                                 </div>
                                             </div>
                                         </div>
+                                        </>
+                                                       )}
+                                 </CollapsibleSection> 
                                         <div className="heading1" style={{ marginTop: "10px" }}>
                                             <label>Summary of WHT Applicability</label>
                                         </div>
@@ -1846,7 +1871,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                             <>
                                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                                     <label>Forex Payment Request Details</label>
-                                                </div>
+                                                    </div>
                                                 <div className='main-formcontainer'>
                                                     <div className='row mb-20'>
                                                         <div className='col-md-4'>
@@ -1855,7 +1880,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                                         </div>
                                                         <div className='col-md-4'>
                                                             <label className="font">Requested On <span className="Mantorystar">*</span></label>
-                                                            <input type="text" value={employee.EmployeeName} className="form-control" />
+                                                            <input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} className="form-control" />
                                                         </div>
                                                         <div className="col-md-4">
                                                             <label className="font">Currency <span className="Mantorystar">*</span></label>
@@ -2161,7 +2186,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                                 </div>
                                             </>
                                         )}
-                                        
+
                                         {paymentType === "Service-Bill Payment" && (
                                             <>
                                                 <div className="heading1" style={{ marginTop: "10px" }}>
@@ -2175,7 +2200,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                                         </div>
                                                         <div className='col-md-4'>
                                                             <label className="font">Requested On</label>
-                                                            <input type="text" value={requestedOn} className="form-control" onChange={(e) => { setRequestedOn(e.target.value) }} />
+                                                            <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
                                                         </div>
                                                         <div className="col-md-4">
                                                             <label className="font">Currency</label>
@@ -2383,7 +2408,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                                         </div>
                                                         <div className='col-md-4'>
                                                             <label className="font">Requested On</label>
-                                                            <input type="text" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
+                                                            <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
                                                         </div>
                                                         <div className="col-md-4">
                                                             <label className="font">Currency</label>
@@ -2604,7 +2629,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                                         </div>
                                                         <div className='col-md-4'>
                                                             <label className="font">Requested On</label>
-                                                            <input type="text" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
+                                                            <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
                                                         </div>
                                                         <div className="col-md-4">
                                                             <label className="font">Currency</label>
@@ -2814,7 +2839,7 @@ const NewRequest = (props: IForexModuleProps) => {
 
                                         <div className='row mb-20'>
                                             <div className='col-md-4'>
-                                                <label className='font'>Remarks </label>
+                                                <label className='font' >Remarks </label>
                                                 <textarea rows={4} cols={4} value={remarks} className="form-control" onChange={(e) => { setRemarks(e.target.value) }}></textarea>
                                             </div>
                                         </div>
@@ -2835,8 +2860,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                             </div>
                                         </div>
 
-                                    </>
-                                )}
+                                    
                             </div>
                         </div>
                     </div>

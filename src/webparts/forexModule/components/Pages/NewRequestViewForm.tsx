@@ -831,7 +831,6 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     </div>
                                 </div>
 
-                                <CollapsibleSection title="Vendor / Beneficiary Details" style={{ marginTop: "10px" }}>
                                     <div className="heading1" style={{ marginTop: "10px" }}>
                                         <label>Vendor / Beneficiary Details</label>
                                     </div>
@@ -896,6 +895,8 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                                         </div>
                                     </div>
+           <CollapsibleSection title="Tax & Regulatory Information" style={{ marginTop: "10px" }}>
+
                                     <div className="heading1" style={{ marginTop: "10px" }}>
                                         <label>Tax & Regulatory Information</label>
                                     </div>
