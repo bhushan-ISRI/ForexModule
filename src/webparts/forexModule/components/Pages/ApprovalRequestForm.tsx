@@ -2765,7 +2765,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                                 )}
                                                 <div className="col-md-4">
                                                     <label className="font">Remarks</label>
-                                                    <textarea rows={4} cols={4} className="form-control" value={vouchingRemarks} onChange={(e) => setVouchingRemarks(e.target.value)} />
+                                                    <textarea rows={4} cols={4} style={{width:"100%"}} value={vouchingRemarks} onChange={(e) => setVouchingRemarks(e.target.value)} />
                                                 </div>
                                             </div>
 
