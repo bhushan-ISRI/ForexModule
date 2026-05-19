@@ -414,10 +414,10 @@ const ModernForexDashboard: React.FC<IForexModuleProps> = (props) => {
             <h1>{dashboardCounts.rejectedByMe}</h1>
           </div>
 
-          <div className="dashboard-card sentback">
+          {/* <div className="dashboard-card sentback">
             <h3>Sent Back By Me</h3>
             <h1>{dashboardCounts.sentBackByMe}</h1>
-          </div>
+          </div> */}
 
         </div>
 
@@ -440,13 +440,8 @@ const ModernForexDashboard: React.FC<IForexModuleProps> = (props) => {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="All">All</option>
-            <option value="Pending">Pending</option>
             <option value="ApprovedByMe">Approved By Me</option>
             <option value="RejectedByMe">Rejected By Me</option>
-            <option value="SentBackByMe">Sent Back By Me</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Sent Back">Sent Back</option>
-            <option value="Paid">Paid</option>
           </select>
 
         </div>

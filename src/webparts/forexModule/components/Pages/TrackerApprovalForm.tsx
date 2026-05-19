@@ -122,6 +122,9 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
     ]);
     const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
     const [approverRemark, setApproverRemark] = useState("");
+    const [poContractNo, setPoContractNo] = useState("");
+    const [poDate, setPoDate] = useState("");
+    const [expectedSettlementDate, setExpectedSettlementDate] = useState("");
 
     useEffect(() => {
         if (Id) loadForexData(Id);
@@ -134,7 +137,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
 
         const res = await sp.getData(
             "VendorMaster",
-            "VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,State/Title,Country/Title,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress",
+            "Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
             "NatureOfPayment,City,State,Country,Currency",
             `VendorCode eq '${vendorCode}'`,
             { column: "ID", isAscending: true },
@@ -150,14 +153,15 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                 VendorCode: v.VendorCode,
                 VendorName: v.VendorName,
                 VendorAddress: v.VendorAddress,
-                City: v.City.Title,
-                Country: v.Country.Title,
+                City: v.City.City,
+                Country: v.Country.Country,
                 PostalCode: v.PostalCode,
                 BankName: v.BankName,
                 BankCountry: v.BankCountry,
                 SWIFTBICCode: v.SWIFTBICCode,
                 BankAddress: v.BankAddress,
-                AccountNumberIBAN: v.AccountNumberIBAN
+                AccountNumberIBAN: v.AccountNumberIBAN,
+                Pincode: v.Pincode,
             });
 
         }
@@ -194,7 +198,9 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
             setCurrency(data.Currency.Title);
             setTotalAmount(data.TotalAmount);
             setForeignBankCharges(data.ForeignBankCharges);
-
+            setPoContractNo(data.poContractNo || "");
+            setPoDate(data.poDate?.split("T")[0] || "");
+            setExpectedSettlementDate(data.expectedSettlementDate?.split("T")[0] || "");
             setEmployee({
                 EmployeeCode: data.EmployeeCode || "",
                 EmployeeName: data.EmployeeName || "",
@@ -378,11 +384,11 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                 const files = item.AttachmentFiles || [];
 
                 poAttachmentMap[index] = files.filter((f: any) =>
-                    f.FileName?.startsWith("PO_")
+                    f.FileName?.startsWith("INV_")
                 );
 
                 piAttachmentMap[index] = files.filter((f: any) =>
-                    f.FileName?.startsWith("PI_")
+                    f.FileName?.startsWith("DOC_")
                 );
 
                 otherAttachmentMap[index] = files.filter((f: any) =>
@@ -569,60 +575,57 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                 <h1>Forex Payment - Advance Payment Tracker Approval Form</h1>
                             </div>
                             <div className='borderedbox'>
-                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Requestor Information</label>
-                                </div>
+                                </div> */}
+                                <CollapsibleSection title="Requestor Information" style={{ marginTop: "10px" }}>
 
-                                <div className='main-formcontainer'>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Type</label>
-                                            <input type="text" value={paymentType} className="form-control readonly" />
+                                    <div className='main-formcontainer'>
+
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Employee Code</label>
+                                                <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Employee Name</label>
+                                                <input type="text" value={employee.EmployeeName} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Division</label>
+                                                <input type="text" value={employee.Division} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Location</label>
+                                                <input type="text" value={employee.Location} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">RM</label>
+                                                <input type="text" value={employee.RM} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">HOD</label>
+                                                <input type="text" value={employee.HOD} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Contact No</label>
+                                                <input type="text" value={employee.ContactNo} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Employee Status</label>
+                                                <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Email</label>
+                                                <input type="text" value={employee.Email} className="form-control readonly" />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Employee Code</label>
-                                            <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Employee Name</label>
-                                            <input type="text" value={employee.EmployeeName} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Division</label>
-                                            <input type="text" value={employee.Division} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Location</label>
-                                            <input type="text" value={employee.Location} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">RM</label>
-                                            <input type="text" value={employee.RM} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">HOD</label>
-                                            <input type="text" value={employee.HOD} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Contact No</label>
-                                            <input type="text" value={employee.ContactNo} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Employee Status</label>
-                                            <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Email</label>
-                                            <input type="text" value={employee.Email} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                </div>
+                                </CollapsibleSection>
                                 <CollapsibleSection title="Vendor / Beneficiary Details" style={{ marginTop: "10px" }}>
                                     <div className="heading1" style={{ marginTop: "10px" }}>
                                         <label>Vendor / Beneficiary Details</label>
@@ -655,7 +658,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                             </div>
                                             <div className='col-md-4'>
                                                 <label className="font">Pincode</label>
-                                                <input type="text" value={vendor.PostalCode} className="form-control readonly" />
+                                                <input type="text" value={vendor.Pincode} className="form-control readonly" />
                                             </div>
                                             <div className='col-md-4'>
                                                 <label className="font">Bank Name</label>
@@ -689,35 +692,92 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                         </div>
                                     </div>
                                 </CollapsibleSection>
+                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
+
+                                    {workflowHistory.length > 0 ? (
+                                        <table className="custom-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Action By</th>
+                                                    {/* <th>Role</th> */}
+                                                    <th>Action</th>
+                                                    <th>Remark</th>
+                                                    <th>Date</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                {workflowHistory.map((item: any, index: number) => (
+                                                    <tr key={index}>
+                                                        <td>{item.CurrentApprover}</td>
+                                                        {/* <td>{item.Role || "-"}</td> */}
+                                                        <td>{item.ActionTaken}</td>
+                                                        <td>{item.Comment || "-"}</td>
+                                                        <td>
+                                                            {item.Date
+                                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                                : ""}
+                                                        </td>
+                                                        <td>{item.CurrentStatus}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p>No workflow history available</p>
+                                    )}
+
+                                </CollapsibleSection>
 
                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Advance Payment Request Details</label>
                                 </div>
                                 <div className='main-formcontainer'>
-
                                     <div className='row mb-20'>
                                         <div className='col-md-4'>
-                                            <label className="font">Request Number</label>
-                                            <input type="text" value={requestNumber} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Currency</label>
-                                            <input type="text" value={currency} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Total Amount</label>
-                                            <input type="text" value={totalAmount} className="form-control readonly" />
+                                            <label className='font'>Type</label>
+                                            <input type="text" value={paymentType} className="form-control readonly" />
                                         </div>
                                     </div>
                                     <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className="font">Foreign Bank Charges</label>
-                                            <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                       <div className='col-md-4'>
+                                            <label className='font'>Request Number</label>
+                                            <input type="text" value={requestNumber} className="form-control readonly" />
                                         </div>
                                         <div className='col-md-4'>
                                             <label className="font">Requested On</label>
                                             <input type="text" value={requestedOn} className="form-control readonly" />
                                         </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Currency</label>
+                                            <input type="text" value={currency} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Total Amount</label>
+                                            <input type="text" value={totalAmount} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Foreign Bank Charges </label>
+                                            <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">PO/Contract No </label>
+                                            <input type="text" value={poContractNo} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                     <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>PO Date</label>
+                                            <input type="date" value={poDate} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Expected Settlement Date </label>
+                                            <input type="date" value={expectedSettlementDate} className="form-control readonly" />
+                                        </div>
+
                                     </div>
                                 </div>
 
@@ -1223,53 +1283,9 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                     </>
                                 )}
 
-                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
 
-                                    {workflowHistory.length > 0 ? (
-                                        <table className="custom-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Action By</th>
-                                                    {/* <th>Role</th> */}
-                                                    <th>Action</th>
-                                                    <th>Remark</th>
-                                                    <th>Date</th>
-                                                    <th>Status</th>
-                                                </tr>
-                                            </thead>
 
-                                            <tbody>
-                                                {workflowHistory.map((item: any, index: number) => (
-                                                    <tr key={index}>
-                                                        <td>{item.CurrentApprover}</td>
-                                                        {/* <td>{item.Role || "-"}</td> */}
-                                                        <td>{item.ActionTaken}</td>
-                                                        <td>{item.Comment || "-"}</td>
-                                                        <td>
-                                                            {item.Date
-                                                                ? new Date(item.Date).toLocaleString("en-GB")
-                                                                : ""}
-                                                        </td>
-                                                        <td>{item.CurrentStatus}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    ) : (
-                                        <p>No workflow history available</p>
-                                    )}
 
-                                </CollapsibleSection>
-
-                                <div style={{ marginTop: "20px" }}>
-                                    <label><b>Approver's Remarks:</b></label>
-                                    <textarea
-                                        style={{ width: "70%", height: "40px", marginLeft: "10px" }}
-                                        value={approverRemark}
-                                        onChange={(e) => setApproverRemark(e.target.value)}
-                                    />
-
-                                </div>
 
                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Bank Closure Details</label>
@@ -1318,6 +1334,20 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                         </div>
                                     </div> */}
                                 </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Remarks Section</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className='col-md-4'>
+                                        <label><b>Remarks:</b></label>
+                                        <textarea
+                                            style={{ width: "70%", height: "40px", marginLeft: "10px" }}
+                                            value={approverRemark}
+                                            onChange={(e) => setApproverRemark(e.target.value)}
+                                        />
+
+                                    </div>
+                                </div>
 
                                 <div className='row my-3'>
                                     <div className='col-md-12'>
@@ -1329,7 +1359,7 @@ const TrackerApprovalForm = (props: IForexModuleProps) => {
                                                 Reject
                                             </button>
 
-                                            <button  onClick={() => history.push("/")} className="Exit-btn">
+                                            <button onClick={() => history.push("/")} className="Exit-btn">
                                                 Exit
                                             </button>
                                         </div>

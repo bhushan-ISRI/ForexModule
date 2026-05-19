@@ -13,6 +13,7 @@ import "@pnp/sp/files";
 import "@pnp/sp/folders";
 
 import logo from "../../assets/sona-comstarlogo.png";
+import { sp } from "@pnp/sp";
 
 //import USESPCRUD from "../../service/BAL/spcrud";
 
@@ -33,6 +34,7 @@ interface IApproverDetails {
     Name: string;
     Role: string;
     Level: number;
+    status: string;
 }
 
 const Section = ({ title, children }: any) => (
@@ -161,7 +163,8 @@ const NewRequest = (props: IForexModuleProps) => {
         PurposeCodeRBI: "",
         BankCountry: "",
         BankAddress: "",
-        VendorAddress: ""
+        VendorAddress: "",
+        Pincode:""
     });
 
     const [permanentEstablishmentDeclaration, setPermanentEstablishmentDeclaration] = useState({
@@ -277,7 +280,7 @@ const NewRequest = (props: IForexModuleProps) => {
         try {
             const sp = await spCrudOps;
             await sp.getData(
-                "Currency",
+                "CurrencyMaster",
                 "Title,Id",
                 "",
                 "",
@@ -305,7 +308,7 @@ const NewRequest = (props: IForexModuleProps) => {
         const shortStart = startYear.toString().slice(-2);
         const shortEnd = endYear.toString().slice(-2);
 
-        return `${shortStart}-${shortEnd}`;
+        return `${shortEnd}`;
     };
 
     const generateRequestNumber = async () => {
@@ -325,7 +328,7 @@ const NewRequest = (props: IForexModuleProps) => {
             const nextNo = currentNo + 1;
             setNextNo(nextNo);
             setIncrimentalId(itemId);
-            const paddedNumber = nextNo.toString().padStart(4, "0");
+            const paddedNumber = nextNo.toString().padStart(5, "0");
 
             const formattedNumber = `Forex/${fy}/${paddedNumber}`;
 
@@ -339,130 +342,351 @@ const NewRequest = (props: IForexModuleProps) => {
         } catch (error) { console.error("Error generating request number:", error); }
     }
 
-    const buildApprovalFlow = async (employeeData: any, selectedType: string) => {
-        try {
-            const sp = await spCrudOps;
+  const buildApprovalFlow = async (employeeData: any, selectedType: string) => {
+    try {
+        const sp = await spCrudOps;
 
-            const baseApprovers: IApproverDetails[] = [];
+        const baseApprovers: IApproverDetails[] = [];
 
-            if (employeeData.RMId) {
-                baseApprovers.push({
-                    Id: employeeData.RMId,
-                    Name: employeeData.RM,
-                    Role: "RM",
-                    Level: 1
-                });
-            }
+        if (employeeData.RMId) {
+            baseApprovers.push({
+                Id: employeeData.RMId,
+                Name: employeeData.RM,
+                Role: "RM",
+                Level: 1,
+                status: "Pending"
+            });
+        }
 
-            if (employeeData.HODId) {
-                baseApprovers.push({
-                    Id: employeeData.HODId,
-                    Name: employeeData.HOD,
-                    Role: "HOD",
-                    Level: 2
-                });
-            }
+        if (employeeData.HODId) {
+            baseApprovers.push({
+                Id: employeeData.HODId,
+                Name: employeeData.HOD,
+                Role: "HOD",
+                Level: 2,
+                status: ""
+            });
+        }
 
-            // 🔥 Map UI type to Backend RequestType
-            let requestTypeFilter = "";
+        // 🔥 Map UI type to Backend RequestType
+        let requestTypeFilter = "";
 
-            if (
-                selectedType === "Goods-Advance Payment" ||
-                selectedType === "Service-Advance Payment"
-            ) {
-                requestTypeFilter = "Advance Payment";
-            } else {
-                requestTypeFilter = selectedType; // direct match for Bill types
-            }
+        if (
+            selectedType === "Goods-Advance Payment" ||
+            selectedType === "Service-Advance Payment"
+        ) {
+            requestTypeFilter = "Advance Payment";
+        } else {
+            requestTypeFilter = selectedType;
+        }
 
-            const matrixData = await sp.getData(
-                "ForexApprovalMatrix",
-                "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
-                "Approver",
-                `RequestType eq '${requestTypeFilter}' and Status eq 'Active'`,
-                { column: "Level", isAscending: true },
-                5000,
-                props
-            );
+        const matrixData = await sp.getData(
+            "ForexApprovalMatrix",
+            "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
+            "Approver",
+            `RequestType eq '${requestTypeFilter}' and Status eq 'Active'`,
+            { column: "Level", isAscending: true },
+            5000,
+            props
+        );
 
-            const matrixApprovers = matrixData.map((item: any, index: number) => ({
+        const matrixApprovers = matrixData.map(
+            (item: any, index: number) => ({
                 Id: item.Approver?.Id,
                 Name: item.Approver?.Title,
                 Role: item.Role,
-                Level: baseApprovers.length + index + 1
-            }));
+                Level: baseApprovers.length + index + 1,
+                status: ""
+            })
+        );
 
-            const fullFlow = [...baseApprovers, ...matrixApprovers];
+        // ✅ Keep all approvers including duplicates
+        const fullFlow = [...baseApprovers, ...matrixApprovers];
 
-            const uniqueFlow = fullFlow.filter(
-                (value, index, self) =>
-                    self.findIndex(v => v.Id === value.Id) === index
+        // ✅ First approver should always be pending
+        if (fullFlow.length > 0) {
+            fullFlow[0].status = "Pending";
+        }
+
+        setApproverDetails(fullFlow);
+        setApprovers(fullFlow.map(a => a.Id));
+
+    } catch (error) {
+        console.error("Error building approval flow:", error);
+    }
+};
+    //=----------------------- userdata------------------------//
+    // const getuserData = async () => {
+    //     (await spCrudOps).getData(
+    //         "EmployeeMaster",
+    //         "EmployeeCode,EmployeeName,Division,Location,ReportingManager/EMail,ReportingManager/Id,HOD/EMail,HOD/Id,ReportingManager/Title,HOD/Title,ContactNo,EmployeeStatus,EmployeeEmail,Employee/Id,Employee/Title",
+    //         "ReportingManager,HOD,Employee",
+    //         `EmployeeId eq '${props.context.pageContext.legacyPageContext.userId}'`,
+    //         { column: "ID", isAscending: true },
+    //         1,
+    //         props
+    //     )
+    //         .then((res: any[]) => {
+    //             if (res.length > 0) {
+    //                 const userData = res[0];
+
+    //                 setEmployee({
+    //                     EmployeeCode: userData.EmployeeCode || "",
+    //                     EmployeeName: userData.EmployeeName || "",
+    //                     Division: userData.Division || "",
+    //                     Location: userData.Location || "",
+    //                     RM: userData.ReportingManager?.Title || "",
+    //                     HOD: userData.HOD?.Title || "",
+    //                     ContactNo: userData.ContactNo || "",
+    //                     EmployeeStatus: userData.EmployeeStatus || "",
+    //                     Email: userData.EmployeeEmail || "",
+    //                     RMId: userData.ReportingManager?.Id || 0,
+    //                     HODId: userData.HOD?.Id || 0
+    //                 });
+
+    //                 const rmId = userData.ReportingManager?.Id;
+    //                 const hodId = userData.HOD?.Id;
+
+    //                 const userApprovers = [rmId, hodId]
+    //                     .filter((id): id is number => !!id);
+
+    //                 const uniqueApprovers = userApprovers.filter(
+    //                     (value, index, self) => self.indexOf(value) === index
+    //                 );
+
+    //                 setApprovers(uniqueApprovers);
+
+    //                 // 🔥 NEW: Fetch Roles From Matrix
+    //                 buildApprovalFlow({
+    //                     RMId: userData.ReportingManager?.Id,
+    //                     HODId: userData.HOD?.Id,
+    //                     RM: userData.ReportingManager?.Title,
+    //                     HOD: userData.HOD?.Title
+    //                 }, paymentType);
+
+    //             } else {
+    //                 console.log("No user data found for the current email.");
+    //             }
+    //         })
+    //         .catch((error: any) => {
+    //             console.error("Error fetching user data:", error);
+    //         });
+    // };
+    // ✅ Ensure User Function
+const ensureUser = async (email: string): Promise<number> => {
+
+    if (!email) return 0;
+
+    try {
+
+        const webUrl = props.context.pageContext.web.absoluteUrl;
+
+        const response = await props.context.spHttpClient.post(
+            `${webUrl}/_api/web/ensureuser`,
+            SPHttpClient.configurations.v1,
+            {
+                headers: {
+                    "Accept": "application/json;odata=nometadata",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    logonName: email
+                })
+            }
+        );
+
+        if (!response.ok) {
+
+            console.log("ensureUser failed for:", email);
+
+            return 0;
+        }
+
+        const data = await response.json();
+
+        return data.Id || 0;
+
+    } catch (error) {
+
+        console.log("ensureUser error:", email, error);
+
+        return 0;
+    }
+};
+    const getuserData = async () => {
+
+    try {
+
+        const toTitleCase = (str: string): string => {
+            if (!str) return "";
+
+            return str
+                .toLowerCase()
+                .split(" ")
+                .filter(Boolean)
+                .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ");
+        };
+
+        const cleanLocationForDisplay = (location: string): string => {
+            if (!location) return "N/A";
+
+            return location.replace(/^re\s+/i, "").trim();
+        };
+
+        const FLOW_URL =
+            "https://defaultcb1edbfe8080457d9cae51528f3643.3f.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/e2bb522aa41443179a72b701b9613471/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=q8b8ADCtK2eKr2f6p3MX7gxmJymPeJbm0mq2M69Rk8E";
+
+        // ✅ Fetch page data
+        const fetchPage = async (pageNumber: number) => {
+
+            const response = await fetch(FLOW_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    PageSize: 500,
+                    PageNumber: pageNumber
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch employee data");
+            }
+
+            return response.json();
+        };
+
+        // ✅ Current User Email
+        const userEmail =
+            props.context.pageContext.user.email.toLowerCase();
+
+        let item = null;
+        let page = 1;
+
+        // ✅ Paging Loop
+        while (true) {
+
+            const res = await fetchPage(page);
+
+            const employees = res?.data?.employees || [];
+
+            item = employees.find(
+                (x: any) =>
+                    x.email?.toLowerCase() === userEmail
             );
 
-            setApproverDetails(uniqueFlow);
-            setApprovers(uniqueFlow.map(a => a.Id));
+            // ✅ Stop when found
+            if (item) {
+                break;
+            }
 
-        } catch (error) {
-            console.error("Error building approval flow:", error);
+            // ✅ Stop if last page
+            if (employees.length < 500) {
+                break;
+            }
+
+            page++;
         }
-    };
-    //=----------------------- userdata------------------------//
-    const getuserData = async () => {
-        (await spCrudOps).getData(
-            "EmployeeMaster",
-            "EmployeeCode,EmployeeName,Division,Location,RM/EMail,RM/Id,HOD/EMail,HOD/Id,RM/Title,HOD/Title,ContactNo,EmployeeStatus,Email,Employee/Id,Employee/Title",
-            "RM,HOD,Employee",
-            `EmployeeId eq '${props.context.pageContext.legacyPageContext.userId}'`,
-            { column: "ID", isAscending: true },
-            1,
-            props
-        )
-            .then((res: any[]) => {
-                if (res.length > 0) {
-                    const userData = res[0];
 
-                    setEmployee({
-                        EmployeeCode: userData.EmployeeCode || "",
-                        EmployeeName: userData.EmployeeName || "",
-                        Division: userData.Division || "",
-                        Location: userData.Location || "",
-                        RM: userData.RM?.Title || "",
-                        HOD: userData.HOD?.Title || "",
-                        ContactNo: userData.ContactNo || "",
-                        EmployeeStatus: userData.EmployeeStatus || "",
-                        Email: userData.Email || "",
-                        RMId: userData.RM?.Id || 0,
-                        HODId: userData.HOD?.Id || 0
-                    });
+        if (!item) {
+            console.log("Employee not found");
+            return;
+        }
 
-                    const rmId = userData.RM?.Id;
-                    const hodId = userData.HOD?.Id;
+        // ✅ Location
+        const locationAttr = (item.attributes || []).find(
+            (a: any) => a.attributeTypeDescription === "Location"
+        );
 
-                    const userApprovers = [rmId, hodId]
-                        .filter((id): id is number => !!id);
+        // ✅ Department
+        const departmentAttr = (item.attributes || []).find(
+            (a: any) =>
+                a.attributeTypeDescription?.toLowerCase() === "department"
+        );
 
-                    const uniqueApprovers = userApprovers.filter(
-                        (value, index, self) => self.indexOf(value) === index
-                    );
+        // ✅ Ensure Users
+        let employeeUserId = 0;
+        let rmUserId = 0;
+        let hodUserId = 0;
 
-                    setApprovers(uniqueApprovers);
+        try {
 
-                    // 🔥 NEW: Fetch Roles From Matrix
-                    buildApprovalFlow({
-                        RMId: userData.RM?.Id,
-                        HODId: userData.HOD?.Id,
-                        RM: userData.RM?.Title,
-                        HOD: userData.HOD?.Title
-                    }, paymentType);
+            if (item.email) {
+                employeeUserId = await ensureUser(item.email);
+            }
 
-                } else {
-                    console.log("No user data found for the current email.");
-                }
-            })
-            .catch((error: any) => {
-                console.error("Error fetching user data:", error);
-            });
-    };
+            if (item.reportingManagerEmail) {
+                rmUserId = await ensureUser(item.reportingManagerEmail);
+            }
+
+            if (item.reportingManagerEmail2) {
+                hodUserId = await ensureUser(item.reportingManagerEmail2);
+            }
+
+        } catch (e) {
+
+            console.log("ensureUser error", e);
+        }
+
+        // ✅ Set Employee State
+        setEmployee({
+
+            EmployeeCode: item.employeeCode || "",
+
+            EmployeeName: toTitleCase(item.employeeName || ""),
+
+            Division:
+                departmentAttr?.attributeTypeUnitDescription || "",
+
+            Location:
+                cleanLocationForDisplay(
+                    locationAttr?.attributeTypeUnitDescription || ""
+                ),
+
+            RM: item.reportingManagerName || "",
+
+            HOD: item.reportingManagerName2 || "",
+
+            ContactNo: item.mobileNo || "",
+
+            EmployeeStatus: item.employeeStatus || "",
+
+            Email: item.email || "",
+
+            RMId: rmUserId || 0,
+
+            HODId: hodUserId || 0
+        });
+
+        // ✅ Approvers
+        const userApprovers = [rmUserId, hodUserId]
+            .filter((id): id is number => !!id);
+
+        const uniqueApprovers = userApprovers.filter(
+            (value, index, self) =>
+                self.indexOf(value) === index
+        );
+
+        setApprovers(uniqueApprovers);
+
+        // ✅ Build Approval Flow
+        buildApprovalFlow(
+            {
+                RMId: rmUserId,
+                HODId: hodUserId,
+                RM: item.reportingManagerName || "",
+                HOD: item.reportingManagerName2 || ""
+            },
+            paymentType
+        );
+
+    } catch (error) {
+
+        console.error("Error fetching user data:", error);
+    }
+};
     //---------------------------------lOADVENDOR DATA-------------------------//
     const loadVendorOptions = async () => {
         const sp = await spCrudOps;
@@ -497,7 +721,7 @@ const NewRequest = (props: IForexModuleProps) => {
 
         (await spCrudOps).getData(
             "VendorMaster",
-            "VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,State/Title,Country/Title,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
+            "Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
             "NatureOfPayment,City,State,Country,Currency",
             `VendorCode eq '${vendorCode}'`,
             { column: "ID", isAscending: true },
@@ -516,9 +740,9 @@ const NewRequest = (props: IForexModuleProps) => {
                         VendorNameLegal: v.VendorNameLegal || "",
                         VendorShortName: v.VendorShortName || "",
                         VendorType: v.VendorType || "",
-                        City: v.City?.Title || "",
+                        City: v.City?.City || "",
                         State: v.State?.Title || "",
-                        Country: v.Country?.Title || "",
+                        Country: v.Country?.Country || "",
                         Currency: v.Currency?.Title || "",
                         PostalCode: v.PostalCode || "",
                         ContactPersonName: v.ContactPersonName || "",
@@ -537,7 +761,8 @@ const NewRequest = (props: IForexModuleProps) => {
                         PurposeCodeRBI: v.PurposeCodeRBI || "",
                         BankAddress: v.BankAddress || "",
                         BankCountry: v.BankCountry || "",
-                        VendorAddress: v.VendorAddress || ""
+                        VendorAddress: v.VendorAddress || "",
+                        Pincode: v.Pincode || ""
                     });
                     getTaxDeclarationdata(v.VendorCode);
                     setBankAccountNo(v.AccountNumberIBAN || "");
@@ -656,32 +881,7 @@ const NewRequest = (props: IForexModuleProps) => {
         setFromDate(`${fyStartYear}-04-01`);
     };
 
-    //     const getApprovers = async () => {
-    //         try {
-    //             (await spCrudOps).getData(
-    //                 "ForexApprovalMAtrix",
-    //                 "Title,Role,Approver/Id,Approver/Title,Level",
-    //                 "Approver",
-    //                 `Title eq 'Approver'`,
-    //                 { column: "ID", isAscending: true },
-    //                 5000,
-    //                 props
-    //             ).then((res: any[]) => {
-    //                 const approverIds = res
-    //                     .map(item => item.Approver?.Id)
-    //                     .filter((id): id is number => !!id);
-
-    //                setApprovers(prev => {
-    //     const newApprovers = approverIds.filter(id => !prev.includes(id));
-    //     return [...prev, ...newApprovers];
-    // });
-
-    //               //  setApprovers(approverIds);
-
-    //             })
-
-    //         } catch (error) { console.error("Error fetching approvers:", error); }
-    //     }
+    
 
 
 
@@ -1389,6 +1589,13 @@ const NewRequest = (props: IForexModuleProps) => {
                 }
 
             }
+             await sp.updateData(
+                "ApplicationNumber",
+                incrimentalId,
+                { IDNo: nextNo },
+                props
+            );
+
             for (const boeNo of uniqueBoeNumbers) {
 
                 if (!boeFiles[boeNo] || boeFiles[boeNo].length > 0) {
@@ -1409,6 +1616,13 @@ const NewRequest = (props: IForexModuleProps) => {
                     }
                 }
             }
+             await sp.updateData(
+                "ApplicationNumber",
+                incrimentalId,
+                { IDNo: nextNo },
+                props
+            );
+
 
             for (const blNo of uniqueBlNumbers) {
                 if (!blFiles[blNo] || blFiles[blNo].length > 0) {
@@ -1483,54 +1697,12 @@ const NewRequest = (props: IForexModuleProps) => {
 
                             </div>
                             <div className='borderedbox'>
-                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Requestor Information</label>
-                                </div>
+                                </div> */}
+                                <CollapsibleSection title="Requestor Information">
                                 <div className='main-formcontainer'>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <Field label="Type" required>
-                                                <select
-                                                    value={paymentType} className="form-controltext"
-                                                    onChange={(e) => {
-                                                        const selected = e.target.value;
-                                                        setPaymentType(selected);
 
-                                                        buildApprovalFlow({
-                                                            RMId: employee.RMId,
-                                                            HODId: employee.HODId,
-                                                            RM: employee.RM,
-                                                            HOD: employee.HOD
-                                                        }, selected);
-                                                    }}
-                                                >
-                                                    <option value="Goods-Bill Payment">Goods-Bill Payment</option>
-                                                    <option value="Service-Bill Payment">Service-Bill Payment</option>
-                                                    <option value="Goods-Advance Payment">Goods-Advance Payment</option>
-                                                    <option value="Service-Advance Payment">Service-Advance Payment</option>
-                                                </select>
-                                            </Field>
-                                            {/* <label className='font'>Type <span className='Mantorystar'>*</span></label>
-                                            <select
-                                                value={paymentType} className="form-control readonlytext"
-                                                onChange={(e) => {
-                                                    const selected = e.target.value;
-                                                    setPaymentType(selected);
-                                                    buildApprovalFlow({
-                                                        RMId: employee.RMId,
-                                                        HODId: employee.HODId,
-                                                        RM: employee.RM,
-                                                        HOD: employee.HOD
-                                                    }, selected);
-                                                }}
-                                            >
-                                                <option value="Goods-Bill Payment">Goods-Bill Payment</option>
-                                                <option value="Service-Bill Payment">Service-Bill Payment</option>
-                                                <option value="Goods-Advance Payment">Goods-Advance Payment</option>
-                                                <option value="Service-Advance Payment">Service-Advance Payment</option>
-                                            </select> */}
-                                        </div>
-                                    </div>
                                     <div className='row mb-20'>
                                         <div className='col-md-4'>
                                             <label className='font'>Employee Code</label>
@@ -1574,13 +1746,14 @@ const NewRequest = (props: IForexModuleProps) => {
                                         </div>
                                     </div>
                                 </div>
+                                </CollapsibleSection>
                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Vendor / Beneficiary Details</label>
                                 </div>
                                 <div className='main-formcontainer'>
                                     <div className='row mb-20'>
                                         <div className='col-md-4'>
-                                            <label className='font'>Vendor Code</label>
+                                            <label className='font'>Vendor Code <span style={{color:'red'}}>*</span></label>
                                             <Dropdown
                                                 placeholder="Select Vendor Code"
                                                 className="form-controltext"
@@ -1611,7 +1784,7 @@ const NewRequest = (props: IForexModuleProps) => {
                                         </div>
                                         <div className='col-md-4'>
                                             <label className="font">Pincode</label>
-                                            <input type="text" value={vendor.PostalCode} className="form-control readonly" />
+                                            <input type="text" value={vendor.Pincode} className="form-control readonly" />
                                         </div>
                                         <div className='col-md-4'>
                                             <label className="font">Bank Name</label>
@@ -1645,453 +1818,481 @@ const NewRequest = (props: IForexModuleProps) => {
                                     </div>
                                 </div>
                                 <CollapsibleSection title="Tax & Regulatory Information" style={{ marginTop: "10px" }}>
-                                <div className="heading1" style={{ marginTop: "10px" }}>
-                                    <label>Tax & Regulatory Information</label>
-                                </div>
-                                <div className='main-formcontainer'>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Nature of Payment</label>
-                                            <input type="text" value={paymentType} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className='font fontblock'>Tax Document Available?</label>
-                                            <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled
-                                                style={{
-                                                    color: "black",
-                                                    backgroundColor: "white",
-                                                    opacity: 1,
-                                                    WebkitTextFillColor: "black" // important for Chrome
-                                                }} className="form-controltext readonly" >
-                                                <option>Yes</option>
-                                                <option>No</option>
-                                            </select>
-                                            {taxDocumentView === "No" && (
-                                                <Field >
-                                                    <span style={{ color: "red" }}>
-                                                        (if No, withholding tax will be applicable)
-                                                    </span>
-                                                </Field>
-                                            )}
-                                        </div>
-                                        {taxDocumentView === "Yes" && (
-                                            <div className="col-md-4">
-                                                <label className="font fontblock">DTAA Applicable?</label>
-                                                <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)} disabled
+                                    <div className="heading1" style={{ marginTop: "10px" }}>
+                                        <label>Tax & Regulatory Information</label>
+                                    </div>
+                                    <div className='main-formcontainer'>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Nature of Payment</label>
+                                                <input type="text" value={paymentType} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className='font fontblock'>Tax Document Available?</label>
+                                                <select value={taxDocumentView} onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled
                                                     style={{
                                                         color: "black",
                                                         backgroundColor: "white",
                                                         opacity: 1,
                                                         WebkitTextFillColor: "black" // important for Chrome
                                                     }} className="form-controltext readonly" >
-                                                    <option value="">Select</option>
-                                                    <option value="Yes">Yes</option>
-                                                    <option value="No">No</option>
+                                                    <option value={'Yes'}>Yes</option>
+                                                    <option value={'No'}>No</option>
                                                 </select>
+                                                {taxDocumentView === "No" && (
+                                                    <Field >
+                                                        <span style={{ color: "red" }}>
+                                                            (if No, withholding tax will be applicable)
+                                                        </span>
+                                                    </Field>
+                                                )}
                                             </div>
-                                        )}
+                                            {taxDocumentView === "Yes" && (
+                                                <div className="col-md-4">
+                                                    <label className="font fontblock">DTAA Applicable?</label>
+                                                    <select value={dTAAApplicable} onChange={(e) => setDTAAApplicable(e.target.value)} disabled
+                                                        style={{
+                                                            color: "black",
+                                                            backgroundColor: "white",
+                                                            opacity: 1,
+                                                            WebkitTextFillColor: "black" // important for Chrome
+                                                        }} className="form-controltext readonly" >
+                                                        <option value="">Select</option>
+                                                        <option value="Yes">Yes</option>
+                                                        <option value="No">No</option>
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {taxDocumentView === "Yes" && (
+                                        <>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Permanent Establishment Declaration</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Document Available</label>
+                                                        <select
+                                                            value={permanentEstablishmentDeclaration.DocumentAvailable || ""}
+                                                            className="form-controltext readonly">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes">Yes</option>
+                                                            <option value="No">No</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Document Number</label>
+                                                        <input type="text" value={permanentEstablishmentDeclaration.DocumentNumber || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Document Date</label>
+                                                        <input type="date" value={permanentEstablishmentDeclaration.DocumentDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font">Validity Start Date</label>
+                                                        <input type="date" value={permanentEstablishmentDeclaration.ValidityStartDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity End Date</label>
+                                                        <input type="date" value={permanentEstablishmentDeclaration.ValidityEndDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font fontblock'>View Document</label>
+                                                        <span><a href={permanentEstablishmentDeclaration.Attachmenturl || "#"} target="_blank">{permanentEstablishmentDeclaration.Attachmentfilename || "No Document Available"}</a></span>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Tax Residency Certificate</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Document Available</label>
+                                                        <select
+                                                            value={taxResidencyCertificate.DocumentAvailable || ""}
+                                                            className="form-controltext readonly">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes">Yes</option>
+                                                            <option value="No">No</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Document Number</label>
+                                                        <input type="text" value={taxResidencyCertificate.DocumentNumber || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Country of Tax Residence</label>
+                                                        <input type="text" value={taxResidencyCertificate.CountryOfTaxResidence || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Tax Identification Number</label>
+                                                        <input type="text" value={taxResidencyCertificate.TaxIdentificationNumber || "" || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity Start Date</label>
+                                                        <input type="date" value={taxResidencyCertificate.ValidityStartDate || "" || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity End Date</label>
+                                                        <input type="date" value={taxResidencyCertificate.ValidityEndDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">View Document</label>
+                                                        <span><a href={taxResidencyCertificate.Attachmenturl || "#"} target="_blank">{taxResidencyCertificate.Attachmentfilename || "No Document Available"}</a></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Form 10F</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Document Available</label>
+                                                        <select
+                                                            value={form10F.DocumentAvailable || ""}
+                                                            className="form-controltext readonly">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes">Yes</option>
+                                                            <option value="No">No</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Document Number</label>
+                                                        <input type="text" value={form10F.DocumentNumber || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Acknowledgment Number</label>
+                                                        <input type="text" value={form10F.AcknowledgmentNumber || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">Document Date</label>
+                                                        <input type="date" value={form10F.DocumentDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity Start Date</label>
+                                                        <input type="date" value={form10F.ValidityStartDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                    <div className='col-md-4'>
+                                                        <label className='font'>Validity End Date</label>
+                                                        <input type="date" value={form10F.ValidityEndDate || ""} className="form-control readonly" />
+                                                    </div>
+                                                </div>
+                                                <div className='row mb-20'>
+                                                    <div className="col-md-4">
+                                                        <label className="font fontblock">View Document</label>
+                                                        <span><a href={form10F.Attachmenturl || "#"} target="_blank">{form10F.Attachmentfilename || "No Document Available"}</a></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </CollapsibleSection>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Summary of WHT Applicability</label>
+                                </div> */}
+                                <CollapsibleSection title="Summary of WHT Applicability" style={{ marginTop: "10px" }}>
+                                <div className='main-formcontainer'>
+                                    <div className='row mb-20'>
+                                        <div className="col-md-4">
+                                            <div className="date-summary">
+                                                <span className="label">From</span>
+                                                <span className="value">{formatDate(fromdate)}</span>
+                                                <span className="label">To</span>
+                                                <span className="value">{formatDate(todate)},</span>
+                                                <span className="label"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        {paymentType !== "Service-Bill Payment" &&
+                                            paymentType !== "Service-Advance Payment" && (
+                                                <div className="col-md-4">
+                                                    <label className="font">Eligible amount that can be transmitted without WHT</label>
+                                                    <input type="number" value={eligibleAmountWithWHT} onChange={(e) => setEligibleAmountWithWHT(e.target.value)}
+                                                        className="form-control readonly"
+                                                    />
+                                                </div>
+                                            )}
+                                        <div className="col-md-4">
+                                            <label className="font">Paid Amount</label>
+                                            <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)}
+                                                className="form-control readonly"
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Balance eligible amount (Without withholding Tax)</label>
+                                            <input type="number" value={ballenceEligibleAmount} onChange={(e) => setBallenceEligibleAmount(e.target.value)}
+                                                className="form-control readonly"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                {taxDocumentView === "Yes" && (
+                                </CollapsibleSection>
+
+                                {paymentType === "Goods-Bill Payment" && (
                                     <>
                                         <div className="heading1" style={{ marginTop: "10px" }}>
-                                            <label>Permanent Establishment Declaration</label>
+                                            <label>Forex Payment Request Details</label>
                                         </div>
                                         <div className='main-formcontainer'>
                                             <div className='row mb-20'>
-                                                <div className="col-md-4">
-                                                    <label className="font fontblock">Document Available</label>
-                                                    <select
-                                                        value={permanentEstablishmentDeclaration.DocumentAvailable || ""}
-                                                        className="form-controltext readonly">
-                                                        <option value="">Select</option>
-                                                        <option value="Yes">Yes</option>
-                                                        <option value="No">No</option>
-                                                    </select>
-                                                </div>
                                                 <div className='col-md-4'>
-                                                    <label className='font'>Document Number</label>
-                                                    <input type="text" value={permanentEstablishmentDeclaration.DocumentNumber || ""} className="form-control readonly" />
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Document Date</label>
-                                                    <input type="date" value={permanentEstablishmentDeclaration.DocumentDate || ""} className="form-control readonly" />
-                                                </div>
-                                            </div>
-                                            <div className='row mb-20'>
-                                                <div className="col-md-4">
-                                                    <label className="font">Validity Start Date</label>
-                                                    <input type="date" value={permanentEstablishmentDeclaration.ValidityStartDate || ""} className="form-control readonly" />
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Validity End Date</label>
-                                                    <input type="date" value={permanentEstablishmentDeclaration.ValidityEndDate || ""} className="form-control readonly" />
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font fontblock'>View Document</label>
-                                                    <span><a href={permanentEstablishmentDeclaration.Attachmenturl || "#"} target="_blank">{permanentEstablishmentDeclaration.Attachmentfilename || "No Document Available"}</a></span>
-                                                </div>
+                                                    <Field label="Type" required>
+                                                        <select
+                                                            value={paymentType} className="form-controltext"
+                                                            onChange={(e) => {
+                                                                const selected = e.target.value;
+                                                                setPaymentType(selected);
 
-                                            </div>
-                                        </div>
-                                        <div className="heading1" style={{ marginTop: "10px" }}>
-                                            <label>Tax Residency Certificate</label>
-                                        </div>
-                                        <div className='main-formcontainer'>
-                                            <div className='row mb-20'>
-                                                <div className="col-md-4">
-                                                    <label className="font fontblock">Document Available</label>
-                                                    <select
-                                                        value={taxResidencyCertificate.DocumentAvailable || ""}
-                                                        className="form-controltext readonly">
-                                                        <option value="">Select</option>
-                                                        <option value="Yes">Yes</option>
-                                                        <option value="No">No</option>
-                                                    </select>
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Document Number</label>
-                                                    <input type="text" value={taxResidencyCertificate.DocumentNumber || ""} className="form-control readonly" />
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Country of Tax Residence</label>
-                                                    <input type="text" value={taxResidencyCertificate.CountryOfTaxResidence || ""} className="form-control readonly" />
+                                                                buildApprovalFlow({
+                                                                    RMId: employee.RMId,
+                                                                    HODId: employee.HODId,
+                                                                    RM: employee.RM,
+                                                                    HOD: employee.HOD
+                                                                }, selected);
+                                                            }}
+                                                        >
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+
                                                 </div>
                                             </div>
                                             <div className='row mb-20'>
-                                                <div className="col-md-4">
-                                                    <label className="font fontblock">Tax Identification Number</label>
-                                                    <input type="text" value={taxResidencyCertificate.TaxIdentificationNumber || "" || ""} className="form-control readonly" />
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Request Number <span className="Mantorystar">*</span></label>
+                                                    <input type="text" value={requestNumber} className="form-control readonly" />
                                                 </div>
                                                 <div className='col-md-4'>
-                                                    <label className='font'>Validity Start Date</label>
-                                                    <input type="date" value={taxResidencyCertificate.ValidityStartDate || "" || ""} className="form-control readonly" />
+                                                    <label className="font">Requested On <span className="Mantorystar">*</span></label>
+                                                    <input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} className="form-control" />
                                                 </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Validity End Date</label>
-                                                    <input type="date" value={taxResidencyCertificate.ValidityEndDate || ""} className="form-control readonly" />
-                                                </div>
-                                            </div>
-                                            <div className='row mb-20'>
                                                 <div className="col-md-4">
-                                                    <label className="font fontblock">View Document</label>
-                                                    <span><a href={taxResidencyCertificate.Attachmenturl || "#"} target="_blank">{taxResidencyCertificate.Attachmentfilename || "No Document Available"}</a></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="heading1" style={{ marginTop: "10px" }}>
-                                            <label>Form 10F</label>
-                                        </div>
-                                        <div className='main-formcontainer'>
-                                            <div className='row mb-20'>
-                                                <div className="col-md-4">
-                                                    <label className="font fontblock">Document Available</label>
-                                                    <select
-                                                        value={form10F.DocumentAvailable || ""}
-                                                        className="form-controltext readonly">
-                                                        <option value="">Select</option>
-                                                        <option value="Yes">Yes</option>
-                                                        <option value="No">No</option>
-                                                    </select>
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Document Number</label>
-                                                    <input type="text" value={form10F.DocumentNumber || ""} className="form-control readonly" />
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Acknowledgment Number</label>
-                                                    <input type="text" value={form10F.AcknowledgmentNumber || ""} className="form-control readonly" />
-                                                </div>
-                                            </div>
-                                            <div className='row mb-20'>
-                                                <div className="col-md-4">
-                                                    <label className="font fontblock">Document Date</label>
-                                                    <input type="date" value={form10F.DocumentDate || ""} className="form-control readonly" />
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Validity Start Date</label>
-                                                    <input type="date" value={form10F.ValidityStartDate || ""} className="form-control readonly" />
-                                                </div>
-                                                <div className='col-md-4'>
-                                                    <label className='font'>Validity End Date</label>
-                                                    <input type="date" value={form10F.ValidityEndDate || ""} className="form-control readonly" />
-                                                </div>
-                                            </div>
-                                            <div className='row mb-20'>
-                                                <div className="col-md-4">
-                                                    <label className="font fontblock">View Document</label>
-                                                    <span><a href={form10F.Attachmenturl || "#"} target="_blank">{form10F.Attachmentfilename || "No Document Available"}</a></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        </>
-                                                       )}
-                                 </CollapsibleSection> 
-                                        <div className="heading1" style={{ marginTop: "10px" }}>
-                                            <label>Summary of WHT Applicability</label>
-                                        </div>
-                                        <div className='main-formcontainer'>
-                                            <div className='row mb-20'>
-                                                <div className="col-md-4">
-                                                    <div className="date-summary">
-                                                        <span className="label">From</span>
-                                                        <span className="value">{formatDate(fromdate)}</span>
-                                                        <span className="label">To</span>
-                                                        <span className="value">{formatDate(todate)},</span>
-                                                        <span className="label"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className='row mb-20'>
-                                                {paymentType !== "Service-Bill Payment" &&
-                                                    paymentType !== "Service-Advance Payment" && (
-                                                        <div className="col-md-4">
-                                                            <label className="font">Eligible amount that can be transmitted without WHT</label>
-                                                            <input type="number" value={eligibleAmountWithWHT} onChange={(e) => setEligibleAmountWithWHT(e.target.value)}
-                                                                className="form-control readonly"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                <div className="col-md-4">
-                                                    <label className="font">Paid Amount</label>
-                                                    <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)}
-                                                        className="form-control readonly"
+                                                    <label className="font">Currency <span className="Mantorystar">*</span></label>
+                                                    <Dropdown
+                                                        options={currencyOptions}
+                                                        selectedKey={currency}
+                                                        onChange={(e, option) => {
+                                                            if (option) {
+                                                                setCurrency(option.key as string);
+                                                            }
+                                                        }} className="form-controltext"
                                                     />
                                                 </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Total Amount</label>
+                                                    <input type="text" value={totalInvoiceAmount} className="form-control readonly" />
+                                                </div>
                                                 <div className="col-md-4">
-                                                    <label className="font">Balance eligible amount (Without withholding Tax)</label>
-                                                    <input type="number" value={ballenceEligibleAmount} onChange={(e) => setBallenceEligibleAmount(e.target.value)}
-                                                        className="form-control readonly"
-                                                    />
+                                                    <label className="font">Foreign Bank Charges <span className="Mantorystar">*</span></label>
+                                                    <select
+                                                        className="form-controltext"
+                                                        value={foreignBankCharges}
+                                                        onChange={(e) => setForeignBankCharges(e.target.value)}
+                                                    >
+                                                        <option value="">Select</option>
+                                                        <option value="Beneficiary">Beneficiary</option>
+                                                        <option value="Our">Our</option>
+                                                        <option value="Shared">Shared</option>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {paymentType === "Goods-Bill Payment" && (
-                                            <>
-                                                <div className="heading1" style={{ marginTop: "10px" }}>
-                                                    <label>Forex Payment Request Details</label>
-                                                    </div>
-                                                <div className='main-formcontainer'>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>Request Number <span className="Mantorystar">*</span></label>
-                                                            <input type="text" value={requestNumber} className="form-control readonly" />
-                                                        </div>
-                                                        <div className='col-md-4'>
-                                                            <label className="font">Requested On <span className="Mantorystar">*</span></label>
-                                                            <input type="date" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} className="form-control" />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Currency <span className="Mantorystar">*</span></label>
-                                                            <Dropdown
-                                                                options={currencyOptions}
-                                                                selectedKey={currency}
-                                                                onChange={(e, option) => {
-                                                                    if (option) {
-                                                                        setCurrency(option.key as string);
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table" style={{ marginTop: "10px" }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr.No</th>
+                                                        <th>Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>BOE No <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>BOE Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>MRN No <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Bill of Lading No <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Bill of Lading Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach Other Docs</th>
+                                                        <th>Add/Delete Entry</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+                                                            <td>{index + 1}</td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceNo", e.target.value)
                                                                     }
-                                                                }} className="form-controltext"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>Total Amount</label>
-                                                            <input type="text" value={totalInvoiceAmount} className="form-control readonly" />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Foreign Bank Charges <span className="Mantorystar">*</span></label>
-                                                            <select
-                                                                className="form-controltext"
-                                                                value={foreignBankCharges}
-                                                                onChange={(e) => setForeignBankCharges(e.target.value)}
-                                                            >
-                                                                <option value="">Select</option>
-                                                                <option value="Beneficiary">Beneficiary</option>
-                                                                <option value="Our">Our</option>
-                                                                <option value="Shared">Shared</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                                />
+                                                            </td>
 
-                                                <div style={{ overflowX: "auto" }}>
-                                                    <table className="custom-table" style={{ marginTop: "10px" }}>
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Sr.No</th>
-                                                                <th>Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>BOE No <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>BOE Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>MRN No <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Bill of Lading No <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Bill of Lading Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach Other Docs</th>
-                                                                <th>Add/Delete Entry</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {rows.map((row, index) => (
-                                                                <tr key={index}>
-                                                                    <td>{index + 1}</td>
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.invoiceDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceDate", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.invoiceNo}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceNo", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    value={row.boeNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "boeNo", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={row.invoiceDate}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceDate", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.boeDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "boeDate", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.boeNo}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "boeNo", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    value={row.mrnNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "mrnNo", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={row.boeDate}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "boeDate", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    value={row.blNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "blNo", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.mrnNo}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "mrnNo", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.blDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "blDate", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.blNo}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "blNo", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    type="number"
+                                                                    value={row.invoiceAmount}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceAmount", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={row.blDate}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "blDate", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="number"
-                                                                            value={row.invoiceAmount}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceAmount", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                                            setInvoiceFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
 
-                                                                                    setInvoiceFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
+                                                                            setOtherFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                            <td style={{ textAlign: "center" }}>
+                                                                {/* Show PLUS only on last row */}
+                                                                {index === rows.length - 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={addRow}
+                                                                        style={{
+                                                                            background: "#28a745",
+                                                                            color: "white",
+                                                                            marginRight: "5px",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                )}
 
-                                                                                    setOtherFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
+                                                                {/* Show DELETE if more than 1 row */}
+                                                                {rows.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => deleteRow(index)}
+                                                                        style={{
+                                                                            background: "#dc3545",
+                                                                            color: "white",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
+                                                                    >
+                                                                        ✖
+                                                                    </button>
+                                                                )}
+                                                            </td>
 
-                                                                    <td style={{ textAlign: "center" }}>
-                                                                        {/* Show PLUS only on last row */}
-                                                                        {index === rows.length - 1 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={addRow}
-                                                                                style={{
-                                                                                    background: "#28a745",
-                                                                                    color: "white",
-                                                                                    marginRight: "5px",
-                                                                                    border: "none",
-                                                                                    padding: "5px 10px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px"
-                                                                                }}
-                                                                            >
-                                                                                +
-                                                                            </button>
-                                                                        )}
-
-                                                                        {/* Show DELETE if more than 1 row */}
-                                                                        {rows.length > 1 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => deleteRow(index)}
-                                                                                style={{
-                                                                                    background: "#dc3545",
-                                                                                    color: "white",
-                                                                                    border: "none",
-                                                                                    padding: "5px 10px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px"
-                                                                                }}
-                                                                            >
-                                                                                ✖
-                                                                            </button>
-                                                                        )}
-                                                                    </td>
-
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                        {/*<tfoot>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {/*<tfoot>
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2102,284 +2303,310 @@ const NewRequest = (props: IForexModuleProps) => {
                                     <td colSpan={3}></td>
                                 </tr>
                             </tfoot> */}
-                                                    </table>
-                                                </div>
-                                                <div style={{ display: "flex", gap: "40px", marginTop: "30px" }}>
+                                            </table>
+                                        </div>
+                                        <div style={{ display: "flex", gap: "40px", marginTop: "30px" }}>
 
-                                                    {/* BOE TABLE */}
-                                                    <div style={{ flex: 1 }}>
-                                                        <p style={{ color: "red", fontSize: "13px" }}>
-                                                            Unique BOE no will be listed below
-                                                        </p>
+                                            {/* BOE TABLE */}
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ color: "red", fontSize: "13px" }}>
+                                                    Unique BOE no will be listed below
+                                                </p>
 
-                                                        <table className="custom-table">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>BOE No </th>
-                                                                    <th>Attach Documents</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {uniqueBoeNumbers.map((boe, index) => (
-                                                                    <tr key={index}>
-                                                                        <td>{boe}</td>
-                                                                        <td>
-                                                                            <input
-                                                                                type="file"
-                                                                                multiple
-                                                                                onChange={(e) => {
-                                                                                    if (e.target.files) {
-                                                                                        const filesArray = Array.from(e.target.files);
+                                                <table className="custom-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>BOE No </th>
+                                                            <th>Attach Documents</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {uniqueBoeNumbers.map((boe, index) => (
+                                                            <tr key={index}>
+                                                                <td>{boe}</td>
+                                                                <td>
+                                                                    <input
+                                                                        type="file"
+                                                                        multiple
+                                                                        onChange={(e) => {
+                                                                            if (e.target.files) {
+                                                                                const filesArray = Array.from(e.target.files);
 
-                                                                                        setBoeFiles(prev => ({
-                                                                                            ...prev,
-                                                                                            [boe]: [...(prev[boe] || []), ...filesArray]
-                                                                                        }));
-                                                                                    }
-                                                                                }}
-                                                                            />
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                    {/* BILL OF LADING TABLE */}
-                                                    <div style={{ flex: 1 }}>
-                                                        <p style={{ color: "red", fontSize: "13px" }}>
-                                                            Unique Bill of lading no will be listed below
-                                                        </p>
-
-                                                        <table className="custom-table">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Bill of Lading Number</th>
-                                                                    <th>Attach Documents</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {uniqueBlNumbers.map((bl, index) => (
-                                                                    <tr key={index}>
-                                                                        <td>{bl}</td>
-                                                                        <td>
-                                                                            <input
-                                                                                type="file"
-                                                                                multiple
-                                                                                onChange={(e) => {
-                                                                                    if (e.target.files) {
-                                                                                        const filesArray = Array.from(e.target.files);
-
-                                                                                        setBlFiles(prev => ({
-                                                                                            ...prev,
-                                                                                            [bl]: [...(prev[bl] || []), ...filesArray]
-                                                                                        }));
-                                                                                    }
-                                                                                }}
-                                                                            />
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {paymentType === "Service-Bill Payment" && (
-                                            <>
-                                                <div className="heading1" style={{ marginTop: "10px" }}>
-                                                    <label>Forex Payment Request Details</label>
-                                                </div>
-                                                <div className='main-formcontainer'>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>Request Number</label>
-                                                            <input type="text" value={requestNumber} className="form-control readonly" />
-                                                        </div>
-                                                        <div className='col-md-4'>
-                                                            <label className="font">Requested On</label>
-                                                            <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Currency</label>
-                                                            <Dropdown
-                                                                options={currencyOptions}
-                                                                selectedKey={currency}
-                                                                onChange={(e, option) => {
-                                                                    if (option) {
-                                                                        setCurrency(option.key as string);
-                                                                    }
-                                                                }} className="form-controltext"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>Total Amount</label>
-                                                            <input type="text" value={totalInvoiceAmount} className="form-control readonly" />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Foreign Bank Charges </label>
-                                                            <select
-                                                                className="form-controltext"
-                                                                value={foreignBankCharges}
-                                                                onChange={(e) => setForeignBankCharges(e.target.value)}
-                                                            >
-                                                                <option value="">Select</option>
-                                                                <option value="Beneficiary">Beneficiary</option>
-                                                                <option value="Our">Our</option>
-                                                                <option value="Shared">Shared</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div style={{ overflowX: "auto" }}>
-                                                    <table className="custom-table" style={{ marginTop: "10px" }}>
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Sr No</th>
-                                                                <th>Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>MRN No <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach Other Document</th>
-                                                                <th>Add/Delete Entry</th>
+                                                                                setBoeFiles(prev => ({
+                                                                                    ...prev,
+                                                                                    [boe]: [...(prev[boe] || []), ...filesArray]
+                                                                                }));
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </td>
                                                             </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {rows.map((row, index) => (
-                                                                <tr key={index}>
-                                                                    <td>{index + 1}</td>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {/* BILL OF LADING TABLE */}
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ color: "red", fontSize: "13px" }}>
+                                                    Unique Bill of lading no will be listed below
+                                                </p>
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.invoiceNo}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceNo", e.target.value)
+                                                <table className="custom-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Bill of Lading Number</th>
+                                                            <th>Attach Documents</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {uniqueBlNumbers.map((bl, index) => (
+                                                            <tr key={index}>
+                                                                <td>{bl}</td>
+                                                                <td>
+                                                                    <input
+                                                                        type="file"
+                                                                        multiple
+                                                                        onChange={(e) => {
+                                                                            if (e.target.files) {
+                                                                                const filesArray = Array.from(e.target.files);
+
+                                                                                setBlFiles(prev => ({
+                                                                                    ...prev,
+                                                                                    [bl]: [...(prev[bl] || []), ...filesArray]
+                                                                                }));
                                                                             }
-                                                                        />
-                                                                    </td>
+                                                                        }}
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={row.invoiceDate}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceDate", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                        </div>
+                                    </>
+                                )}
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.invoiceAmount}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceAmount", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                {paymentType === "Service-Bill Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Forex Payment Request Details</label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select
+                                                            value={paymentType} className="form-controltext"
+                                                            onChange={(e) => {
+                                                                const selected = e.target.value;
+                                                                setPaymentType(selected);
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.mrnNo}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "mrnNo", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
-                                                                    <td>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={row.mrnDate}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "mrnDate", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                                buildApprovalFlow({
+                                                                    RMId: employee.RMId,
+                                                                    HODId: employee.HODId,
+                                                                    RM: employee.RM,
+                                                                    HOD: employee.HOD
+                                                                }, selected);
+                                                            }}
+                                                        >
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
 
-                                                                                    setInvoiceFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Request Number</label>
+                                                    <input type="text" value={requestNumber} className="form-control readonly" />
+                                                </div>
+                                                <div className='col-md-4'>
+                                                    <label className="font">Requested On <span className="Mantorystar">*</span></label>
+                                                    <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Currency <span className="Mantorystar">*</span></label>
+                                                    <Dropdown
+                                                        options={currencyOptions}
+                                                        selectedKey={currency}
+                                                        onChange={(e, option) => {
+                                                            if (option) {
+                                                                setCurrency(option.key as string);
+                                                            }
+                                                        }} className="form-controltext"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Total Amount</label>
+                                                    <input type="text" value={totalInvoiceAmount} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Foreign Bank Charges <span className="Mantorystar">*</span></label>
+                                                    <select
+                                                        className="form-controltext"
+                                                        value={foreignBankCharges}
+                                                        onChange={(e) => setForeignBankCharges(e.target.value)}
+                                                    >
+                                                        <option value="">Select</option>
+                                                        <option value="Beneficiary">Beneficiary</option>
+                                                        <option value="Our">Our</option>
+                                                        <option value="Shared">Shared</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table" style={{ marginTop: "10px" }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr No</th>
+                                                        <th>Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>MRN No <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach Other Document</th>
+                                                        <th>Add/Delete Entry</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+                                                            <td>{index + 1}</td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceNo", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                                    setOtherFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.invoiceDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceDate", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceAmount}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceAmount", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.mrnNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "mrnNo", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.mrnDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "mrnDate", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
+
+                                                                            setInvoiceFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
+
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
+
+                                                                            setOtherFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
 
 
 
 
-                                                                    <td style={{ textAlign: "center" }}>
-                                                                        {/* Show PLUS only on last row */}
-                                                                        {index === rows.length - 1 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={addRow}
-                                                                                style={{
-                                                                                    background: "#28a745",
-                                                                                    color: "white",
-                                                                                    marginRight: "5px",
-                                                                                    border: "none",
-                                                                                    padding: "5px 10px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px"
-                                                                                }}
-                                                                            >
-                                                                                +
-                                                                            </button>
-                                                                        )}
+                                                            <td style={{ textAlign: "center" }}>
+                                                                {/* Show PLUS only on last row */}
+                                                                {index === rows.length - 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={addRow}
+                                                                        style={{
+                                                                            background: "#28a745",
+                                                                            color: "white",
+                                                                            marginRight: "5px",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                )}
 
-                                                                        {/* Show DELETE if more than 1 row */}
-                                                                        {rows.length > 1 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => deleteRow(index)}
-                                                                                style={{
-                                                                                    background: "#dc3545",
-                                                                                    color: "white",
-                                                                                    border: "none",
-                                                                                    padding: "5px 10px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px"
-                                                                                }}
-                                                                            >
-                                                                                ✖
-                                                                            </button>
-                                                                        )}
-                                                                    </td>
+                                                                {/* Show DELETE if more than 1 row */}
+                                                                {rows.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => deleteRow(index)}
+                                                                        style={{
+                                                                            background: "#dc3545",
+                                                                            color: "white",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
+                                                                    >
+                                                                        ✖
+                                                                    </button>
+                                                                )}
+                                                            </td>
 
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                        {/*  <tfoot>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2390,217 +2617,243 @@ const NewRequest = (props: IForexModuleProps) => {
                                     <td colSpan={5}></td>
                                 </tr>
                             </tfoot> */}
-                                                    </table>
-                                                </div>
-                                            </>
-                                        )}
+                                            </table>
+                                        </div>
+                                    </>
+                                )}
 
-                                        {paymentType === "Service-Advance Payment" && (
-                                            <>
-                                                <div className="heading1" style={{ marginTop: "10px" }}>
-                                                    <label>Forex Payment Request Details</label>
+                                {paymentType === "Service-Advance Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Forex Payment Request Details</label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select
+                                                            value={paymentType} className="form-controltext"
+                                                            onChange={(e) => {
+                                                                const selected = e.target.value;
+                                                                setPaymentType(selected);
+
+                                                                buildApprovalFlow({
+                                                                    RMId: employee.RMId,
+                                                                    HODId: employee.HODId,
+                                                                    RM: employee.RM,
+                                                                    HOD: employee.HOD
+                                                                }, selected);
+                                                            }}
+                                                        >
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+
                                                 </div>
-                                                <div className='main-formcontainer'>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>Request Number</label>
-                                                            <input type="text" value={requestNumber} className="form-control readonly" />
-                                                        </div>
-                                                        <div className='col-md-4'>
-                                                            <label className="font">Requested On</label>
-                                                            <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Currency</label>
-                                                            <Dropdown
-                                                                options={currencyOptions}
-                                                                selectedKey={currency}
-                                                                onChange={(e, option) => {
-                                                                    if (option) {
-                                                                        setCurrency(option.key as string);
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Request Number</label>
+                                                    <input type="text" value={requestNumber} className="form-control readonly" />
+                                                </div>
+                                                <div className='col-md-4'>
+                                                    <label className="font">Requested On <span className="Mantorystar">*</span></label>
+                                                    <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Currency <span className="Mantorystar">*</span></label>
+                                                    <Dropdown
+                                                        options={currencyOptions}
+                                                        selectedKey={currency}
+                                                        onChange={(e, option) => {
+                                                            if (option) {
+                                                                setCurrency(option.key as string);
+                                                            }
+                                                        }} className="form-controltext"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Total Amount</label>
+                                                    <input type="text" value={totalInvoiceAmount} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Foreign Bank Charges <span className="Mantorystar">*</span></label>
+                                                    <select
+                                                        className="form-controltext"
+                                                        value={foreignBankCharges}
+                                                        onChange={(e) => setForeignBankCharges(e.target.value)}
+                                                    >
+                                                        <option value="">Select</option>
+                                                        <option value="Beneficiary">Beneficiary</option>
+                                                        <option value="Our">Our</option>
+                                                        <option value="Shared">Shared</option>
+                                                    </select>
+                                                </div>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>PO/Contract No <span className="Mantorystar">*</span></label>
+                                                    <input type="text" className="form-control" value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>PO Date <span className="Mantorystar">*</span></label>
+                                                    <input type="date" className="form-control" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Expected Settlement Date <span className="Mantorystar">*</span></label>
+                                                    <input type="date" className="form-control" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table" style={{ marginTop: "10px" }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr No</th>
+                                                        <th>Performa Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Performa Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Performa Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach PO <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach PI <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach Other Document</th>
+                                                        <th>Add/Delete Entry</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+                                                            <td>{index + 1}</td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceNo", e.target.value)
                                                                     }
-                                                                }} className="form-controltext"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>Total Amount</label>
-                                                            <input type="text" value={totalInvoiceAmount} className="form-control readonly" />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Foreign Bank Charges </label>
-                                                            <select
-                                                                className="form-controltext"
-                                                                value={foreignBankCharges}
-                                                                onChange={(e) => setForeignBankCharges(e.target.value)}
-                                                            >
-                                                                <option value="">Select</option>
-                                                                <option value="Beneficiary">Beneficiary</option>
-                                                                <option value="Our">Our</option>
-                                                                <option value="Shared">Shared</option>
-                                                            </select>
-                                                        </div>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>PO/Contract No</label>
-                                                            <input type="text" className="form-control" value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} />
-                                                        </div>
-                                                    </div>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>PO Date</label>
-                                                            <input type="date" className="form-control" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Expected Settlement Date </label>
-                                                            <input type="date" className="form-control" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div style={{ overflowX: "auto" }}>
-                                                    <table className="custom-table" style={{ marginTop: "10px" }}>
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Sr No</th>
-                                                                <th>Performa Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Performa Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Performa Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach PO <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach PI <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach Other Document</th>
-                                                                <th>Add/Delete Entry</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {rows.map((row, index) => (
-                                                                <tr key={index}>
-                                                                    <td>{index + 1}</td>
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.invoiceNo}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceNo", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.invoiceDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceDate", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={row.invoiceDate}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceDate", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
-
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.invoiceAmount}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceAmount", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceAmount}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceAmount", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
 
-                                                                                    setPoFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                                            setPoFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
 
-                                                                                    setPiFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
+                                                                            setPiFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
 
-                                                                                    setAdvanceOtherFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
+                                                                            setAdvanceOtherFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
 
 
 
 
-                                                                    <td style={{ textAlign: "center" }}>
-                                                                        {/* Show PLUS only on last row */}
-                                                                        {index === rows.length - 1 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={addRow}
-                                                                                style={{
-                                                                                    background: "#28a745",
-                                                                                    color: "white",
-                                                                                    marginRight: "5px",
-                                                                                    border: "none",
-                                                                                    padding: "5px 10px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px"
-                                                                                }}
-                                                                            >
-                                                                                +
-                                                                            </button>
-                                                                        )}
+                                                            <td style={{ textAlign: "center" }}>
+                                                                {/* Show PLUS only on last row */}
+                                                                {index === rows.length - 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={addRow}
+                                                                        style={{
+                                                                            background: "#28a745",
+                                                                            color: "white",
+                                                                            marginRight: "5px",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                )}
 
-                                                                        {/* Show DELETE if more than 1 row */}
-                                                                        {rows.length > 1 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => deleteRow(index)}
-                                                                                style={{
-                                                                                    background: "#dc3545",
-                                                                                    color: "white",
-                                                                                    border: "none",
-                                                                                    padding: "5px 10px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px"
-                                                                                }}
-                                                                            >
-                                                                                ✖
-                                                                            </button>
-                                                                        )}
-                                                                    </td>
+                                                                {/* Show DELETE if more than 1 row */}
+                                                                {rows.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => deleteRow(index)}
+                                                                        style={{
+                                                                            background: "#dc3545",
+                                                                            color: "white",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
+                                                                    >
+                                                                        ✖
+                                                                    </button>
+                                                                )}
+                                                            </td>
 
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                        {/*  <tfoot>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2611,217 +2864,244 @@ const NewRequest = (props: IForexModuleProps) => {
                                     <td colSpan={4}></td>
                                 </tr>
                             </tfoot> */}
-                                                    </table>
-                                                </div>
-                                            </>
-                                        )}
+                                            </table>
+                                        </div>
+                                    </>
+                                )}
 
-                                        {paymentType === "Goods-Advance Payment" && (
-                                            <>
-                                                <div className="heading1" style={{ marginTop: "10px" }}>
-                                                    <label>Forex Payment Request Details</label>
+                                {paymentType === "Goods-Advance Payment" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Forex Payment Request Details</label>
+                                        </div>
+
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select
+                                                            value={paymentType} className="form-controltext"
+                                                            onChange={(e) => {
+                                                                const selected = e.target.value;
+                                                                setPaymentType(selected);
+
+                                                                buildApprovalFlow({
+                                                                    RMId: employee.RMId,
+                                                                    HODId: employee.HODId,
+                                                                    RM: employee.RM,
+                                                                    HOD: employee.HOD
+                                                                }, selected);
+                                                            }}
+                                                        >
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+
                                                 </div>
-                                                <div className='main-formcontainer'>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>Request Number</label>
-                                                            <input type="text" value={requestNumber} className="form-control readonly" />
-                                                        </div>
-                                                        <div className='col-md-4'>
-                                                            <label className="font">Requested On</label>
-                                                            <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Currency</label>
-                                                            <Dropdown
-                                                                options={currencyOptions}
-                                                                selectedKey={currency}
-                                                                onChange={(e, option) => {
-                                                                    if (option) {
-                                                                        setCurrency(option.key as string);
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Request Number</label>
+                                                    <input type="text" value={requestNumber} className="form-control readonly" />
+                                                </div>
+                                                <div className='col-md-4'>
+                                                    <label className="font">Requested On <span className="Mantorystar">*</span></label>
+                                                    <input type="date" className="form-control" value={requestedOn} onChange={(e) => { setRequestedOn(e.target.value) }} />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Currency <span className="Mantorystar">*</span></label>
+                                                    <Dropdown
+                                                        options={currencyOptions}
+                                                        selectedKey={currency}
+                                                        onChange={(e, option) => {
+                                                            if (option) {
+                                                                setCurrency(option.key as string);
+                                                            }
+                                                        }} className="form-controltext"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Total Amount <span className="Mantorystar">*</span></label>
+                                                    <input type="text" value={totalInvoiceAmount} className="form-control readonly" />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Foreign Bank Charges <span className="Mantorystar">*</span></label>
+                                                    <select
+                                                        className="form-controltext"
+                                                        value={foreignBankCharges}
+                                                        onChange={(e) => setForeignBankCharges(e.target.value)}
+                                                    >
+                                                        <option value="">Select</option>
+                                                        <option value="Beneficiary">Beneficiary</option>
+                                                        <option value="Our">Our</option>
+                                                        <option value="Shared">Shared</option>
+                                                    </select>
+                                                </div>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>PO/Contract No <span className="Mantorystar">*</span></label>
+                                                    <input type="text" className="form-control" value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} />
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>PO Date <span className="Mantorystar">*</span></label>
+                                                    <input type="date" className="form-control" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} />
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <label className="font">Expected Settlement Date <span className="Mantorystar">*</span></label>
+                                                    <input type="date" className="form-control" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ overflowX: "auto" }}>
+                                            <table className="custom-table" style={{ marginTop: "10px" }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sr No</th>
+                                                        <th>Performa Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Performa Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Performa Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach PO <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach PI <span className="required" style={{ color: "red" }}>*</span></th>
+                                                        <th>Attach Other Document</th>
+                                                        <th>Add/Delete Entry</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, index) => (
+                                                        <tr key={index}>
+                                                            <td>{index + 1}</td>
+
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceNo}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceNo", e.target.value)
                                                                     }
-                                                                }} className="form-controltext"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>Total Amount</label>
-                                                            <input type="text" value={totalInvoiceAmount} className="form-control readonly" />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Foreign Bank Charges </label>
-                                                            <select
-                                                                className="form-controltext"
-                                                                value={foreignBankCharges}
-                                                                onChange={(e) => setForeignBankCharges(e.target.value)}
-                                                            >
-                                                                <option value="">Select</option>
-                                                                <option value="Beneficiary">Beneficiary</option>
-                                                                <option value="Our">Our</option>
-                                                                <option value="Shared">Shared</option>
-                                                            </select>
-                                                        </div>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>PO/Contract No</label>
-                                                            <input type="text" className="form-control" value={poContractNo} onChange={(e) => { setPoContractNo(e.target.value) }} />
-                                                        </div>
-                                                    </div>
-                                                    <div className='row mb-20'>
-                                                        <div className='col-md-4'>
-                                                            <label className='font'>PO Date</label>
-                                                            <input type="date" className="form-control" value={poDate} onChange={(e) => { setPoDate(e.target.value) }} />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label className="font">Expected Settlement Date </label>
-                                                            <input type="date" className="form-control" value={expectedSettlementDate} onChange={(e) => { setExpectedSettlementDate(e.target.value) }} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div style={{ overflowX: "auto" }}>
-                                                    <table className="custom-table" style={{ marginTop: "10px" }}>
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Sr No</th>
-                                                                <th>Performa Invoice No <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Performa Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Performa Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach PO <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach PI <span className="required" style={{ color: "red" }}>*</span></th>
-                                                                <th>Attach Other Document</th>
-                                                                <th>Add/Delete Entry</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {rows.map((row, index) => (
-                                                                <tr key={index}>
-                                                                    <td>{index + 1}</td>
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.invoiceNo}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceNo", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    type="date"
+                                                                    value={row.invoiceDate}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceDate", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={row.invoiceDate}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceDate", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
-
-                                                                    <td>
-                                                                        <input
-                                                                            value={row.invoiceAmount}
-                                                                            onChange={(e) =>
-                                                                                handleChange(index, "invoiceAmount", e.target.value)
-                                                                            }
-                                                                        />
-                                                                    </td>
+                                                            <td>
+                                                                <input
+                                                                    value={row.invoiceAmount}
+                                                                    onChange={(e) =>
+                                                                        handleChange(index, "invoiceAmount", e.target.value)
+                                                                    }
+                                                                />
+                                                            </td>
 
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
 
-                                                                                    setPoFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                                            setPoFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
 
-                                                                                    setPiFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
+                                                                            setPiFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
 
-                                                                    <td>
-                                                                        <input
-                                                                            type="file"
-                                                                            multiple
-                                                                            onChange={(e) => {
-                                                                                if (e.target.files) {
-                                                                                    const filesArray = Array.from(e.target.files);
+                                                            <td>
+                                                                <input
+                                                                    type="file"
+                                                                    multiple
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            const filesArray = Array.from(e.target.files);
 
-                                                                                    setAdvanceOtherFiles(prev => ({
-                                                                                        ...prev,
-                                                                                        [index]: [...(prev[index] || []), ...filesArray]
-                                                                                    }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </td>
+                                                                            setAdvanceOtherFiles(prev => ({
+                                                                                ...prev,
+                                                                                [index]: [...(prev[index] || []), ...filesArray]
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </td>
 
 
 
 
-                                                                    <td style={{ textAlign: "center" }}>
-                                                                        {/* Show PLUS only on last row */}
-                                                                        {index === rows.length - 1 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={addRow}
-                                                                                style={{
-                                                                                    background: "#28a745",
-                                                                                    color: "white",
-                                                                                    marginRight: "5px",
-                                                                                    border: "none",
-                                                                                    padding: "5px 10px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px"
-                                                                                }}
-                                                                            >
-                                                                                +
-                                                                            </button>
-                                                                        )}
+                                                            <td style={{ textAlign: "center" }}>
+                                                                {/* Show PLUS only on last row */}
+                                                                {index === rows.length - 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={addRow}
+                                                                        style={{
+                                                                            background: "#28a745",
+                                                                            color: "white",
+                                                                            marginRight: "5px",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                )}
 
-                                                                        {/* Show DELETE if more than 1 row */}
-                                                                        {rows.length > 1 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => deleteRow(index)}
-                                                                                style={{
-                                                                                    background: "#dc3545",
-                                                                                    color: "white",
-                                                                                    border: "none",
-                                                                                    padding: "5px 10px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px"
-                                                                                }}
-                                                                            >
-                                                                                ✖
-                                                                            </button>
-                                                                        )}
-                                                                    </td>
+                                                                {/* Show DELETE if more than 1 row */}
+                                                                {rows.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => deleteRow(index)}
+                                                                        style={{
+                                                                            background: "#dc3545",
+                                                                            color: "white",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
+                                                                    >
+                                                                        ✖
+                                                                    </button>
+                                                                )}
+                                                            </td>
 
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                        {/*  <tfoot>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {/*  <tfoot>
                                 <tr>
                                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                                         Total Invoice Amount:
@@ -2832,35 +3112,35 @@ const NewRequest = (props: IForexModuleProps) => {
                                     <td colSpan={4}></td>
                                 </tr>
                             </tfoot> */}
-                                                    </table>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        <div className='row mb-20'>
-                                            <div className='col-md-4'>
-                                                <label className='font' >Remarks </label>
-                                                <textarea rows={4} cols={4} value={remarks} className="form-control" onChange={(e) => { setRemarks(e.target.value) }}></textarea>
-                                            </div>
+                                            </table>
                                         </div>
+                                    </>
+                                )}
 
-                                        <div className='row my-3'>
-                                            <div className='col-md-12'>
-                                                <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
-                                                    <button onClick={onsubmit} disabled={loading} className="Submit-btn">
-                                                        {loading ? "Submitting..." : "Submit"}
-                                                    </button>
-                                                    <button onClick={!loading ? handledraft : undefined} className="SendBack-btn">
-                                                        {loading ? "Submitting..." : "Save as Draft"}
-                                                    </button>
-                                                    <button onClick={() => history.push("/")} className="Exit-btn">
-                                                        Exit
-                                                    </button>
-                                                </div>
-                                            </div>
+                                <div className='row mb-20'>
+                                    <div className='col-md-4'>
+                                        <label className='font' >Remarks </label>
+                                        <textarea rows={4} cols={4} value={remarks} className="form-control" onChange={(e) => { setRemarks(e.target.value) }}></textarea>
+                                    </div>
+                                </div>
+
+                                <div className='row my-3'>
+                                    <div className='col-md-12'>
+                                        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                                            <button onClick={onsubmit} disabled={loading} className="Submit-btn">
+                                                {loading ? "Submitting..." : "Submit"}
+                                            </button>
+                                            <button onClick={!loading ? handledraft : undefined} className="SendBack-btn">
+                                                {loading ? "Submitting..." : "Save as Draft"}
+                                            </button>
+                                            <button onClick={() => history.push("/")} className="Exit-btn">
+                                                Exit
+                                            </button>
                                         </div>
+                                    </div>
+                                </div>
 
-                                    
+
                             </div>
                         </div>
                     </div>

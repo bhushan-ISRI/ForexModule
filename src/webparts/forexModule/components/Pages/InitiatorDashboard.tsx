@@ -149,8 +149,9 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
           <div>
             <select value={statusFilter} className="form-controltext" style={{ width: "250px" }} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="All">All Status</option>
-              <option value="Pending">Pending for RM Approval</option>
-              <option value="Pending">Pending for HOD Approval</option>
+              <option value="Draft">Draft</option>
+              <option value="Pending for RM Approval">Pending for RM Approval</option>
+              <option value="Pending for HOD Approval">Pending for HOD Approval</option>
               <option value="Pending with Treasury for Verification">Pending with Treasury for Verification</option>
               <option value="Pending for Vouching">Pending for Vouching</option>
               <option value="Sent Back">Sent Back</option>
@@ -201,7 +202,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
               )}
               {activeTab === "Advance" && (
                 <>
-                  <th>Total Performa Invoice</th>
+                  <th>Performa Invoice Amount</th>
                   <th>Advance Paid</th>
                   <th>Amount Settled</th>
                   <th>Balance</th>
@@ -251,7 +252,7 @@ export const InitiatorDashboard: React.FC<IForexModuleProps> = (
                     <>
                       <td>₹ {item.TotalAmount || "-"}</td>
                       <td>₹ {item.INRAmount || "-"}</td>
-                      <td>₹ {item.INRAmount || "-"}</td>
+                      <td>₹ {item.SettlementAmount || "-"}</td>
                       <td>₹ {(item.BalenceAmount) || "-"}</td>
                     </>
                   )}

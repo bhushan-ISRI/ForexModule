@@ -118,6 +118,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
     const [voucherNumber, setVoucherNumber] = useState("");
     const [vouchingRemarks, setVouchingRemarks] = useState("");
     const [treasuryRemarks, setTreasuryRemarks] = useState("");
+    const [treasuryPaymentRemarks, setTreasuryPaymentRemarks] = useState("");
+
     const [currentRole, setCurrentRole] = useState("");
 
     const [foreignCurrency, setForeignCurrency] = useState("");
@@ -183,7 +185,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
         PurposeCodeRBI: "",
         BankCountry: "",
         BankAddress: "",
-        VendorAddress: ""
+        VendorAddress: "",
+        Pincode: ""
     });
 
     const [permanentEstablishmentDeclaration, setPermanentEstablishmentDeclaration] = useState({
@@ -379,8 +382,11 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                     const approvers = JSON.parse(data.AllApprovers);
 
-                    const current = approvers.find((a: any) => a.Id === data.CurrentApprover?.Id);
-
+                    const current = approvers.find(
+                        (a: any) =>
+                            a.Id === data.CurrentApprover?.Id &&
+                            a.status === "Pending"
+                    );
                     if (current) {
                         setCurrentRole(current.Role);
                     }
@@ -407,7 +413,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                     let status = "pending";
 
-                    if (a.Status === "Approved") {
+                    if (a.status === "Approved") {
                         status = "approved";
                     }
                     else if (data.CurrentApprover?.Id === a.Id) {
@@ -525,7 +531,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
         (await spCrudOps).getData(
             "VendorMaster",
-            "VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,State/Title,Country/Title,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress",
+            "Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
             "NatureOfPayment,City,State,Country,Currency",
             `VendorCode eq '${vendorCode}'`,
             { column: "ID", isAscending: true },
@@ -544,9 +550,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                         VendorNameLegal: v.VendorNameLegal || "",
                         VendorShortName: v.VendorShortName || "",
                         VendorType: v.VendorType || "",
-                        City: v.City?.Title || "",
+                        City: v.City?.City || "",
                         State: v.State?.Title || "",
-                        Country: v.Country?.Title || "",
+                        Country: v.Country?.Country || "",
                         Currency: v.Currency?.Title || "",
                         PostalCode: v.PostalCode || "",
                         ContactPersonName: v.ContactPersonName || "",
@@ -565,7 +571,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                         PurposeCodeRBI: v.PurposeCodeRBI || "",
                         BankAddress: v.BankAddress || "",
                         BankCountry: v.BankCountry || "",
-                        VendorAddress: v.VendorAddress || ""
+                        VendorAddress: v.VendorAddress || "",
+                        Pincode: v.Pincode || ""
                     });
                     getTaxDeclarationdata(v.VendorCode);
 
@@ -724,84 +731,94 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
         }
     };
 
-    const validateAndBuildApprovers = async (): Promise<any[]> => {
+  const validateAndBuildApprovers = async (): Promise<any[]> => {
 
-        const sp = await spCrudOps;
+    const sp = await spCrudOps;
 
-        const approvers: any[] = [];
+    const approvers: any[] = [];
 
-        // RM
-        if (employee.RMId) {
+    // RM
+    if (employee.RMId) {
 
-            approvers.push({
-                Id: employee.RMId,
-                Name: employee.RM,
-                Role: "RM",
-                Level: 1
-            });
+        approvers.push({
+            Id: employee.RMId,
+            Name: employee.RM,
+            Role: "RM",
+            Level: 1,
+            status: "Pending"
+          
+        });
 
-        }
+    }
 
-        // HOD
-        if (employee.HODId) {
+    // HOD
+    if (employee.HODId) {
 
-            approvers.push({
-                Id: employee.HODId,
-                Name: employee.HOD,
-                Role: "HOD",
-                Level: 2
-            });
+        approvers.push({
+            Id: employee.HODId,
+            Name: employee.HOD,
+            Role: "HOD",
+            Level: 2,
+            status: ""
+        
+        });
 
+    }
 
-        }
-        let requestTypeFilter = "";
-        if (
-            paymentType === "Goods-Advance Payment" ||
-            paymentType === "Service-Advance Payment"
-        ) {
-            requestTypeFilter = "Advance Payment";
-        } else {
-            requestTypeFilter = paymentType; // direct match for Bill types
-        }
+    let requestTypeFilter = "";
 
-        const matrix = await sp.getData(
-            "ForexApprovalMatrix",
-            "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
-            "Approver",
-            `RequestType eq '${requestTypeFilter}' and Status eq 'Active'`,
-            { column: "Level", isAscending: true },
-            5000,
-            props
-        );
+    if (
+        paymentType === "Goods-Advance Payment" ||
+        paymentType === "Service-Advance Payment"
+    ) {
 
-        matrix.forEach((item: any) => {
+        requestTypeFilter = "Advance Payment";
 
-            const id = item.Approver?.Id;
+    } else {
 
-            if (!approvers.find(a => a.Id === id)) {
+        requestTypeFilter = paymentType;
 
-                approvers.push({
+    }
 
-                    Id: id,
-                    Name: item.Approver?.Title,
-                    Role: item.Role,
-                    Level: item.Level
+    const matrix = await sp.getData(
+        "ForexApprovalMatrix",
+        "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
+        "Approver",
+        `RequestType eq '${requestTypeFilter}' and Status eq 'Active'`,
+        { column: "Level", isAscending: true },
+        5000,
+        props
+    );
 
-                });
+    matrix.forEach((item: any) => {
 
-            }
+        approvers.push({
+
+            Id: item.Approver?.Id,
+            Name: item.Approver?.Title,
+            Role: item.Role,
+            Level: item.Level,
+            status: ""
+            
 
         });
 
-        return approvers;
+    });
 
-    };
+    // ✅ Ensure first approver is pending
+    if (approvers.length > 0) {
+        approvers[0].Status = "Pending";
+    }
+
+    return approvers;
+
+};
 
     const getCurrencyData = async () => {
         try {
             const sp = await spCrudOps;
             await sp.getData(
-                "Currency",
+                "CurrencyMaster",
                 "Title,Id",
                 "",
                 "",
@@ -844,17 +861,20 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             }
 
             // 🔹 Build new approver list but preserve old status
+            // 🔹 Build new approver list but preserve old status
             const approvers = correctApproversObjects.map((newAppr: any) => {
 
                 const existing = existingApprovers.find(
-                    (a: any) => a.Id === newAppr.Id
+                    (a: any) =>
+                        a.Id === newAppr.Id &&
+                        a.Role === newAppr.Role
                 );
 
                 return existing
                     ? existing
                     : {
                         ...newAppr,
-                        Status: "",
+                        status: "",
                         ActionDate: "",
                         Remarks: ""
                     };
@@ -862,7 +882,9 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             });
 
             const currentIndex = approvers.findIndex(
-                (a: any) => a.Id === currentUserId
+                (a: any) =>
+                    a.Id === currentUserId &&
+                    a.status === "Pending"
             );
 
             if (currentIndex === -1) {
@@ -875,7 +897,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
             const currentApproverObj = approvers[currentIndex];
 
             // ⭐ Update current approver
-            approvers[currentIndex].Status = "Approved";
+            approvers[currentIndex].status = "Approved";
             approvers[currentIndex].ActionDate = new Date().toISOString();
             approvers[currentIndex].Remarks = approverRemarks;
 
@@ -886,8 +908,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     ? approvers[currentIndex + 1]
                     : null;
 
-            if (nextApprover && !nextApprover.Status) {
-                nextApprover.Status = "Pending";
+            if (nextApprover && !nextApprover.status ) {
+                nextApprover.status = "Pending";
             }
 
             let status = "Approved";
@@ -984,8 +1006,13 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     setActionLoading(false);
                     return;
                 }
+                if (!treasuryPaymentRemarks || treasuryPaymentRemarks.trim() === "") {
+                    alert("Please enter treasury payment remark");
+                    setActionLoading(false);
+                    return;
+                }
 
-                //finalRemark = paymentReference; // or treasuryRemarks if you want
+                finalRemark = treasuryPaymentRemarks; // or treasuryRemarks if you want
             }
 
 
@@ -1037,6 +1064,22 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 if (!foreignCurrency) {
                     alert("Please select foreign currency");
                     setActionLoading(false);
+                    return;
+                }
+                const totalAmountValue =
+                    parseFloat(totalAmount || "0");
+
+                const enteredINRAmount =
+                    parseFloat(inrAmount || "0");
+
+                if (enteredINRAmount > totalAmountValue) {
+
+                    alert(
+                        "INR Amount should not exceed the Total Amount"
+                    );
+
+                    setActionLoading(false);
+
                     return;
                 }
                 if (!foreignAmount || isNaN(Number(foreignAmount))) {
@@ -1522,71 +1565,61 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                             </div>
                             <div className='borderedbox'>
-                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Requestor Information</label>
-                                </div>
+                                </div> */}
+                                <CollapsibleSection title="Requestor Information" style={{ marginTop: "10px" }}>
+                                    <div className='main-formcontainer'>
 
-                                <div className='main-formcontainer'>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <Field label="Type" required>
-                                                <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext">
-                                                    <option value="Goods-Bill Payment">Goods-Bill Payment</option>
-                                                    <option value="Service-Bill Payment">Service-Bill Payment</option>
-                                                    <option value="Goods-Advance Payment">Goods-Advance Payment</option>
-                                                    <option value="Service-Advance Payment">Service-Advance Payment</option>
-                                                </select>
-                                            </Field>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Employee Code</label>
+                                                <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Employee Name</label>
+                                                <input type="text" value={employee.EmployeeName} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Division</label>
+                                                <input type="text" value={employee.Division} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Location</label>
+                                                <input type="text" value={employee.Location} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">RM</label>
+                                                <input type="text" value={employee.RM} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">HOD</label>
+                                                <input type="text" value={employee.HOD} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Contact No</label>
+                                                <input type="text" value={employee.ContactNo} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Employee Status</label>
+                                                <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Email</label>
+                                                <input type="text" value={employee.Email} className="form-control readonly" />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Employee Code</label>
-                                            <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Employee Name</label>
-                                            <input type="text" value={employee.EmployeeName} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Division</label>
-                                            <input type="text" value={employee.Division} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Location</label>
-                                            <input type="text" value={employee.Location} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">RM</label>
-                                            <input type="text" value={employee.RM} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">HOD</label>
-                                            <input type="text" value={employee.HOD} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Contact No</label>
-                                            <input type="text" value={employee.ContactNo} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Employee Status</label>
-                                            <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Email</label>
-                                            <input type="text" value={employee.Email} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                </div>
+                                </CollapsibleSection>
 
                                 <CollapsibleSection title="Vendor / Beneficiary Details" style={{ marginTop: "10px" }}>
-                                    <div className="heading1" style={{ marginTop: "10px" }}>
+                                    {/* <div className="heading1" style={{ marginTop: "10px" }}>
                                         <label>Vendor / Beneficiary Details</label>
-                                    </div>
+                                    </div> */}
                                     <div className='main-formcontainer'>
                                         <div className='row mb-20'>
                                             <div className='col-md-4'>
@@ -1615,7 +1648,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                             </div>
                                             <div className='col-md-4'>
                                                 <label className="font">Pincode</label>
-                                                <input type="text" value={vendor.PostalCode} className="form-control readonly" />
+                                                <input type="text" value={vendor.Pincode} className="form-control readonly" />
                                             </div>
                                             <div className='col-md-4'>
                                                 <label className="font">Bank Name</label>
@@ -1648,6 +1681,8 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                                         </div>
                                     </div>
+                                </CollapsibleSection>
+                                <CollapsibleSection title="Tax & Regulatory Information" style={{ marginTop: "10px" }}>
                                     <div className="heading1" style={{ marginTop: "10px" }}>
                                         <label>Tax & Regulatory Information</label>
                                     </div>
@@ -1869,13 +1904,58 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                         </div>
                                     </div>
                                 </CollapsibleSection>
-
+                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
+                                    {workflowHistory.length > 0 ? (
+                                        <table className="custom-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Action By</th>
+                                                    {/* <th>Role</th> */}
+                                                    <th>Action</th>
+                                                    <th>Remark</th> {/* ✅ NEW COLUMN */}
+                                                    <th>Date</th>
+                                                    {/* <th>Status</th> */}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {workflowHistory.map((item, index) => (
+                                                    <tr key={index}>
+                                                        <td>{item.CurrentApprover}</td>   {/* ✅ FIX */}
+                                                        {/* <td>{item.Role || "-"}</td>       optional */}
+                                                        <td>{item.ActionTaken}</td>       {/* ✅ FIX */}
+                                                        <td>{item.Comment}</td>           {/* ✅ FIX */}
+                                                        <td>
+                                                            {item.Date
+                                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                                : ""}
+                                                        </td>
+                                                        {/* <td>{item.CurrentStatus}</td>     ✅ FIX */}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p>No workflow history available</p>
+                                    )}
+                                </CollapsibleSection>
                                 {paymentType === "Goods-Bill Payment" && (
                                     <>
                                         <div className="heading1" style={{ marginTop: "10px" }}>
                                             <label>Forex Payment Request Details</label>
                                         </div>
                                         <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext" disabled>
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+                                                </div>
+                                            </div>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
                                                     <label className='font'>Request Number </label>
@@ -2162,6 +2242,18 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                         <div className='main-formcontainer'>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext" disabled>
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
                                                     <label className='font'>Request Number</label>
                                                     <input type="text" value={requestNumber} className="form-control readonly" />
                                                 </div>
@@ -2342,6 +2434,18 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                             <label>Forex Payment Request Details</label>
                                         </div>
                                         <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext" disabled>
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+                                                </div>
+                                            </div>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
                                                     <label className='font'>Request Number</label>
@@ -2531,6 +2635,18 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                         <div className='main-formcontainer'>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext" disabled>
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
                                                     <label className='font'>Request Number</label>
                                                     <input type="text" value={requestNumber} className="form-control readonly" />
                                                 </div>
@@ -2711,40 +2827,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </>
                                 )}
 
-                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
-                                    {workflowHistory.length > 0 ? (
-                                        <table className="custom-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Action By</th>
-                                                    {/* <th>Role</th> */}
-                                                    <th>Action</th>
-                                                    <th>Remark</th> {/* ✅ NEW COLUMN */}
-                                                    <th>Date</th>
-                                                    {/* <th>Status</th> */}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {workflowHistory.map((item, index) => (
-                                                    <tr key={index}>
-                                                        <td>{item.CurrentApprover}</td>   {/* ✅ FIX */}
-                                                        {/* <td>{item.Role || "-"}</td>       optional */}
-                                                        <td>{item.ActionTaken}</td>       {/* ✅ FIX */}
-                                                        <td>{item.Comment}</td>           {/* ✅ FIX */}
-                                                        <td>
-                                                            {item.Date
-                                                                ? new Date(item.Date).toLocaleString("en-GB")
-                                                                : ""}
-                                                        </td>
-                                                        {/* <td>{item.CurrentStatus}</td>     ✅ FIX */}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    ) : (
-                                        <p>No workflow history available</p>
-                                    )}
-                                </CollapsibleSection>
+
 
                                 {currentRole === "Vouching" && (
                                     <>
@@ -2754,18 +2837,18 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                         <div className='main-formcontainer'>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
-                                                    <label className='font'>Validation Date</label>
+                                                    <label className='font'>Validation Date <span style={{ color: "red" }}>*</span></label>
                                                     <input type="date" value={validationDate} className="form-control" onChange={(e) => setValidationDate(e.target.value)} />
                                                 </div>
                                                 {(paymentType.includes("Advance")) && (
                                                     <div className='col-md-4'>
-                                                        <label className="font">Voucher Number</label>
+                                                        <label className="font">Voucher Number <span style={{ color: "red" }}>*</span></label>
                                                         <input type="text" value={voucherNumber} className="form-control" onChange={(e) => setVoucherNumber(e.target.value)} />
                                                     </div>
                                                 )}
                                                 <div className="col-md-4">
-                                                    <label className="font">Remarks</label>
-                                                    <textarea rows={4} cols={4} style={{width:"100%"}} value={vouchingRemarks} onChange={(e) => setVouchingRemarks(e.target.value)} />
+                                                    <label className="font">Remarks <span style={{ color: "red" }}>*</span></label>
+                                                    <textarea rows={4} cols={4} style={{ width: "100%" }} value={vouchingRemarks} onChange={(e) => setVouchingRemarks(e.target.value)} />
                                                 </div>
                                             </div>
 
@@ -2799,7 +2882,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                         <div className='main-formcontainer'>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
-                                                    <label className='font'>Treasury Remarks</label>
+                                                    <label className='font'>Treasury Remarks<span style={{ color: "red" }}>*</span></label>
                                                     <textarea
                                                         rows={4} cols={4} className="form-control"
                                                         value={treasuryRemarks}
@@ -2831,212 +2914,224 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                                 )}
 
                                             </div>
-                                            <div className="heading1" style={{ marginTop: "10px" }}>
-                                                <label>Payment Details</label>
+                                        </div>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Payment Details</label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Foreign Currency <span style={{ color: "red" }}>*</span></label>
+                                                    <Dropdown
+                                                        className="form-controltext"
+                                                        options={foreignCurrencyOptions}
+                                                        selectedKey={foreignCurrency}
+                                                        onChange={(e, option) => {
+                                                            if (option) {
+                                                                setForeignCurrency(option.key as string);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className='col-md-4'>
+                                                    <label className="font">Foreign Currency Amount<span style={{ color: "red" }}>*</span></label>
+                                                    <input type="number" value={foreignAmount} className="form-control" onChange={(e) => setForeignAmount(e.target.value)} />
+                                                </div>
+                                                <div className='col-md-4'>
+                                                    <label className="font">Exchange Rate<span style={{ color: "red" }}>*</span></label>
+                                                    <input type="number" value={exchangeRate} className="form-control" onChange={(e) => setExchangeRate(e.target.value)} />
+                                                </div>
+
                                             </div>
-                                            <div className='main-formcontainer'>
-                                                <div className='row mb-20'>
-                                                    <div className='col-md-4'>
-                                                        <label className='font'>Foreign Currency</label>
-                                                        <Dropdown
-                                                            className="form-controltext"
-                                                            options={foreignCurrencyOptions}
-                                                            selectedKey={foreignCurrency}
-                                                            onChange={(e, option) => {
-                                                                if (option) {
-                                                                    setForeignCurrency(option.key as string);
-                                                                }
-                                                            }}
-                                                        />
-                                                    </div>
+                                            <div className='row mb-20'>
 
-                                                    <div className='col-md-4'>
-                                                        <label className="font">Foreign Currency Amount</label>
-                                                        <input type="number" value={foreignAmount} className="form-control" onChange={(e) => setForeignAmount(e.target.value)} />
-                                                    </div>
-                                                    <div className='col-md-4'>
-                                                        <label className="font">Exchange Rate</label>
-                                                        <input type="number" value={exchangeRate} className="form-control" onChange={(e) => setExchangeRate(e.target.value)} />
-                                                    </div>
 
+                                                <div className='col-md-4'>
+                                                    <label className="font">INR Amount <span style={{ color: "red" }}>*</span></label>
+                                                    <input type="number" value={inrAmount} className="form-control" onChange={(e) => setInrAmount(e.target.value)} />
                                                 </div>
-                                                <div className='row mb-20'>
-                                                    <div className='col-md-4'>
-                                                        <label className='font'>Foreign Currency</label>
-                                                        <Dropdown
-                                                            className="form-controltext"
-                                                            options={foreignCurrencyOptions}
-                                                            selectedKey={foreignCurrency}
-                                                            onChange={(e, option) => {
-                                                                if (option) {
-                                                                    setForeignCurrency(option.key as string);
-                                                                }
-                                                            }}
-                                                        />
-                                                    </div>
 
-                                                    <div className='col-md-4'>
-                                                        <label className="font">INR Amount</label>
-                                                        <input type="number" value={inrAmount} className="form-control" onChange={(e) => setInrAmount(e.target.value)} />
-                                                    </div>
-
-
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Payment Date <span style={{ color: "red" }}>*</span></label>
+                                                    <input type="date" value={paymentDate} className="form-control" onChange={(e) => setPaymentDate(e.target.value)} />
                                                 </div>
-                                                <div className="row mb-20">
+                                                <div className='col-md-4'>
+                                                    <label className="font">Payment reference number <span style={{ color: "red" }}>*</span></label>
+                                                    <input type="number" value={paymentReference} className="form-control" onChange={(e) => setPaymentReference(e.target.value)} />
+                                                </div>
+                                            </div>
+                                            {/* <div className="row mb-20">
                                                     <div className="col-md-12">
                                                         <p style={{ color: "red", fontSize: "12px" }}>
                                                             (if difference in foreign currency & Amount system to display alert message only)
                                                         </p>
                                                     </div>
-                                                </div>
-                                                <div className='row mb-20'>
+                                                </div> */}
+
+                                            <div className='row mb-20'>
+                                                {isServicePayment && (
                                                     <div className='col-md-4'>
-                                                        <label className='font'>Payment Date</label>
-                                                        <input type="date" value={paymentDate} className="form-control" onChange={(e) => setPaymentDate(e.target.value)} />
+                                                        <label className="font">Form145 <span style={{ color: "red" }}>*</span></label>
+                                                        <input type="file" multiple onChange={(e) => {
+                                                            const files = e.target.files ? Array.from(e.target.files) : [];
+                                                            setForm15CA((prev) => [...prev, ...files]);
+                                                        }}
+                                                            className="form-control"
+                                                        />
+                                                        {form15CA.length > 0 && (
+                                                            <div style={{ marginTop: "10px" }}>
+                                                                {form15CA.map((file, index) => (
+                                                                    <div
+                                                                        key={index}
+                                                                        style={{
+                                                                            display: "flex",
+                                                                            justifyContent: "space-between",
+                                                                            alignItems: "center",
+                                                                            marginBottom: "5px",
+                                                                            padding: "6px 10px",
+                                                                            border: "1px solid #ddd",
+                                                                            borderRadius: "4px",
+                                                                        }}
+                                                                    >
+                                                                        <span>{file.name}</span>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => remove15CAFile(index)}
+                                                                            style={{
+                                                                                background: "red",
+                                                                                color: "#fff",
+                                                                                border: "none",
+                                                                                padding: "4px 8px",
+                                                                                cursor: "pointer",
+                                                                                borderRadius: "4px",
+                                                                            }}
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
+                                                )}
+                                                {isServicePayment && (
                                                     <div className='col-md-4'>
-                                                        <label className="font">Payment reference number</label>
-                                                        <input type="number" value={paymentReference} className="form-control" onChange={(e) => setPaymentReference(e.target.value)} />
+                                                        <label className="font">Form146 <span style={{ color: "red" }}>*</span></label>
+                                                        <input type="file" multiple onChange={(e) => {
+                                                            const files = e.target.files ? Array.from(e.target.files) : [];
+                                                            setForm15CB((prev) => [...prev, ...files]);
+                                                        }}
+                                                            className="form-control"
+
+                                                        />
+                                                        {form15CB.length > 0 && (
+                                                            <div style={{ marginTop: "10px" }}>
+                                                                {form15CB.map((file, index) => (
+                                                                    <div
+                                                                        key={index}
+                                                                        style={{
+                                                                            display: "flex",
+                                                                            justifyContent: "space-between",
+                                                                            alignItems: "center",
+                                                                            marginBottom: "5px",
+                                                                            padding: "6px 10px",
+                                                                            border: "1px solid #ddd",
+                                                                            borderRadius: "4px",
+                                                                        }}
+                                                                    >
+                                                                        <span>{file.name}</span>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => remove15CBFile(index)}
+                                                                            style={{
+                                                                                background: "red",
+                                                                                color: "#fff",
+                                                                                border: "none",
+                                                                                padding: "4px 8px",
+                                                                                cursor: "pointer",
+                                                                                borderRadius: "4px",
+                                                                            }}
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    {isServicePayment && (
-                                                        <div className='col-md-4'>
-                                                            <label className="font">Form145</label>
-                                                            <input type="file" multiple onChange={(e) => {
-                                                                const files = e.target.files ? Array.from(e.target.files) : [];
-                                                                setForm15CA((prev) => [...prev, ...files]);
-                                                            }}
-                                                            />
-                                                            {form15CA.length > 0 && (
-                                                                <div style={{ marginTop: "10px" }}>
-                                                                    {form15CA.map((file, index) => (
-                                                                        <div
-                                                                            key={index}
+                                                )}
+                                                {isGoodsPayment && (
+                                                    <div className="col-md-4">
+                                                        <label className="font">Attach Swift Copy (Applicable for Goods) <span style={{ color: "red" }}>*</span></label>
+                                                        <input type="file" multiple onChange={(e) => {
+                                                            const files = e.target.files ? Array.from(e.target.files) : [];
+                                                            setSwiftCopy((prev) => [...prev, ...files]);
+                                                        }}
+                                                            className="form-control"
+
+                                                        />
+                                                        {swiftCopy.length > 0 && (
+                                                            <div style={{ marginTop: "10px" }}>
+                                                                {swiftCopy.map((file, index) => (
+                                                                    <div
+                                                                        key={index}
+                                                                        style={{
+                                                                            display: "flex",
+                                                                            justifyContent: "space-between",
+                                                                            alignItems: "center",
+                                                                            marginBottom: "5px",
+                                                                            padding: "6px 10px",
+                                                                            border: "1px solid #ddd",
+                                                                            borderRadius: "4px",
+                                                                        }}
+                                                                    >
+                                                                        <span>{file.name}</span>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => removeSwiftCopyFile(index)}
                                                                             style={{
-                                                                                display: "flex",
-                                                                                justifyContent: "space-between",
-                                                                                alignItems: "center",
-                                                                                marginBottom: "5px",
-                                                                                padding: "6px 10px",
-                                                                                border: "1px solid #ddd",
+                                                                                background: "red",
+                                                                                color: "#fff",
+                                                                                border: "none",
+                                                                                padding: "4px 8px",
+                                                                                cursor: "pointer",
                                                                                 borderRadius: "4px",
                                                                             }}
                                                                         >
-                                                                            <span>{file.name}</span>
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
 
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => remove15CAFile(index)}
-                                                                                style={{
-                                                                                    background: "red",
-                                                                                    color: "#fff",
-                                                                                    border: "none",
-                                                                                    padding: "4px 8px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px",
-                                                                                }}
-                                                                            >
-                                                                                Delete
-                                                                            </button>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className='row mb-20'>
-                                                    {isServicePayment && (
-                                                        <div className='col-md-4'>
-                                                            <label className="font">Form146</label>
-                                                            <input type="file" multiple onChange={(e) => {
-                                                                const files = e.target.files ? Array.from(e.target.files) : [];
-                                                                setForm15CB((prev) => [...prev, ...files]);
-                                                            }}
-                                                            />
-                                                            {form15CB.length > 0 && (
-                                                                <div style={{ marginTop: "10px" }}>
-                                                                    {form15CB.map((file, index) => (
-                                                                        <div
-                                                                            key={index}
-                                                                            style={{
-                                                                                display: "flex",
-                                                                                justifyContent: "space-between",
-                                                                                alignItems: "center",
-                                                                                marginBottom: "5px",
-                                                                                padding: "6px 10px",
-                                                                                border: "1px solid #ddd",
-                                                                                borderRadius: "4px",
-                                                                            }}
-                                                                        >
-                                                                            <span>{file.name}</span>
-
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => remove15CBFile(index)}
-                                                                                style={{
-                                                                                    background: "red",
-                                                                                    color: "#fff",
-                                                                                    border: "none",
-                                                                                    padding: "4px 8px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px",
-                                                                                }}
-                                                                            >
-                                                                                Delete
-                                                                            </button>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {isGoodsPayment && (
-                                                        <div className="col-md-4">
-                                                            <label className="font">Attach Swift Copy (Applicable for Goods)</label>
-                                                            <input type="file" multiple onChange={(e) => {
-                                                                const files = e.target.files ? Array.from(e.target.files) : [];
-                                                                setSwiftCopy((prev) => [...prev, ...files]);
-                                                            }}
-                                                            />
-                                                            {swiftCopy.length > 0 && (
-                                                                <div style={{ marginTop: "10px" }}>
-                                                                    {swiftCopy.map((file, index) => (
-                                                                        <div
-                                                                            key={index}
-                                                                            style={{
-                                                                                display: "flex",
-                                                                                justifyContent: "space-between",
-                                                                                alignItems: "center",
-                                                                                marginBottom: "5px",
-                                                                                padding: "6px 10px",
-                                                                                border: "1px solid #ddd",
-                                                                                borderRadius: "4px",
-                                                                            }}
-                                                                        >
-                                                                            <span>{file.name}</span>
-
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => removeSwiftCopyFile(index)}
-                                                                                style={{
-                                                                                    background: "red",
-                                                                                    color: "#fff",
-                                                                                    border: "none",
-                                                                                    padding: "4px 8px",
-                                                                                    cursor: "pointer",
-                                                                                    borderRadius: "4px",
-                                                                                }}
-                                                                            >
-                                                                                Delete
-                                                                            </button>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
                                             </div>
+                                        </div>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>
+                                                Treasury Payment Remarks
+                                            </label>
+                                        </div>
+                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <label className='font'>Treasury Payment Remarks<span style={{ color: "red" }}>*</span></label>
+                                                    <textarea
+                                                        rows={4} cols={4} className="form-control"
+                                                        value={treasuryPaymentRemarks}
+                                                        onChange={(e) => setTreasuryPaymentRemarks(e.target.value)}
+                                                    />
+                                                </div>
+
+                                            </div>
+
+
 
 
 
@@ -3052,11 +3147,12 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                         <div className='main-formcontainer'>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
-                                                    <label className='font'>Approver Remarks</label>
+                                                    <label className='font'>Approver Remarks<span color="red">*</span></label>
                                                     <textarea
                                                         rows={4} cols={4}
                                                         value={approverRemarks}
                                                         onChange={(e) => setApproverRemarks(e.target.value)}
+                                                        className="form-control"
                                                     />
                                                 </div>
 
@@ -3117,7 +3213,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     </div>
                 </div>
             )}
-            
+
         </>
     );
 };

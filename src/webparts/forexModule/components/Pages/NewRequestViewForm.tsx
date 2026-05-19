@@ -179,7 +179,8 @@ const ViewRequestForm = (props: IForexModuleProps) => {
         PurposeCodeRBI: "",
         BankCountry: "",
         BankAddress: "",
-        VendorAddress: ""
+        VendorAddress: "",
+        Pincode: ""
     });
 
     const [permanentEstablishmentDeclaration, setPermanentEstablishmentDeclaration] = useState({
@@ -261,9 +262,9 @@ const ViewRequestForm = (props: IForexModuleProps) => {
         setRows(updatedRows);
     };
 
-    const [swiftCopy, setSwiftCopy] = useState<File[]>([]);
-    const [form15CA, setForm15CA] = useState<File[]>([]);
-    const [form15CB, setForm15CB] = useState<File[]>([]);
+    const [swiftCopy, setSwiftCopy] = useState<any>({});
+    const [form15CA, setForm15CA] = useState<any>({});
+    const [form15CB, setForm15CB] = useState<any>({});
     const [foreignCurrencypayment, setForeignCurrencypayment] = useState("");
     const [foreignAmountpayment, setForeignAmountpayment] = useState("");
     const [exchangeRatepayment, setExchangeRatepayment] = useState("");
@@ -306,21 +307,23 @@ const ViewRequestForm = (props: IForexModuleProps) => {
             // 🔹 Load Parent
             const parent = await sp.getData(
                 "ForexRequest",
-                "*,AllApprovers,RM/Title,HOD/Title,Author/Id,Currency/Title,Currency/Id,CurrentApprover/Id,CurrentApprover/Title,NextApprovers/Id,NextApprovers/Title,PrevApprovers/Id,PrevApprovers/Title",
-                "RM,HOD,Author,Currency,CurrentApprover,NextApprovers,PrevApprovers",
+                "*,AttachmentFiles,AllApprovers,RM/Title,HOD/Title,Author/Id,Currency/Title,Currency/Id,CurrentApprover/Id,CurrentApprover/Title,NextApprovers/Id,NextApprovers/Title,PrevApprovers/Id,PrevApprovers/Title",
+                "AttachmentFiles,RM,HOD,Author,Currency,CurrentApprover,NextApprovers,PrevApprovers",
                 `ID eq ${forexId}`,
                 { column: "ID", isAscending: true },
                 1,
                 props
             );
-
+            const swiftCopyMap: any = {};
+            const form15CAMap: any = {};
+            const form15CBMap: any = {};
             if (parent.length > 0) {
                 const data = parent[0];
 
                 setPaymentType(data.ForexType || "");
                 setRequestNumber(data.ForexNumber || "");
                 setRequestedOn(data.RequestedOn?.split("T")[0] || "");
-                setCurrency(data.Currency.Title || "");
+                setCurrency(data.Currency?.Title || "");
                 setTotalAmount(data.TotalAmount || "");
                 setForeignBankCharges(data.ForeignBankCharges || "");
                 setPoContractNo(data.poContractNo || "");
@@ -383,7 +386,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                         let status = "pending";
 
-                        if (a.Status === "Approved") {
+                        if (a.status === "Approved") {
                             status = "approved";
                         }
 
@@ -413,6 +416,23 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 setInrAmountpayment(data.INRAmount || "");
                 setExchangeRatepayment(data.ExchangeRate || "");
                 setForeignCurrencypayment(data.ForeignCurrency || "");
+                const parentFiles = data.AttachmentFiles || {};
+
+                const swiftFiles = parentFiles.filter((file: any) =>
+                    file.FileName?.startsWith("SwiftCopy_")
+                );
+
+                const form15CAFiles = parentFiles.filter((file: any) =>
+                    file.FileName?.startsWith("15CA_")
+                );
+
+                const form15CBFiles = parentFiles.filter((file: any) =>
+                    file.FileName?.startsWith("15CB_")
+                );
+
+                setSwiftCopy(swiftFiles);
+                setForm15CA(form15CAFiles);
+                setForm15CB(form15CBFiles);
 
             }
 
@@ -546,11 +566,11 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 const files = item.AttachmentFiles || [];
 
                 poAttachmentMap[index] = files.filter((f: any) =>
-                    f.FileName?.startsWith("PO_")
+                    f.FileName?.startsWith("INV_")
                 );
 
                 piAttachmentMap[index] = files.filter((f: any) =>
-                    f.FileName?.startsWith("PI_")
+                    f.FileName?.startsWith("DOC_")
                 );
 
                 otherAttachmentMap[index] = files.filter((f: any) =>
@@ -588,7 +608,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
         (await spCrudOps).getData(
             "VendorMaster",
-            "VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,State/Title,Country/Title,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress",
+            "Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
             "NatureOfPayment,City,State,Country,Currency",
             `VendorCode eq '${vendorCode}'`,
             { column: "ID", isAscending: true },
@@ -607,9 +627,9 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                         VendorNameLegal: v.VendorNameLegal || "",
                         VendorShortName: v.VendorShortName || "",
                         VendorType: v.VendorType || "",
-                        City: v.City?.Title || "",
+                        City: v.City?.City || "",
                         State: v.State?.Title || "",
-                        Country: v.Country?.Title || "",
+                        Country: v.Country?.Country || "",
                         Currency: v.Currency?.Title || "",
                         PostalCode: v.PostalCode || "",
                         ContactPersonName: v.ContactPersonName || "",
@@ -628,9 +648,19 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                         PurposeCodeRBI: v.PurposeCodeRBI || "",
                         BankAddress: v.BankAddress || "",
                         BankCountry: v.BankCountry || "",
-                        VendorAddress: v.VendorAddress || ""
+                        VendorAddress: v.VendorAddress || "",
+                        Pincode: v.Pincode || ""
                     });
                     getTaxDeclarationdata(v.VendorCode);
+                    setBankAccountNo(v.AccountNumberIBAN || "");
+                    setBankName(v.BankName || "");
+                    setBankSwiftCode(v.SWIFTBICCode || "");
+                    setBallenceEligibleAmount(v.BalanceEligibleAmount || "");
+                    setPaidAmount(v.ApprovedAmountPaidAmount || "");
+                    setEligibleAmountWithWHT(v.EligibleAmountWithoutWHT || "");
+                    setDTAAApplicable(v.DTAAApplicable || "");
+                    setTaxDocumentView(v.TaxDocumentAvailable || "");
+
 
                 } else {
                     //alert("Vendor not found");
@@ -642,7 +672,6 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                 console.error("Error fetching vendor data:", error);
             });
     };
-
     const getTaxDeclarationdata = async (vendorCode: string) => {
 
         if (!vendorCode) return;
@@ -771,69 +800,60 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                             </div>
                             <div className='borderedbox'>
-                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Requestor Information</label>
-                                </div>
-                                <div className='main-formcontainer'>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <Field label="Type" required>
-                                                <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext">
-                                                    <option value="Goods-Bill Payment">Goods-Bill Payment</option>
-                                                    <option value="Service-Bill Payment">Service-Bill Payment</option>
-                                                    <option value="Goods-Advance Payment">Goods-Advance Payment</option>
-                                                    <option value="Service-Advance Payment">Service-Advance Payment</option>
-                                                </select>
-                                            </Field>
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Employee Code</label>
-                                            <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Employee Name</label>
-                                            <input type="text" value={employee.EmployeeName} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Division</label>
-                                            <input type="text" value={employee.Division} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Location</label>
-                                            <input type="text" value={employee.Location} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">RM</label>
-                                            <input type="text" value={employee.RM} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">HOD</label>
-                                            <input type="text" value={employee.HOD} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Contact No</label>
-                                            <input type="text" value={employee.ContactNo} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Employee Status</label>
-                                            <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Email</label>
-                                            <input type="text" value={employee.Email} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                </div>
+                                </div> */}
+                                <CollapsibleSection title="Requestor Information" style={{ marginTop: "10px" }}>
+                                    <div className='main-formcontainer'>
 
-                                    <div className="heading1" style={{ marginTop: "10px" }}>
-                                        <label>Vendor / Beneficiary Details</label>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Employee Code</label>
+                                                <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Employee Name</label>
+                                                <input type="text" value={employee.EmployeeName} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Division</label>
+                                                <input type="text" value={employee.Division} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Location</label>
+                                                <input type="text" value={employee.Location} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">RM</label>
+                                                <input type="text" value={employee.RM} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">HOD</label>
+                                                <input type="text" value={employee.HOD} className="form-control readonly" />
+                                            </div>
+                                        </div>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Contact No</label>
+                                                <input type="text" value={employee.ContactNo} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Employee Status</label>
+                                                <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Email</label>
+                                                <input type="text" value={employee.Email} className="form-control readonly" />
+                                            </div>
+                                        </div>
                                     </div>
+                                </CollapsibleSection>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
+                                        <label>Vendor / Beneficiary Details</label>
+                                    </div> */}
+                                <CollapsibleSection title="Vendor / Beneficiary Details" style={{ marginTop: "10px" }}>
                                     <div className='main-formcontainer'>
                                         <div className='row mb-20'>
                                             <div className='col-md-4'>
@@ -862,7 +882,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             </div>
                                             <div className='col-md-4'>
                                                 <label className="font">Pincode</label>
-                                                <input type="text" value={vendor.PostalCode} className="form-control readonly" />
+                                                <input type="text" value={vendor.Pincode} className="form-control readonly" />
                                             </div>
                                             <div className='col-md-4'>
                                                 <label className="font">Bank Name</label>
@@ -895,7 +915,8 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                                         </div>
                                     </div>
-           <CollapsibleSection title="Tax & Regulatory Information" style={{ marginTop: "10px" }}>
+                                </CollapsibleSection>
+                                <CollapsibleSection title="Tax & Regulatory Information" style={{ marginTop: "10px" }}>
 
                                     <div className="heading1" style={{ marginTop: "10px" }}>
                                         <label>Tax & Regulatory Information</label>
@@ -1117,6 +1138,43 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                         </div>
                                     </div>
                                 </CollapsibleSection>
+                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
+
+                                    {workflowHistory.length > 0 ? (
+                                        <table className="custom-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Action By</th>
+                                                    {/* <th>Role</th> */}
+                                                    <th>Action</th>
+                                                    <th>Remark</th>
+                                                    <th>Date</th>
+                                                    {/* <th>Status</th> */}
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                {workflowHistory.map((item: any, index: number) => (
+                                                    <tr key={index}>
+                                                        <td>{item.CurrentApprover}</td>
+                                                        {/* <td>{item.Role || "-"}</td> */}
+                                                        <td>{item.ActionTaken}</td>
+                                                        <td>{item.Comment || "-"}</td>
+                                                        <td>
+                                                            {item.Date
+                                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                                : ""}
+                                                        </td>
+                                                        {/* <td>{item.CurrentStatus}</td> */}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p>No workflow history available</p>
+                                    )}
+
+                                </CollapsibleSection>
 
                                 {paymentType === "Goods-Bill Payment" && (
                                     <>
@@ -1124,6 +1182,18 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             <label>Forex Payment Request Details</label>
                                         </div>
                                         <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext" disabled>
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+                                                </div>
+                                            </div>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
                                                     <label className='font'>Request Number </label>
@@ -1409,6 +1479,18 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                         <div className='main-formcontainer'>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext" disabled>
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+                                                </div>
+                                            </div>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
                                                     <label className='font'>Request Number</label>
                                                     <input type="text" value={requestNumber} className="form-control readonly" />
                                                 </div>
@@ -1582,6 +1664,18 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             <label>Forex Payment Request Details</label>
                                         </div>
                                         <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext" disabled>
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+                                                </div>
+                                            </div>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
                                                     <label className='font'>Request Number</label>
@@ -1770,6 +1864,18 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             <label>Forex Payment Request Details</label>
                                         </div>
                                         <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className='col-md-4'>
+                                                    <Field label="Type" required>
+                                                        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="form-controltext" disabled>
+                                                            <option value="Goods-Bill Payment">Goods-Bill Payment</option>
+                                                            <option value="Service-Bill Payment">Service-Bill Payment</option>
+                                                            <option value="Goods-Advance Payment">Goods-Advance Payment</option>
+                                                            <option value="Service-Advance Payment">Service-Advance Payment</option>
+                                                        </select>
+                                                    </Field>
+                                                </div>
+                                            </div>
                                             <div className='row mb-20'>
                                                 <div className='col-md-4'>
                                                     <label className='font'>Request Number</label>
@@ -2370,7 +2476,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     <div className='row mb-20'>
                                         <div className='col-md-4'>
                                             <label className='font'>Foreign Currency</label>
-                                            <input type="date" value={foreignCurrency} className="form-control readonly" />
+                                            <input type="text" value={foreignCurrency} className="form-control readonly" />
                                         </div>
                                         <div className='col-md-4'>
                                             <label className="font">Foreign Currency Amount</label>
@@ -2386,15 +2492,6 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             <label className='font'>INR Amount</label>
                                             <input type="text" value={inrAmountpayment} className="form-control readonly" />
                                         </div>
-                                    </div>
-                                    <div className="row mb-20">
-                                        <div className="col-md-12">
-                                            <p style={{ color: "red", fontSize: "12px" }}>
-                                                (if difference in foreign currency & Amount system to display alert message only)
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
                                         <div className='col-md-4'>
                                             <label className='font'>Payment Date</label>
                                             <input type="date" value={paymentDatepayment} className="form-control readonly" />
@@ -2403,12 +2500,19 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             <label className="font">Payment reference number</label>
                                             <input type="number" value={paymentReferencepayment} className="form-control readonly" />
                                         </div>
+                                    </div>
+                                    <div className="row mb-20">
+
+                                    </div>
+                                    <div className='row mb-20'>
+
                                         {isServicePayment && (
                                             <div className='col-md-4'>
                                                 <label className="font">Form145</label>
+
                                                 {form15CA.length > 0 && (
                                                     <div style={{ marginTop: "10px" }}>
-                                                        {form15CA.map((file, index) => (
+                                                        {form15CA.map((file: any, index: number) => (
                                                             <div
                                                                 key={index}
                                                                 style={{
@@ -2421,36 +2525,26 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                                     borderRadius: "4px",
                                                                 }}
                                                             >
-                                                                <span>{file.name}</span>
-
-                                                                {/* <button
-                                                    type="button"
-                                                    onClick={() => remove15CAFile(index)}
-                                                    style={{
-                                                        background: "red",
-                                                        color: "#fff",
-                                                        border: "none",
-                                                        padding: "4px 8px",
-                                                        cursor: "pointer",
-                                                        borderRadius: "4px",
-                                                    }}
-                                                >
-                                                    Delete
-                                                </button> */}
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                >
+                                                                    {file.FileName}
+                                                                </a>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 )}
                                             </div>
                                         )}
-                                    </div>
-                                    <div className='row mb-20'>
                                         {isServicePayment && (
                                             <div className='col-md-4'>
                                                 <label className="font">Form146</label>
+
                                                 {form15CB.length > 0 && (
                                                     <div style={{ marginTop: "10px" }}>
-                                                        {form15CB.map((file, index) => (
+                                                        {form15CB.map((file: any, index: number) => (
                                                             <div
                                                                 key={index}
                                                                 style={{
@@ -2463,22 +2557,13 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                                     borderRadius: "4px",
                                                                 }}
                                                             >
-                                                                <span>{file.name}</span>
-
-                                                                {/* <button
-                                                    type="button"
-                                                    onClick={() => remove15CBFile(index)}
-                                                    style={{
-                                                        background: "red",
-                                                        color: "#fff",
-                                                        border: "none",
-                                                        padding: "4px 8px",
-                                                        cursor: "pointer",
-                                                        borderRadius: "4px",
-                                                    }}
-                                                >
-                                                    Delete
-                                                </button> */}
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                >
+                                                                    {file.FileName}
+                                                                </a>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -2487,10 +2572,13 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                         )}
                                         {isGoodsPayment && (
                                             <div className="col-md-4">
-                                                <label className="font">Attach Swift Copy (Applicable for Goods)</label>
+                                                <label className="font">
+                                                    Attach Swift Copy (Applicable for Goods)
+                                                </label>
+
                                                 {swiftCopy.length > 0 && (
                                                     <div style={{ marginTop: "10px" }}>
-                                                        {swiftCopy.map((file, index) => (
+                                                        {swiftCopy.map((file: any, index: number) => (
                                                             <div
                                                                 key={index}
                                                                 style={{
@@ -2503,22 +2591,13 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                                                     borderRadius: "4px",
                                                                 }}
                                                             >
-                                                                <span>{file.name}</span>
-
-                                                                {/* <button
-                                                    type="button"
-                                                    onClick={() => removeSwiftCopyFile(index)}
-                                                    style={{
-                                                        background: "red",
-                                                        color: "#fff",
-                                                        border: "none",
-                                                        padding: "4px 8px",
-                                                        cursor: "pointer",
-                                                        borderRadius: "4px",
-                                                    }}
-                                                >
-                                                    Delete
-                                                </button> */}
+                                                                <a
+                                                                    href={file.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                >
+                                                                    {file.FileName}
+                                                                </a>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -2526,45 +2605,12 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                             </div>
                                         )}
                                     </div>
+                                    <div className='row mb-20'>
+
+                                    </div>
                                 </div>
 
-                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
 
-                                    {workflowHistory.length > 0 ? (
-                                        <table className="custom-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Action By</th>
-                                                    {/* <th>Role</th> */}
-                                                    <th>Action</th>
-                                                    <th>Remark</th>
-                                                    <th>Date</th>
-                                                    {/* <th>Status</th> */}
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                {workflowHistory.map((item: any, index: number) => (
-                                                    <tr key={index}>
-                                                        <td>{item.CurrentApprover}</td>
-                                                        {/* <td>{item.Role || "-"}</td> */}
-                                                        <td>{item.ActionTaken}</td>
-                                                        <td>{item.Comment || "-"}</td>
-                                                        <td>
-                                                            {item.Date
-                                                                ? new Date(item.Date).toLocaleString("en-GB")
-                                                                : ""}
-                                                        </td>
-                                                        {/* <td>{item.CurrentStatus}</td> */}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    ) : (
-                                        <p>No workflow history available</p>
-                                    )}
-
-                                </CollapsibleSection>
 
                                 <div className='row my-3'>
                                     <div className='col-md-12'>

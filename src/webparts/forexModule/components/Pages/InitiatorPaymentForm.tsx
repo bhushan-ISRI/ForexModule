@@ -94,6 +94,10 @@ const TrackerForm = (props: IForexModuleProps) => {
     const [blAttachments, setBlAttachments] = useState<any>({});
 
     const [otherAttachmentsadvance, setOtherAttachmentsadvance] = useState<any>({});
+    const [invoiceAttachmentsadvance, setInvoiceAttachmentsadvance] = useState<any>({});
+    const [boeAttachmentsadvance, setBoeAttachmentsadvance] = useState<any>({});
+    const [blAttachmentsadvance, setBlAttachmentsadvance] = useState<any>({});
+
     const [rows, setRows] = useState<InvoiceRow[]>([
         {
             invoiceNo: "",
@@ -119,7 +123,9 @@ const TrackerForm = (props: IForexModuleProps) => {
         },
     ]);
     const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
-
+    const [poContractNo, setPoContractNo] = useState("");
+    const [poDate, setPoDate] = useState("");
+    const [expectedSettlementDate, setExpectedSettlementDate] = useState("");
     useEffect(() => {
         if (Id) loadForexData(Id);
     }, [Id]);
@@ -131,7 +137,7 @@ const TrackerForm = (props: IForexModuleProps) => {
 
         const res = await sp.getData(
             "VendorMaster",
-            "VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,State/Title,Country/Title,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress",
+            "Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
             "NatureOfPayment,City,State,Country,Currency",
             `VendorCode eq '${vendorCode}'`,
             { column: "ID", isAscending: true },
@@ -147,14 +153,15 @@ const TrackerForm = (props: IForexModuleProps) => {
                 VendorCode: v.VendorCode,
                 VendorName: v.VendorName,
                 VendorAddress: v.VendorAddress,
-                City: v.City.Title,
-                Country: v.Country.Title,
+                City: v.City.City,
+                Country: v.Country.Country,
                 PostalCode: v.PostalCode,
                 BankName: v.BankName,
                 BankCountry: v.BankCountry,
                 SWIFTBICCode: v.SWIFTBICCode,
                 BankAddress: v.BankAddress,
-                AccountNumberIBAN: v.AccountNumberIBAN
+                AccountNumberIBAN: v.AccountNumberIBAN,
+                Pincode: v.Pincode
             });
 
         }
@@ -191,7 +198,9 @@ const TrackerForm = (props: IForexModuleProps) => {
             setCurrency(data.Currency.Title);
             setTotalAmount(data.TotalAmount);
             setForeignBankCharges(data.ForeignBankCharges);
-
+            setPoContractNo(data.poContractNo || "");
+            setPoDate(data.poDate?.split("T")[0] || "");
+            setExpectedSettlementDate(data.expectedSettlementDate?.split("T")[0] || "");
             setEmployee({
                 EmployeeCode: data.EmployeeCode || "",
                 EmployeeName: data.EmployeeName || "",
@@ -329,7 +338,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                     };
                 });
 
-                setInvoiceAttachments(trackerInvoiceAttachments);
+                setInvoiceAttachmentsadvance(trackerInvoiceAttachments);
                 setOtherAttachmentsadvance(trackerOtherAttachments);
                 setBoeAttachments(trackerBoeAttachments);
                 setBlAttachments(trackerBlAttachments);
@@ -488,7 +497,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                 }
 
                 // Invoice file
-                if (!invoiceAttachments[i] || invoiceAttachments[i].length === 0) {
+                if (!invoiceAttachmentsadvance[i] || invoiceAttachmentsadvance[i].length === 0) {
                     alert(`Invoice attachment required in row ${i + 1}`);
                     return false;
                 }
@@ -507,7 +516,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                     return false;
                 }
 
-                if (!invoiceAttachments[i] || invoiceAttachments[i].length === 0) {
+                if (!invoiceAttachmentsadvance[i] || invoiceAttachmentsadvance[i].length === 0) {
                     alert(`Invoice attachment required in row ${i + 1}`);
                     return false;
                 }
@@ -534,12 +543,229 @@ const TrackerForm = (props: IForexModuleProps) => {
 
         return true;
     };
+    // const onSubmit = async () => {
+
+    //     const sp = await spCrudOps;
+
+    //     try {
+    //         if (!validateForm()) return;
+    //         const trackerData = await sp.getData(
+    //             "ForexAdvanceBillPayment",
+    //             "*",
+    //             "",
+    //             `ForexIDId eq ${Id}`,
+    //             { column: "ID", isAscending: true },
+    //             5000,
+    //             props
+    //         );
+    //         const newRows = rows.filter(
+    //             (r) =>
+    //                 r.invoiceNo &&
+    //                 r.invoiceDate &&
+    //                 r.invoiceAmount &&
+    //                 !trackerData.some(
+    //                     (t: any) =>
+    //                         t.InvoiceNumber === r.invoiceNo &&
+    //                         t.InvoiceAmount == r.invoiceAmount
+    //                 )
+    //         );
+
+    //         for (let i = 0; i < newRows.length; i++) {
+
+    //             const row = newRows[i];
+
+    //             const item = await sp.insertData(
+    //                 "ForexAdvanceBillPayment",
+    //                 {
+    //                     ForexIDId: Number(Id),
+    //                     InvoiceNumber: row.invoiceNo,
+    //                     InvoiceDate: row.invoiceDate ? row.invoiceDate : null,
+    //                     InvoiceAmount: '' + row.invoiceAmount,
+    //                     MRNNumber: '' + row.mrnNo,
+    //                     MRNDate: row.mrnDate ? row.mrnDate : null,
+    //                     BOENo: '' + row.boeNo,
+    //                     BOEDate: row.boeDate ? row.boeDate : null,
+    //                     BillofLandingNo: row.blNo,
+    //                     BillOfLandingdate: row.blDate ? row.blDate : null
+    //                 },
+    //                 props
+    //             );
+
+    //             const itemId = item.data.ID;
+
+    //             const uploadFiles = async (files: any[]) => {
+
+    //                 for (const file of files) {
+
+    //                     const response = await fetch(file.ServerRelativeUrl);
+    //                     const blob = await response.blob();
+
+    //                     await props.context.spHttpClient.post(
+    //                         `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${file.FileName}')`,
+    //                         SPHttpClient.configurations.v1,
+    //                         { body: blob }
+    //                     );
+
+    //                 }
+
+    //             };
+
+    //             // if (poAttachments[i]) await uploadFiles(poAttachments[i]);
+    //             // if (piAttachments[i]) await uploadFiles(piAttachments[i]);
+    //             // if (invoiceAttachmentsadvance[i]) await uploadFiles(invoiceAttachmentsadvance[i]);
+    //             for (const file of invoiceAttachmentsadvance[i]) {
+
+    //                 const fileName = `INV_${row.boeNo}_${file.name}`;
+
+    //                 await props.context.spHttpClient.post(
+    //                     `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${fileName}')`,
+    //                     SPHttpClient.configurations.v1,
+    //                     { body: file }
+    //                 );
+    //             }
+    //             // if (otherAttachmentsadvance[i]) await uploadFiles(otherAttachmentsadvance[i]);
+    //             for (const file of otherAttachmentsadvance[i]) {
+
+    //                 const fileName = `DOC_${row.boeNo}_${file.name}`;
+
+    //                 await props.context.spHttpClient.post(
+    //                     `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${fileName}')`,
+    //                     SPHttpClient.configurations.v1,
+    //                     { body: file }
+    //                 );
+    //             }
+
+    //             if (boeAttachments[i]) {
+
+    //                 for (const file of boeAttachments[i]) {
+
+    //                     const fileName = `BOE_${row.boeNo}_${file.name}`;
+
+    //                     await props.context.spHttpClient.post(
+    //                         `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${fileName}')`,
+    //                         SPHttpClient.configurations.v1,
+    //                         { body: file }
+    //                     );
+    //                 }
+    //             }
+
+    //             /* ---------- BL Attachments ---------- */
+
+    //             if (blAttachments[i]) {
+
+    //                 for (const file of blAttachments[i]) {
+
+    //                     const fileName = `BL_${row.blNo}_${file.name}`;
+
+    //                     await props.context.spHttpClient.post(
+    //                         `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${fileName}')`,
+    //                         SPHttpClient.configurations.v1,
+    //                         { body: file }
+    //                     );
+    //                 }
+    //             }
+
+    //         }
+    //         const treasuryUserId = await getTreasuryPaymentApprover();
+
+    //         // 🔥 FETCH EXISTING WORKFLOW HISTORY
+    //         const existingItem = await sp.getData(
+    //             "ForexRequest",
+    //             "WorkFlowHistory",
+    //             "",
+    //             `ID eq ${Id}`,
+    //             { column: "ID", isAscending: true },
+    //             1,
+    //             props
+    //         );
+
+    //         let existingHistory: any[] = [];
+
+    //         if (existingItem.length > 0 && existingItem[0].WorkFlowHistory) {
+    //             try {
+    //                 existingHistory = JSON.parse(existingItem[0].WorkFlowHistory);
+    //             } catch {
+    //                 existingHistory = [];
+    //             }
+    //         }
+    //         let updatedHistory = [...existingHistory];
+
+    //         const advanceAmount = parseFloat(totalAmount || "0");
+    //         const settledAmount = parseFloat(totalInvoiceAmount.toFixed(2) || "0");
+
+    //         let finalStatus = "";
+    //         let balanceAmount = 0;
+
+    //         if (advanceAmount === settledAmount) {
+
+    //             finalStatus = "Paid and Pending for Settlement";
+    //             balanceAmount = 0;
+
+    //         } else {
+
+    //             finalStatus = "Paid";
+    //             balanceAmount = advanceAmount - settledAmount;
+
+    //         }
+
+    //         updatedHistory.push({
+    //             CurrentApprover: props.context.pageContext.user.displayName,
+    //             Role: "",
+    //             ActionTaken: "Tracker Submitted",
+    //             Comment: "",
+    //             Date: new Date().toISOString(),
+    //             CurrentStatus: finalStatus
+    //         });
+
+    //         await sp.updateData(
+    //             "ForexRequest",
+    //             Number(Id),
+    //             {
+    //                 Status: finalStatus,
+
+    //                 // 🔹 New fields
+    //                 // TotalPerformaInvoice: advanceAmount,
+    //                 // AdvancePaid: advanceAmount,
+    //                 // AmountSettled: settledAmount,
+    //                 // Balance: balanceAmount,
+
+    //                 WorkFlowHistory: JSON.stringify(updatedHistory),
+
+    //                 CurrentApproverId:
+    //                     finalStatus === "Paid and Pending for Settlement"
+    //                         ? treasuryUserId
+    //                         : null,
+    //                 BalenceAmount: "" + balanceAmount,
+    //                 SettlementAmount: "" + totalInvoiceAmount
+    //             },
+    //             props
+    //         );
+
+
+    //         alert("Tracker saved successfully");
+
+    //         history.push("/");
+
+    //     } catch (error) {
+
+    //         console.error(error);
+    //         alert("Error saving tracker");
+
+    //     }
+
+    // };
     const onSubmit = async () => {
 
         const sp = await spCrudOps;
 
         try {
+
             if (!validateForm()) return;
+
+            // =====================================================
+            // ✅ FETCH EXISTING TRACKER DATA
+            // =====================================================
+
             const trackerData = await sp.getData(
                 "ForexAdvanceBillPayment",
                 "*",
@@ -549,61 +775,158 @@ const TrackerForm = (props: IForexModuleProps) => {
                 5000,
                 props
             );
-            const newRows = rows.filter(
-                (r) =>
-                    r.invoiceNo &&
-                    r.invoiceDate &&
-                    r.invoiceAmount &&
-                    !trackerData.some(
-                        (t: any) =>
-                            t.InvoiceNumber === r.invoiceNo &&
-                            t.InvoiceAmount == r.invoiceAmount
-                    )
-            );
 
-            for (let i = 0; i < newRows.length; i++) {
+            // =====================================================
+            // ✅ LOOP ALL ROWS
+            // =====================================================
 
-                const row = newRows[i];
+            for (let i = 0; i < rows.length; i++) {
 
-                const item = await sp.insertData(
-                    "ForexAdvanceBillPayment",
-                    {
-                        ForexIDId: Number(Id),
-                        InvoiceNumber: row.invoiceNo,
-                        InvoiceDate: row.invoiceDate ? row.invoiceDate : null,
-                        InvoiceAmount: '' + row.invoiceAmount,
-                        MRNNumber: '' + row.mrnNo,
-                        MRNDate: row.mrnDate ? row.mrnDate : null,
-                        BOENo: '' + row.boeNo,
-                        BOEDate: row.boeDate ? row.boeDate : null,
-                        BillofLandingNo: row.blNo,
-                        BillOfLandingdate: row.blDate ? row.blDate : null
-                    },
-                    props
+                const row = rows[i];
+
+                if (
+                    !row.invoiceNo ||
+                    !row.invoiceDate ||
+                    !row.invoiceAmount
+                ) continue;
+
+                // =====================================================
+                // ✅ CHECK EXISTING RECORD
+                // =====================================================
+
+                const existingRecord = trackerData.find(
+                    (t: any) =>
+                        t.InvoiceNumber === row.invoiceNo
                 );
 
-                const itemId = item.data.ID;
+                let itemId = 0;
 
-                const uploadFiles = async (files: any[]) => {
+                // =====================================================
+                // ✅ UPDATE EXISTING RECORD
+                // =====================================================
 
-                    for (const file of files) {
+                if (existingRecord) {
 
-                        const response = await fetch(file.ServerRelativeUrl);
-                        const blob = await response.blob();
+                    itemId = existingRecord.ID;
+
+                    await sp.updateData(
+                        "ForexAdvanceBillPayment",
+                        itemId,
+                        {
+                            ForexIDId: Number(Id),
+
+                            InvoiceNumber: row.invoiceNo,
+
+                            InvoiceDate: row.invoiceDate
+                                ? row.invoiceDate
+                                : null,
+
+                            InvoiceAmount: "" + row.invoiceAmount,
+
+                            MRNNumber: "" + row.mrnNo,
+
+                            MRNDate: row.mrnDate
+                                ? row.mrnDate
+                                : null,
+
+                            BOENo: "" + row.boeNo,
+
+                            BOEDate: row.boeDate
+                                ? row.boeDate
+                                : null,
+
+                            BillofLandingNo: row.blNo,
+
+                            BillOfLandingdate: row.blDate
+                                ? row.blDate
+                                : null
+                        },
+                        props
+                    );
+
+                } else {
+
+                    // =====================================================
+                    // ✅ INSERT NEW RECORD
+                    // =====================================================
+
+                    const item = await sp.insertData(
+                        "ForexAdvanceBillPayment",
+                        {
+                            ForexIDId: Number(Id),
+
+                            InvoiceNumber: row.invoiceNo,
+
+                            InvoiceDate: row.invoiceDate
+                                ? row.invoiceDate
+                                : null,
+
+                            InvoiceAmount: "" + row.invoiceAmount,
+
+                            MRNNumber: "" + row.mrnNo,
+
+                            MRNDate: row.mrnDate
+                                ? row.mrnDate
+                                : null,
+
+                            BOENo: "" + row.boeNo,
+
+                            BOEDate: row.boeDate
+                                ? row.boeDate
+                                : null,
+
+                            BillofLandingNo: row.blNo,
+
+                            BillOfLandingdate: row.blDate
+                                ? row.blDate
+                                : null
+                        },
+                        props
+                    );
+
+                    itemId = item.data.ID;
+                }
+
+                // =====================================================
+                // ✅ INVOICE ATTACHMENTS
+                // =====================================================
+
+                if (invoiceAttachmentsadvance[i]) {
+
+                    for (const file of invoiceAttachmentsadvance[i]) {
+
+                        const fileName = `INV_${row.boeNo}_${file.name}`;
 
                         await props.context.spHttpClient.post(
-                            `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${file.FileName}')`,
+                            `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${fileName}')`,
                             SPHttpClient.configurations.v1,
-                            { body: blob }
+                            { body: file }
                         );
-
                     }
+                }
 
-                };
+                // =====================================================
+                // ✅ OTHER ATTACHMENTS
+                // =====================================================
 
-                if (poAttachments[i]) await uploadFiles(poAttachments[i]);
-                if (piAttachments[i]) await uploadFiles(piAttachments[i]);
-                if (otherAttachmentsadvance[i]) await uploadFiles(otherAttachmentsadvance[i]);
+                if (otherAttachmentsadvance[i]) {
+
+                    for (const file of otherAttachmentsadvance[i]) {
+
+                        const fileName = `DOC_${row.boeNo}_${file.name}`;
+
+                        await props.context.spHttpClient.post(
+                            `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('ForexAdvanceBillPayment')/items(${itemId})/AttachmentFiles/add(FileName='${fileName}')`,
+                            SPHttpClient.configurations.v1,
+                            { body: file }
+                        );
+                    }
+                }
+
+                // =====================================================
+                // ✅ BOE ATTACHMENTS
+                // =====================================================
+
                 if (boeAttachments[i]) {
 
                     for (const file of boeAttachments[i]) {
@@ -618,7 +941,9 @@ const TrackerForm = (props: IForexModuleProps) => {
                     }
                 }
 
-                /* ---------- BL Attachments ---------- */
+                // =====================================================
+                // ✅ BL ATTACHMENTS
+                // =====================================================
 
                 if (blAttachments[i]) {
 
@@ -633,11 +958,18 @@ const TrackerForm = (props: IForexModuleProps) => {
                         );
                     }
                 }
-
             }
+
+            // =====================================================
+            // ✅ TREASURY USER
+            // =====================================================
+
             const treasuryUserId = await getTreasuryPaymentApprover();
 
-            // 🔥 FETCH EXISTING WORKFLOW HISTORY
+            // =====================================================
+            // ✅ FETCH EXISTING WORKFLOW HISTORY
+            // =====================================================
+
             const existingItem = await sp.getData(
                 "ForexRequest",
                 "WorkFlowHistory",
@@ -650,41 +982,66 @@ const TrackerForm = (props: IForexModuleProps) => {
 
             let existingHistory: any[] = [];
 
-            if (existingItem.length > 0 && existingItem[0].WorkFlowHistory) {
+            if (
+                existingItem.length > 0 &&
+                existingItem[0].WorkFlowHistory
+            ) {
+
                 try {
-                    existingHistory = JSON.parse(existingItem[0].WorkFlowHistory);
+
+                    existingHistory = JSON.parse(
+                        existingItem[0].WorkFlowHistory
+                    );
+
                 } catch {
+
                     existingHistory = [];
                 }
             }
+
             let updatedHistory = [...existingHistory];
 
             const advanceAmount = parseFloat(totalAmount || "0");
-            const settledAmount = parseFloat(totalInvoiceAmount.toFixed(2) || "0");
+
+            const settledAmount = parseFloat(
+                totalInvoiceAmount.toFixed(2) || "0"
+            );
 
             let finalStatus = "";
+
             let balanceAmount = 0;
 
             if (advanceAmount === settledAmount) {
 
                 finalStatus = "Paid and Pending for Settlement";
+
                 balanceAmount = 0;
 
             } else {
 
                 finalStatus = "Paid";
-                balanceAmount = advanceAmount - settledAmount;
 
+                balanceAmount = advanceAmount - settledAmount;
             }
 
             updatedHistory.push({
-                CurrentApprover: props.context.pageContext.user.displayName,
+                CurrentApprover:
+                    props.context.pageContext.user.displayName,
+
                 Role: "",
+
                 ActionTaken: "Tracker Submitted",
+
                 Comment: "",
+
                 Date: new Date().toISOString(),
+
                 CurrentStatus: finalStatus
             });
+
+            // =====================================================
+            // ✅ UPDATE FOREX REQUEST
+            // =====================================================
 
             await sp.updateData(
                 "ForexRequest",
@@ -692,23 +1049,20 @@ const TrackerForm = (props: IForexModuleProps) => {
                 {
                     Status: finalStatus,
 
-                    // 🔹 New fields
-                    // TotalPerformaInvoice: advanceAmount,
-                    // AdvancePaid: advanceAmount,
-                    // AmountSettled: settledAmount,
-                    // Balance: balanceAmount,
-
                     WorkFlowHistory: JSON.stringify(updatedHistory),
 
                     CurrentApproverId:
-                        finalStatus === "Paid and Pending for Settlement"
+                        finalStatus ===
+                            "Paid and Pending for Settlement"
                             ? treasuryUserId
                             : null,
-                    BalenceAmount: "" + balanceAmount
+
+                    BalenceAmount: "" + balanceAmount,
+
+                    SettlementAmount: "" + totalInvoiceAmount
                 },
                 props
             );
-
 
             alert("Tracker saved successfully");
 
@@ -717,25 +1071,55 @@ const TrackerForm = (props: IForexModuleProps) => {
         } catch (error) {
 
             console.error(error);
+
             alert("Error saving tracker");
-
         }
-
     };
+    const handleInvoiceFile = (
+        index: number,
+        files: FileList | null
+    ) => {
 
-    const handleInvoiceFile = (index: number, files: FileList | null) => {
         if (!files) return;
 
-        const updated = { ...invoiceAttachments };
-        updated[index] = Array.from(files);
-        setInvoiceAttachments(updated);
+        const existingFiles =
+            invoiceAttachmentsadvance[index] || [];
+
+        const newFiles = Array.from(files);
+
+        const updated = {
+            ...invoiceAttachmentsadvance
+        };
+
+        updated[index] = [
+            ...existingFiles,
+            ...newFiles
+        ];
+
+        setInvoiceAttachmentsadvance(updated);
     };
 
-    const handleOtherFile = (index: number, files: FileList | null) => {
+    const handleOtherFile = (
+        index: number,
+        files: FileList | null
+    ) => {
+
         if (!files) return;
 
-        const updated = { ...otherAttachments };
-        updated[index] = Array.from(files);
+        const existingFiles =
+            otherAttachmentsadvance[index] || [];
+
+        const newFiles = Array.from(files);
+
+        const updated = {
+            ...otherAttachmentsadvance
+        };
+
+        updated[index] = [
+            ...existingFiles,
+            ...newFiles
+        ];
+
         setOtherAttachmentsadvance(updated);
     };
 
@@ -767,59 +1151,56 @@ const TrackerForm = (props: IForexModuleProps) => {
                                 <h1>Forex Payment - Advance Payment Tracker</h1>
                             </div>
                             <div className='borderedbox'>
-                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Requestor Information</label>
-                                </div>
-                                <div className='main-formcontainer'>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Employee Code</label>
-                                            <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
+                                </div> */}
+                                <CollapsibleSection title="Requestor Information" style={{ marginTop: "10px" }}>
+                                    <div className='main-formcontainer'>
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Employee Code</label>
+                                                <input type="text" value={employee.EmployeeCode} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Employee Name</label>
+                                                <input type="text" value={employee.EmployeeName} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Division</label>
+                                                <input type="text" value={employee.Division} className="form-control readonly" />
+                                            </div>
                                         </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Employee Name</label>
-                                            <input type="text" value={employee.EmployeeName} className="form-control readonly" />
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Location</label>
+                                                <input type="text" value={employee.Location} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">RM</label>
+                                                <input type="text" value={employee.RM} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">HOD</label>
+                                                <input type="text" value={employee.HOD} className="form-control readonly" />
+                                            </div>
                                         </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Division</label>
-                                            <input type="text" value={employee.Division} className="form-control readonly" />
+                                        <div className='row mb-20'>
+                                            <div className='col-md-4'>
+                                                <label className='font'>Contact No</label>
+                                                <input type="text" value={employee.ContactNo} className="form-control readonly" />
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <label className="font">Employee Status</label>
+                                                <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="font">Email</label>
+                                                <input type="text" value={employee.Email} className="form-control readonly" />
+                                            </div>
                                         </div>
+
                                     </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Location</label>
-                                            <input type="text" value={employee.Location} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">RM</label>
-                                            <input type="text" value={employee.RM} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">HOD</label>
-                                            <input type="text" value={employee.HOD} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Contact No</label>
-                                            <input type="text" value={employee.ContactNo} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Employee Status</label>
-                                            <input type="text" value={employee.EmployeeStatus} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Email</label>
-                                            <input type="text" value={employee.Email} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Type</label>
-                                            <input type="text" value={paymentType} className="form-control readonly" />
-                                        </div>
-                                    </div>
-                                </div>
+                                </CollapsibleSection>
                                 <CollapsibleSection title="Vendor - Beneficiary Details" style={{ marginTop: "10px" }}>
                                     <div className='main-formcontainer'>
                                         <div className='row mb-20'>
@@ -843,7 +1224,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                                             </div>
                                             <div className='col-md-4'>
                                                 <label className="font">Pincode</label>
-                                                <input type="text" value={vendor.PostalCode} className="form-control readonly" />
+                                                <input type="text" value={vendor.Pincode} className="form-control readonly" />
                                             </div>
                                             <div className='col-md-4'>
                                                 <label className="font">Bank Name</label>
@@ -877,33 +1258,90 @@ const TrackerForm = (props: IForexModuleProps) => {
                                         </div>
                                     </div>
                                 </CollapsibleSection>
+                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
+                                    {workflowHistory.length > 0 ? (
+                                        <table className="custom-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Action By</th>
+                                                    {/* <th>Role</th> */}
+                                                    <th>Action</th>
+                                                    <th>Remark</th>
+                                                    <th>Date</th>
+                                                    {/* <th>Status</th> */}
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                {workflowHistory.map((item: any, index: number) => (
+                                                    <tr key={index}>
+                                                        <td>{item.CurrentApprover}</td>
+                                                        {/* <td>{item.Role || "-"}</td> */}
+                                                        <td>{item.ActionTaken}</td>
+                                                        <td>{item.Comment || "-"}</td>
+                                                        <td>
+                                                            {item.Date
+                                                                ? new Date(item.Date).toLocaleString("en-GB")
+                                                                : ""}
+                                                        </td>
+                                                        {/* <td>{item.CurrentStatus}</td> */}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p>No workflow history available</p>
+                                    )}
+                                </CollapsibleSection>
                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Advance Payment Request Details</label>
                                 </div>
                                 <div className='main-formcontainer'>
                                     <div className='row mb-20'>
                                         <div className='col-md-4'>
-                                            <label className='font'>Request Number</label>
-                                            <input type="text" value={requestNumber} className="form-control readonly" />
-                                        </div>
-                                        <div className='col-md-4'>
-                                            <label className="font">Currency</label>
-                                            <input type="text" value={currency} className="form-control readonly" />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <label className="font">Total Amount</label>
-                                            <input type="text" value={totalAmount || totalInvoiceAmountNew.toFixed(2)} className="form-control readonly" />
+                                            <label className='font'>Type</label>
+                                            <input type="text" value={paymentType} className="form-control readonly" />
                                         </div>
                                     </div>
                                     <div className='row mb-20'>
                                         <div className='col-md-4'>
-                                            <label className='font'>Foreign Bank Charges</label>
-                                            <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                            <label className='font'>Request Number</label>
+                                            <input type="text" value={requestNumber} className="form-control readonly" />
                                         </div>
                                         <div className='col-md-4'>
                                             <label className="font">Requested On</label>
                                             <input type="text" value={requestedOn} className="form-control readonly" />
                                         </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Currency</label>
+                                            <input type="text" value={currency} className="form-control readonly" />
+                                        </div>
+
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>Total Amount</label>
+                                            <input type="text" value={totalAmount} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Foreign Bank Charges </label>
+                                            <input type="text" value={foreignBankCharges} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">PO/Contract No </label>
+                                            <input type="text" value={poContractNo} className="form-control readonly" />
+                                        </div>
+                                    </div>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-4'>
+                                            <label className='font'>PO Date</label>
+                                            <input type="date" value={poDate} className="form-control readonly" />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="font">Expected Settlement Date </label>
+                                            <input type="date" value={expectedSettlementDate} className="form-control readonly" />
+                                        </div>
+
                                     </div>
                                 </div>
                                 <div style={{ overflowX: "auto" }}>
@@ -1015,41 +1453,7 @@ const TrackerForm = (props: IForexModuleProps) => {
 
                                     </table>
                                 </div>
-                                <CollapsibleSection title="Workflow History" style={{ marginTop: "10px" }}>
-                                    {workflowHistory.length > 0 ? (
-                                        <table className="custom-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Action By</th>
-                                                    {/* <th>Role</th> */}
-                                                    <th>Action</th>
-                                                    <th>Remark</th>
-                                                    <th>Date</th>
-                                                    {/* <th>Status</th> */}
-                                                </tr>
-                                            </thead>
 
-                                            <tbody>
-                                                {workflowHistory.map((item: any, index: number) => (
-                                                    <tr key={index}>
-                                                        <td>{item.CurrentApprover}</td>
-                                                        {/* <td>{item.Role || "-"}</td> */}
-                                                        <td>{item.ActionTaken}</td>
-                                                        <td>{item.Comment || "-"}</td>
-                                                        <td>
-                                                            {item.Date
-                                                                ? new Date(item.Date).toLocaleString("en-GB")
-                                                                : ""}
-                                                        </td>
-                                                        {/* <td>{item.CurrentStatus}</td> */}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    ) : (
-                                        <p>No workflow history available</p>
-                                    )}
-                                </CollapsibleSection>
 
                                 {paymentType === "Goods-Advance Payment" && (
                                     <>
@@ -1058,7 +1462,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                                         </div>
                                         <div className='main-formcontainer'>
                                             <div className='row mb-20'>
-                                                <div className="col-md-12">
+                                                <div className="col-md-12" style={{ overflow: 'auto' }}>
                                                     <table className="custom-table">
 
                                                         <thead>
@@ -1151,9 +1555,9 @@ const TrackerForm = (props: IForexModuleProps) => {
                                                                             type="file"
                                                                             onChange={(e) => handleInvoiceFile(index, e.target.files)}
                                                                         />
-                                                                        {invoiceAttachments[index]?.length > 0 && (
+                                                                        {invoiceAttachmentsadvance[index]?.length > 0 && (
                                                                             <div style={{ marginTop: "5px" }}>
-                                                                                {invoiceAttachments[index].map((file: any, i: number) => (
+                                                                                {invoiceAttachmentsadvance[index].map((file: any, i: number) => (
                                                                                     <div key={i}>
                                                                                         <a
                                                                                             href={file.ServerRelativeUrl}
@@ -1197,12 +1601,27 @@ const TrackerForm = (props: IForexModuleProps) => {
                                                                     <td style={{ textAlign: "center" }}>
 
                                                                         {index === rows.length - 1 && (
-                                                                            <span style={{ cursor: "pointer" }} onClick={addRow}>+</span>
+                                                                            <span    style={{
+                                                                            background: "#28a745",
+                                                                            color: "white",
+                                                                            marginRight: "5px",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }} onClick={addRow}>+</span>
                                                                         )}
 
                                                                         {rows.length > 1 && (
                                                                             <span
-                                                                                style={{ cursor: "pointer", marginLeft: "8px" }}
+                                                                                style={{
+                                                                            background: "#dc3545",
+                                                                            color: "white",
+                                                                            border: "none",
+                                                                            padding: "5px 10px",
+                                                                            cursor: "pointer",
+                                                                            borderRadius: "4px"
+                                                                        }}
                                                                                 onClick={() => deleteRow(index)}
                                                                             >✖</span>
                                                                         )}
@@ -1357,140 +1776,146 @@ const TrackerForm = (props: IForexModuleProps) => {
 
                                 {paymentType === "Service-Advance Payment" && (
                                     <>
-                                        <p> <b>Bill Payment Details (for Service Bill Payment)</b></p>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Bill Payment Details (For Goods Bill Payment)</label>
+                                        </div>                                        <div className='main-formcontainer'>
+                                            <div className='row mb-20'>
+                                                <div className="col-md-12" style={{ overflow: 'auto' }}>
+                                                    <table className="custom-table">
 
-                                        <table className="custom-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Sr.No.</th>
+                                                                <th>Invoice Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>MRN Number <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
+                                                                <th>Attach Other Document</th>
+                                                                <th>Add/Delete entry</th>
+                                                            </tr>
+                                                        </thead>
 
-                                            <thead>
-                                                <tr>
-                                                    <th>Sr.No.</th>
-                                                    <th>Invoice Number <span className="required" style={{ color: "red" }}>*</span></th>
-                                                    <th>Invoice Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                    <th>Invoice Amount <span className="required" style={{ color: "red" }}>*</span></th>
-                                                    <th>MRN Number <span className="required" style={{ color: "red" }}>*</span></th>
-                                                    <th>MRN Date <span className="required" style={{ color: "red" }}>*</span></th>
-                                                    <th>Attach Invoice <span className="required" style={{ color: "red" }}>*</span></th>
-                                                    <th>Attach Other Document</th>
-                                                    <th>Add/Delete entry</th>
-                                                </tr>
-                                            </thead>
+                                                        <tbody>
 
-                                            <tbody>
+                                                            {rows.map((row, index) => (
+                                                                <tr key={index}>
 
-                                                {rows.map((row, index) => (
-                                                    <tr key={index}>
+                                                                    <td>{index + 1}</td>
 
-                                                        <td>{index + 1}</td>
+                                                                    <td>
+                                                                        <input
+                                                                            value={row.invoiceNo}
+                                                                            onChange={(e) => handleChange(index, "invoiceNo", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                                        <td>
-                                                            <input
-                                                                value={row.invoiceNo}
-                                                                onChange={(e) => handleChange(index, "invoiceNo", e.target.value)}
-                                                            />
-                                                        </td>
+                                                                    <td>
+                                                                        <input
+                                                                            type="date"
+                                                                            value={row.invoiceDate}
+                                                                            onChange={(e) => handleChange(index, "invoiceDate", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                                        <td>
-                                                            <input
-                                                                type="date"
-                                                                value={row.invoiceDate}
-                                                                onChange={(e) => handleChange(index, "invoiceDate", e.target.value)}
-                                                            />
-                                                        </td>
+                                                                    <td>
+                                                                        <input
+                                                                            value={row.invoiceAmount}
+                                                                            onChange={(e) => handleChange(index, "invoiceAmount", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                                        <td>
-                                                            <input
-                                                                value={row.invoiceAmount}
-                                                                onChange={(e) => handleChange(index, "invoiceAmount", e.target.value)}
-                                                            />
-                                                        </td>
+                                                                    <td>
+                                                                        <input
+                                                                            value={row.mrnNo}
+                                                                            onChange={(e) => handleChange(index, "mrnNo", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                                        <td>
-                                                            <input
-                                                                value={row.mrnNo}
-                                                                onChange={(e) => handleChange(index, "mrnNo", e.target.value)}
-                                                            />
-                                                        </td>
+                                                                    <td>
+                                                                        <input
+                                                                            type="date"
+                                                                            value={row.mrnDate || ""}
+                                                                            onChange={(e) => handleChange(index, "mrnDate", e.target.value)}
+                                                                        />
+                                                                    </td>
 
-                                                        <td>
-                                                            <input
-                                                                type="date"
-                                                                value={row.mrnDate || ""}
-                                                                onChange={(e) => handleChange(index, "mrnDate", e.target.value)}
-                                                            />
-                                                        </td>
+                                                                    <td>
+                                                                        <input
+                                                                            type="file"
+                                                                            onChange={(e) => handleInvoiceFile(index, e.target.files)}
+                                                                        />
+                                                                        {invoiceAttachmentsadvance[index]?.length > 0 && (
+                                                                            <div style={{ marginTop: "5px" }}>
+                                                                                {invoiceAttachmentsadvance[index].map((file: any, i: number) => (
+                                                                                    <div key={i}>
+                                                                                        <a
+                                                                                            href={file.ServerRelativeUrl}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            style={{ fontSize: "12px" }}
+                                                                                        >
+                                                                                            {file.FileName}
+                                                                                        </a>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </td>
 
-                                                        <td>
-                                                            <input
-                                                                type="file"
-                                                                onChange={(e) => handleInvoiceFile(index, e.target.files)}
-                                                            />
-                                                            {invoiceAttachments[index]?.length > 0 && (
-                                                                <div style={{ marginTop: "5px" }}>
-                                                                    {invoiceAttachments[index].map((file: any, i: number) => (
-                                                                        <div key={i}>
-                                                                            <a
-                                                                                href={file.ServerRelativeUrl}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                style={{ fontSize: "12px" }}
-                                                                            >
-                                                                                {file.FileName}
-                                                                            </a>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </td>
+                                                                    <td>
+                                                                        <input
+                                                                            type="file"
+                                                                            onChange={(e) => handleOtherFile(index, e.target.files)}
+                                                                        />
+                                                                        {otherAttachmentsadvance[index]?.length > 0 && (
+                                                                            <div style={{ marginTop: "5px" }}>
+                                                                                {otherAttachmentsadvance[index].map((file: any, i: number) => (
+                                                                                    <div key={i}>
+                                                                                        <a
+                                                                                            href={file.ServerRelativeUrl}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            style={{ fontSize: "12px" }}
+                                                                                        >
+                                                                                            {file.FileName}
+                                                                                        </a>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
 
-                                                        <td>
-                                                            <input
-                                                                type="file"
-                                                                onChange={(e) => handleOtherFile(index, e.target.files)}
-                                                            />
-                                                            {otherAttachmentsadvance[index]?.length > 0 && (
-                                                                <div style={{ marginTop: "5px" }}>
-                                                                    {otherAttachmentsadvance[index].map((file: any, i: number) => (
-                                                                        <div key={i}>
-                                                                            <a
-                                                                                href={file.ServerRelativeUrl}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                style={{ fontSize: "12px" }}
-                                                                            >
-                                                                                {file.FileName}
-                                                                            </a>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+                                                                    </td>
 
-                                                        </td>
+                                                                    <td>
 
-                                                        <td>
+                                                                        {rows.length > 1 && (
+                                                                            <span onClick={() => deleteRow(index)}>✖</span>
+                                                                        )}
 
-                                                            {rows.length > 1 && (
-                                                                <span onClick={() => deleteRow(index)}>✖</span>
-                                                            )}
+                                                                        {index === rows.length - 1 && (
+                                                                            <span style={{ marginLeft: "8px" }} onClick={addRow}>+</span>
+                                                                        )}
 
-                                                            {index === rows.length - 1 && (
-                                                                <span style={{ marginLeft: "8px" }} onClick={addRow}>+</span>
-                                                            )}
+                                                                    </td>
 
-                                                        </td>
+                                                                </tr>
+                                                            ))}
 
-                                                    </tr>
-                                                ))}
-
-                                            </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <td colSpan={2}></td>
-                                                    <td style={{ fontWeight: "bold" }}>Total Amount</td>
-                                                    <td>{totalInvoiceAmount.toFixed(2)}</td>
-                                                    <td colSpan={5}></td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr>
+                                                                <td colSpan={2}></td>
+                                                                <td style={{ fontWeight: "bold" }}>Total Amount</td>
+                                                                <td>{totalInvoiceAmount.toFixed(2)}</td>
+                                                                <td colSpan={5}></td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </>
                                 )}
 
@@ -1500,7 +1925,7 @@ const TrackerForm = (props: IForexModuleProps) => {
                                             <button onClick={onSubmit} className="Submit-btn">
                                                 Submit
                                             </button>
-                                            
+
                                             <button onClick={() => history.goBack()} className="Exit-btn">
                                                 Exit
                                             </button>
