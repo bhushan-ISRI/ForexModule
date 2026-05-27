@@ -17,6 +17,8 @@ import ApprovalRequestForm from './Pages/ApprovalRequestForm';
 import TrackerForm from './Pages/InitiatorPaymentForm';
 import TrackerApprovalForm from './Pages/TrackerApprovalForm';
 import ModernForexDashboard from './Pages/ApprovedRejectByme';
+import VendorReviewForm from './Pages/VendorReviewForm';
+import VendorCreationForm from './Pages/VendorCreationForm';
 
 const ForexModule: React.FC<IForexModuleProps> = (props) => {
   const {
@@ -33,7 +35,7 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
     location.pathname === "/NewRequest" ||
     location.pathname.startsWith("/ViewRequest/") ||
     location.pathname.startsWith("/EditRequest/") ||
-    location.pathname.startsWith("/ApprovalRequest/") || location.pathname.startsWith("/AdvancePaymentTracker/") || location.pathname.startsWith('/TrackerApprovalForm/') || location.pathname.startsWith('/ApprovedRejectedByMe');
+    location.pathname.startsWith("/ApprovalRequest/") ||location.pathname.startsWith("/VendorCreationForm ") || location.pathname.startsWith("/AdvancePaymentTracker/") || location.pathname.startsWith('/TrackerApprovalForm/') || location.pathname.startsWith('/ApprovedRejectedByMe');
     
     return (
    
@@ -55,6 +57,8 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
             <Route exact path="/TreasuryLandingPage" render={() => <TreasuryLandingPage {...props} />} />
             <Route exact path="/TrackerApprovalForm/:Id" render={() => <TrackerApprovalForm {...props} />} />
             <Route exact path="/ApprovedRejectedByMe" render={() => <ModernForexDashboard {...props} />} />
+             <Route exact path="/VendorReviewForm" render={() => <VendorReviewForm {...props} />} />
+             <Route exact path="/VendorCreationForm" render={() => <VendorCreationForm {...props} />} />
           </Switch>
         </div>
       </div>
