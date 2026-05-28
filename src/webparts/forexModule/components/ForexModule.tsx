@@ -19,6 +19,7 @@ import TrackerApprovalForm from './Pages/TrackerApprovalForm';
 import ModernForexDashboard from './Pages/ApprovedRejectByme';
 import VendorReviewForm from './Pages/VendorReviewForm';
 import VendorCreationForm from './Pages/VendorCreationForm';
+import VendorApprovalForm from './Pages/IDCApprovalForm';
 
 const ForexModule: React.FC<IForexModuleProps> = (props) => {
   const {
@@ -59,6 +60,8 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
             <Route exact path="/ApprovedRejectedByMe" render={() => <ModernForexDashboard {...props} />} />
              <Route exact path="/VendorReviewForm" render={() => <VendorReviewForm {...props} />} />
              <Route exact path="/VendorCreationForm" render={() => <VendorCreationForm {...props} />} />
+                          <Route exact path="/VendorApprovalForm" render={() => <VendorApprovalForm {...props} />} />
+
           </Switch>
         </div>
       </div>
