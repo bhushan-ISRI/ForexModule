@@ -186,6 +186,15 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             return;
         }
 
+        if (
+            !validateFile(vendorInvoice) ||
+            !validateFile(trcFile) ||
+            !validateFile(kycFile) ||
+            !validateFile(bankConfirmationFile) ||
+            !validateFile(otherDocumentFile)
+        ) {
+            return;
+        }
 
         const existingVendor = await sp.getData(
             "VendorMaster",
@@ -232,7 +241,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             VendorType: vendorType,
 
             VendorAddress: address,
-            PostalCode: postalCode,
+            Pincode: postalCode,
 
             CurrencyId: currencyId,
             CountryId: countryId,
@@ -264,6 +273,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             Status: "Inactive",
             CurrentApproverId: firstApprover?.ApproverID || null,
             VendorNameLegal: vendorNameLegal,
+            TaxDocumentAvailable:"No"
         };
 
         const result = await sp.insertData(
@@ -344,6 +354,48 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             }
         );
     }
+    const validateFile = (file: File | null): boolean => {
+
+        if (!file) return true;
+
+        const allowedExtensions = [
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx",
+            ".jpg",
+            ".jpeg",
+            ".png"
+        ];
+
+        const fileName = file.name.toLowerCase();
+
+        const isValid = allowedExtensions.some(
+            ext => fileName.endsWith(ext)
+        );
+
+        if (!isValid) {
+
+            alert(
+                "Only PDF, Word, Excel, JPG, JPEG and PNG files are allowed."
+            );
+
+            return false;
+        }
+        const maxSize = 20 * 1024 * 1024;
+
+        if (file.size > maxSize) {
+
+            alert(
+                `File '${file.name}' exceeds the maximum size limit of 20 MB.`
+            );
+
+            return false;
+        }
+
+        return true;
+    };
     return (
         <div className="container-fluid mt-3">
             <h5 className="text-center text-danger mb-4">
@@ -476,7 +528,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                     <div className="col-md-4">
                         <label>Postal Code</label>
                         <input
-                         type="number"
+                            type="number"
                             className="form-control"
                             value={postalCode}
                             onChange={(e) => setPostalCode(e.target.value)}
@@ -519,7 +571,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                     <div className="col-md-3">
                         <label>Phone Number</label>
                         <input
-                        type="number"
+                            type="number"
                             className="form-control"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
@@ -529,7 +581,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                     <div className="col-md-3">
                         <label>Alternate Contact</label>
                         <input
-                         type="number"
+                            type="number"
                             className="form-control"
                             value={alternateContact}
                             onChange={(e) => setAlternateContact(e.target.value)}
@@ -743,6 +795,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                         <input
                             type="file"
                             className="form-control"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
                             onChange={(e) =>
                                 setVendorInvoice(
                                     e.target.files?.length
@@ -758,6 +811,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                         <input
                             type="file"
                             className="form-control"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
                             onChange={(e) =>
                                 setTrcFile(
                                     e.target.files?.length
@@ -773,6 +827,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                         <input
                             type="file"
                             className="form-control"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
                             onChange={(e) =>
                                 setKycFile(
                                     e.target.files?.length
@@ -790,6 +845,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                         <input
                             type="file"
                             className="form-control"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
                             onChange={(e) =>
                                 setBankConfirmationFile(
                                     e.target.files?.length
@@ -805,6 +861,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                         <input
                             type="file"
                             className="form-control"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
                             onChange={(e) =>
                                 setOtherDocumentFile(
                                     e.target.files?.length
@@ -820,7 +877,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             <div className="text-center">
                 <button className="btn btn-primary me-2" onClick={saveVendorRequest}> Submit </button>
 
-                <button className="btn btn-secondary">
+                <button className="btn btn-secondary" onClick={history.goBack}>
                     Exit
                 </button>
             </div>

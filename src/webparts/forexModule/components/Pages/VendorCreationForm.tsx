@@ -55,14 +55,14 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     const [vendorInfo, setVendorInfo] = useState<any>(null);
 const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
-    };
+    // const handleChange = (
+    //     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    // ) => {
+    //     setFormData({
+    //         ...formData,
+    //         [e.target.name]: e.target.value,
+    //     });
+    // };
     useEffect(() => {
         loadNatureOfPayment();
         loadVendorInfo(itemId.Id);
@@ -183,7 +183,8 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                 FromDate: new Date(formData.fromDate),
                 ToDate: new Date(formData.toDate),
                 DTAAApplicable: "Yes",
-                CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null,
+                CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null
+                
 
             };
 
@@ -265,7 +266,8 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                         new Date(formData.peStartDate) || null,
 
                     ValidityEndDate:
-                        new Date(formData.peEndDate) || null
+                        new Date(formData.peEndDate) || null,
+                        VendorCodeId: Number(vendorInfo.Id)
                 });
 
             // Upload PE File
@@ -313,7 +315,8 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                         formData.trcStartDate || null,
 
                     ValidityEndDate:
-                        formData.trcEndDate || null
+                        formData.trcEndDate || null,
+                         VendorCodeId: Number(vendorInfo.Id)
                 });
 
             if (trcDeclarationFile) {
@@ -356,7 +359,8 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                         formData.form10FStartDate || null,
 
                     ValidityEndDate:
-                        formData.form10FEndDate || null
+                        formData.form10FEndDate || null,
+                         VendorCodeId: Number(vendorInfo.Id)
                 });
 
             if (form10FFile) {
@@ -380,6 +384,69 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
 
         }
     };
+    const validateFile = (file: File | null): boolean => {
+
+        if (!file) return true;
+
+        const allowedExtensions = [
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx",
+            ".jpg",
+            ".jpeg",
+            ".png"
+        ];
+
+        const fileName = file.name.toLowerCase();
+
+        const isValid = allowedExtensions.some(
+            ext => fileName.endsWith(ext)
+        );
+
+        if (!isValid) {
+
+            alert(
+                "Only PDF, Word, Excel, JPG, JPEG and PNG files are allowed."
+            );
+
+            return false;
+        }
+        const maxSize = 20 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+
+        alert(
+            `File '${file.name}' exceeds the maximum size limit of 20 MB.`
+        );
+
+        return false;
+    }
+
+
+        return true;
+    };
+    const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+) => {
+
+    const updatedForm = {
+        ...formData,
+        [e.target.name]: e.target.value
+    };
+
+    const eligible =
+        Number(updatedForm.eligibleAmount || 0);
+
+    const approved =
+        Number(updatedForm.approvedAmount || 0);
+
+    updatedForm.balanceAmount =
+        String(eligible - approved);
+
+    setFormData(updatedForm);
+};
     return (
         <div className="vendor-tax-container">
             <h2 className="title">Vendor Taxation Document Upload</h2>
@@ -487,7 +554,7 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                                 <div className="form-group">
                                     <label>Postal Code</label>
                                     <input
-                                        value={vendorInfo.PostalCode || ""}
+                                        value={vendorInfo.Pincode || ""}
                                         disabled
                                     />
                                 </div>
@@ -983,7 +1050,12 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                         <label>Vendor Invoice / Proforma Invoice</label>
                         <input
                             type="file"
-                            onChange={(e: any) => setVendorInvoice(e.target.files[0])}
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                            onChange={(e: any) => {
+                                if (validateFile(e.target.files[0])) {
+                                    setVendorInvoice(e.target.files[0]);
+                                }
+                            }}
                         />
 
                     </div>
@@ -992,6 +1064,7 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                         <label>TRC</label>
                         <input
                             type="file"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
                             onChange={(e: any) => setTrcFile(e.target.files[0])}
                         />
                     </div>
@@ -1000,6 +1073,7 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                         <label>Bank Confirmation / Cancelled Cheque</label>
                         <input
                             type="file"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
                             onChange={(e: any) => setBankFile(e.target.files[0])}
                         />
                     </div>
@@ -1008,6 +1082,7 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                         <label>KYC Documents</label>
                         <input
                             type="file"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
                             onChange={(e: any) => setKycFile(e.target.files[0])}
                         />
                     </div>
@@ -1016,7 +1091,12 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                         <label>Other Documents</label>
                         <input
                             type="file"
-                            onChange={(e: any) => setOtherFile(e.target.files[0])}
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                            onChange={(e: any) => {
+                                if (validateFile(e.target.files[0])) {
+                                    setOtherFile(e.target.files[0]);
+                                }
+                            }}
                         />
                     </div>
                 </div>

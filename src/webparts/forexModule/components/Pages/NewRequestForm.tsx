@@ -1792,10 +1792,10 @@ const ensureUser = async (email: string): Promise<number> => {
                                         </div>
                                     </div>
                                     <div className='row mb-20'>
-                                        <div className='col-md-4'>
+                                        {/* <div className='col-md-4'>
                                             <label className="font">Bank Country</label>
                                             <input type="text" value={vendor.BankCountry} className="form-control readonly" />
-                                        </div>
+                                        </div> */}
                                         <div className='col-md-4'>
                                             <label className="font">Bank Swift Code</label>
                                             <input type="text" value={vendor.SWIFTBICCode} className="form-control readonly" />

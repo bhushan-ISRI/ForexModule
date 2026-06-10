@@ -187,14 +187,14 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                 <div className="grid-4">
                     <div className="field">
                         <label>Oracle Vendor Code</label>
-                           <span>
+                        <span>
                             {vendorData?.VendorCode}
                         </span>
                     </div>
 
                     <div className="field">
                         <label>Oracle Vendor Name</label>
-                           <span>
+                        <span>
                             {vendorData?.VendorName}
                         </span>
                     </div>
@@ -254,7 +254,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </label>
 
                         <span>
-                            {vendorData?.Address}
+                            {vendorData?.VendorAddress}
                         </span>
                     </div>
 
@@ -294,7 +294,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </label>
 
                         <span>
-                            {vendorData?.PostalCode}
+                            {vendorData?.Pincode}
                         </span>
                     </div>
 
@@ -450,7 +450,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </span>
                     </div>
 
-                    <div className="field">
+                    {/* <div className="field">
                         <label>
                             Intermediary SWIFT Code
                         </label>
@@ -458,7 +458,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         <span>
                             {vendorData?.IntermediarySWIFTCode}
                         </span>
-                    </div>
+                    </div> */}
 
                 </div>
 
@@ -481,11 +481,11 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                             Nature Of Payment
                         </label>
 
-                        {/* <span>
+                        <span>
                             {
                                 vendorData?.NatureOfPayment?.Title
                             }
-                        </span> */}
+                        </span>
                     </div>
 
                     <div className="field">
@@ -731,6 +731,42 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         <label>SEP Clause</label>
                         <span>{peData?.SEPClause ? "Yes" : "No"}</span>
                     </div>
+                    <div className="field">
+                        <label>Uploaded Document</label>
+
+                        {peData?.AttachmentFiles?.length > 0 ? (
+                            peData.AttachmentFiles.map((file: any, index: number) => (
+                                <div key={index}>
+                                    <a
+                                        href={file.ServerRelativeUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        {file.FileName}
+                                    </a>
+                                </div>
+                            ))
+                        ) : (
+                            <span>No Document Uploaded</span>
+                        )}
+                    </div>
+                    <div className="field">
+                        <label>Validity Start Date</label>
+                        <span>
+                            {peData?.ValidityStartDate
+                                ? new Date(peData.ValidityStartDate).toLocaleDateString()
+                                : ""}
+                        </span>
+                    </div>
+
+                    <div className="field">
+                        <label>Validity End Date</label>
+                        <span>
+                            {peData?.ValidityEndDate
+                                ? new Date(peData.ValidityEndDate).toLocaleDateString()
+                                : ""}
+                        </span>
+                    </div>
                 </div>
             </div>
             <div className="section">
@@ -756,36 +792,120 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         <label>Document Available</label>
                         <span>{trcData?.DocumentAvailable}</span>
                     </div>
-                </div>
-            </div>
-            <div className="section">
-                <h3>Form 10F</h3>
-
-                <div className="grid-4">
                     <div className="field">
-                        <label>Document Number</label>
-                        <span>{form10FData?.DocumentNumber}</span>
+                        <label>Tax Identification Number</label>
+                        <span>{trcData?.TaxIdentificationNumber}</span>
                     </div>
 
                     <div className="field">
-                        <label>Acknowledgment Number</label>
-                        <span>{form10FData?.AcknowledgmentNumber}</span>
-                    </div>
-
-                    <div className="field">
-                        <label>Document Available</label>
-                        <span>{form10FData?.DocumentAvailable}</span>
-                    </div>
-
-                    <div className="field">
-                        <label>Document Date</label>
+                        <label>Validity Start Date</label>
                         <span>
-                            {form10FData?.DocumentDate}
+                            {trcData?.ValidityStartDate
+                                ? new Date(trcData.ValidityStartDate).toLocaleDateString()
+                                : ""}
                         </span>
                     </div>
-                </div>
-            </div>
 
+                    <div className="field">
+                        <label>Validity End Date</label>
+                        <span>
+                            {trcData?.ValidityEndDate
+                                ? new Date(trcData.ValidityEndDate).toLocaleDateString()
+                                : ""}
+                        </span>
+                    </div>
+
+                    <div className="field">
+                        <label>Uploaded Document</label>
+
+                        {trcData?.AttachmentFiles?.length > 0 ? (
+                            trcData.AttachmentFiles.map((file: any, index: number) => (
+                                <div key={index}>
+                                    <a
+                                        href={file.ServerRelativeUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        {file.FileName}
+                                    </a>
+                                </div>
+                            ))
+                        ) : (
+                            <span>No Document Uploaded</span>
+                        )}
+                    </div>                </div>
+            </div>
+            <div className="section">
+    <h3>Form 10F</h3>
+
+    <div className="grid-4">
+
+        <div className="field">
+            <label>Document Number</label>
+            <span>{form10FData?.DocumentNumber}</span>
+        </div>
+
+        <div className="field">
+            <label>Acknowledgment Number</label>
+            <span>{form10FData?.AcknowledgmentNumber}</span>
+        </div>
+
+        <div className="field">
+            <label>Document Available</label>
+            <span>{form10FData?.DocumentAvailable}</span>
+        </div>
+
+        <div className="field">
+            <label>Document Date</label>
+            <span>
+                {form10FData?.DocumentDate
+                    ? new Date(form10FData.DocumentDate).toLocaleDateString()
+                    : ""}
+            </span>
+        </div>
+
+        <div className="field">
+            <label>Validity Start Date</label>
+            <span>
+                {form10FData?.ValidityStartDate
+                    ? new Date(form10FData.ValidityStartDate).toLocaleDateString()
+                    : ""}
+            </span>
+        </div>
+
+        <div className="field">
+            <label>Validity End Date</label>
+            <span>
+                {form10FData?.ValidityEndDate
+                    ? new Date(form10FData.ValidityEndDate).toLocaleDateString()
+                    : ""}
+            </span>
+        </div>
+
+        <div className="field">
+            <label>Uploaded Document</label>
+
+            {form10FData?.AttachmentFiles?.length > 0 ? (
+                form10FData.AttachmentFiles.map(
+                    (file: any, index: number) => (
+                        <div key={index}>
+                            <a
+                                href={file.ServerRelativeUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                {file.FileName}
+                            </a>
+                        </div>
+                    )
+                )
+            ) : (
+                <span>No Document Uploaded</span>
+            )}
+        </div>
+
+    </div>
+</div>
             {/* ========================= */}
             {/* THRESHOLD DETAILS */}
             {/* ========================= */}

@@ -33,7 +33,7 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                 "*,Author/Title,Country/Country",
                 "Author,Country",
                 `AuthorId eq ${currentUserId}`,
-                { column: "Id", isAscending: true },
+                { column: "Created", isAscending: false },
                 5000,
                 props
             );
@@ -71,24 +71,22 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                 x.Status === "Draft"
         ).length;
 
-    const filteredData =
-        vendorData.filter((x: any) => {
+   const filteredData = vendorData
+    .filter((x: any) => {
 
-            const vendorMatch =
-                !searchText ||
-                x.VendorName
-                    ?.toLowerCase()
-                    .includes(
-                        searchText.toLowerCase()
-                    );
+        const vendorMatch =
+            !searchText ||
+            x.VendorName?.toLowerCase().includes(
+                searchText.toLowerCase()
+            );
 
-            const statusMatch =
-                !statusFilter ||
-                x.Status === statusFilter;
+        const statusMatch =
+            !statusFilter ||
+            x.Status === statusFilter;
 
-            return vendorMatch && statusMatch;
-
-        });
+        return vendorMatch && statusMatch;
+    })
+    .sort((a: any, b: any) => b.Id - a.Id);
 
     // const openRequest = (id: number) => {
 
@@ -355,19 +353,15 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                 </td>
 
                                                 <td>
-
-                                                    <button
-                                                        className="btn btn-primary btn-sm me-1"
-                                                        onClick={() =>
-                                                            openRequest(
-                                                                item.Id
-                                                            )
-                                                        }
-                                                    >
-                                                        <i className="bi bi-pencil-square me-1"></i>
-                                                        Edit
-                                                    </button>
-
+                                                    {(item.RequestStatus === "Approved" && item.TaxDocumentAvailable ==="No") && (
+                                                        <button
+                                                            className="btn btn-primary btn-sm me-1"
+                                                            onClick={() => openRequest(item.Id)}
+                                                        >
+                                                            <i className="bi bi-pencil-square me-1"></i>
+                                                            Edit
+                                                        </button>
+                                                    )}
                                                 </td>
 
                                             </tr>
