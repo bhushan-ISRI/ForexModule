@@ -459,7 +459,7 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
 
                         <div className="section">
 
-                            <h3>Vendor Information</h3>
+                            <h3>Vendor Information bhushan</h3>
 
                             <div className="grid-4">
 
