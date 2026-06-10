@@ -721,7 +721,7 @@ const ensureUser = async (email: string): Promise<number> => {
 
         (await spCrudOps).getData(
             "VendorMaster",
-            "Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
+            "Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable,Id",
             "NatureOfPayment,City,State,Country,Currency",
             `VendorCode eq '${vendorCode}'`,
             { column: "ID", isAscending: true },
@@ -764,7 +764,7 @@ const ensureUser = async (email: string): Promise<number> => {
                         VendorAddress: v.VendorAddress || "",
                         Pincode: v.Pincode || ""
                     });
-                    getTaxDeclarationdata(v.VendorCode);
+                    getTaxDeclarationdata(v.Id);
                     setBankAccountNo(v.AccountNumberIBAN || "");
                     setBankName(v.BankName || "");
                     setBankSwiftCode(v.SWIFTBICCode || "");
@@ -786,15 +786,15 @@ const ensureUser = async (email: string): Promise<number> => {
             });
     };
 
-    const getTaxDeclarationdata = async (vendorCode: string) => {
+    const getTaxDeclarationdata = async (vendorId: string) => {
 
-        if (!vendorCode) return;
+        if (!vendorId) return;
 
         (await spCrudOps).getData(
             "VendorTaxDeclaration",
             "VendorMasterId/ID,VendorCode/VendorCode,VendorName/VendorName,DeclarationType,DocumentAvailable,DocumentNumber,DocumentDate,SEPClause,ValidityStartDate,ValidityEndDate,TaxIdentificationNumber,CountryOfTaxResidence,AcknowledgmentNumber,AttachmentFiles/FileName,AttachmentFiles/ServerRelativeUrl",
             "VendorMasterId,VendorCode,VendorName,AttachmentFiles",
-            `VendorCode/VendorCode eq '${vendorCode}'`,
+            `VendorMasterId/ID eq ${vendorId}`,
             { column: "ID", isAscending: true },
             5000,
             props

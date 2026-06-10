@@ -245,11 +245,11 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
             const peResponse = await sp.web.lists
                 .getByTitle("VendorTaxDeclaration")
                 .items.add({
-                    Title: "PE Declaration",
+                    Title: "Permanent Establishment",
 
                     VendorMasterIdId: Number(itemId.Id),
 
-                    DeclarationType: "PE Declaration",
+                    DeclarationType: "Permanent Establishment",
 
                     DocumentAvailable:
                         formData.peDocumentAvailable,
@@ -290,11 +290,11 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
             const trcResponse = await sp.web.lists
                 .getByTitle("VendorTaxDeclaration")
                 .items.add({
-                    Title: "TRC",
+                    Title: "TAX Residency Certificate",
 
                     VendorMasterIdId: Number(itemId.Id),
 
-                    DeclarationType: "TRC",
+                    DeclarationType: "TAX Residency Certificate",
 
                     DocumentAvailable:
                         formData.trcDocumentAvailable,
@@ -337,11 +337,11 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
             const form10Response = await sp.web.lists
                 .getByTitle("VendorTaxDeclaration")
                 .items.add({
-                    Title: "Form10F",
+                    Title: "Form 10 F",
 
                     VendorMasterIdId: Number(itemId.Id),
 
-                    DeclarationType: "Form10F",
+                    DeclarationType: "Form 10 F",
 
                     DocumentAvailable:
                         formData.form10FDocumentAvailable,
