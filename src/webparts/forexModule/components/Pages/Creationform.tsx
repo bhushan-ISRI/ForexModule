@@ -2,8 +2,10 @@ import * as React from "react";
 import { IForexModuleProps } from "../IForexModuleProps";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { SPHttpClient } from "@microsoft/sp-http";
+import { useHistory } from "react-router-dom";
 
 const CreationForm: React.FC<IForexModuleProps> = (props) => {
+    const history = useHistory();
     const spCrudOps = SPCRUDOPS();
 
     const [currencies, setCurrencies] = React.useState<any[]>([]);
@@ -113,13 +115,114 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
         setCities(cityData);
         setNatureOfPayments(nopData);
     };
-
+    let approvalMatrix: any[] = [];
     React.useEffect(() => {
         loadLookups();
+        Approvalrequest();
     }, []);
-    const saveVendorRequest = async () => {
+
+    const Approvalrequest = async () => {
         const sp = await spCrudOps;
 
+        const approvalUsers = await sp.getData(
+            "ForexApprovalMAtrix",
+            "ID,Approver/ID,Approver/Title",
+            "Approver",
+            "RequestType eq 'Treasury Approval' and Status eq 'Active'",
+            { column: "ID", isAscending: true },
+            5000,
+            props
+        );
+
+        // let approvalMatrix: any[] = [];
+
+        approvalUsers.forEach((x: any, index: number) => {
+
+            approvalMatrix.push({
+                Seq: index + 1,
+                Role: x.Role?.RoleName,
+                Approver: x.Approver?.Title,
+                ApproverID: x.Approver?.ID,
+                Status: index === 0 ? "Pending" : "Not Started"
+            });
+
+        });
+    }
+
+
+    const saveVendorRequest = async () => {
+        const sp = await spCrudOps;
+        if (!vendorCode?.trim()) {
+            alert("Oracle Vendor Code is mandatory.");
+            return;
+        }
+
+        if (!vendorName?.trim()) {
+            alert("Oracle Vendor Name is mandatory.");
+            return;
+        }
+
+        if (!vendorNameLegal?.trim()) {
+            alert("Vendor Name (Legal) is mandatory.");
+            return;
+        }
+
+        if (!address?.trim()) {
+            alert("Address Line 1 is mandatory.");
+            return;
+        }
+        if (!dtaaApplicable) {
+            alert("DTAA Applicable is mandatory.");
+            return;
+        }
+
+        if (!withholdingTaxApplicable) {
+            alert("Withholding Tax Applicable is mandatory.");
+            return;
+        }
+
+        if (!countryOfTaxResidence) {
+            alert("Country Of Tax Residence is mandatory.");
+            return;
+        }
+
+
+        const existingVendor = await sp.getData(
+            "VendorMaster",
+            "Id,VendorCode,VendorName",
+            "",
+            `VendorCode eq '${vendorCode.trim()}' or VendorName eq '${vendorName.trim()}'`,
+            { column: "Id", isAscending: false },
+            5000,
+            props
+        );
+
+        if (existingVendor.length > 0) {
+
+            const duplicateCode = existingVendor.find(
+                (x: any) =>
+                    x.VendorCode?.toLowerCase() === vendorCode.trim().toLowerCase()
+            );
+
+            const duplicateName = existingVendor.find(
+                (x: any) =>
+                    x.VendorName?.toLowerCase() === vendorName.trim().toLowerCase()
+            );
+
+            if (duplicateCode) {
+                alert("Oracle Vendor Code already exists.");
+                return;
+            }
+
+            if (duplicateName) {
+                alert("Vendor Name already exists.");
+                return;
+            }
+        }
+
+        await Approvalrequest();
+
+        const firstApprover = approvalMatrix.length > 0 ? approvalMatrix[0] : null;
         const payload = {
             Title: vendorName,
 
@@ -157,8 +260,10 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             PEDeclaration: peDeclaration,
             CountryOfTaxResidence: countryOfTaxResidence,
             DTAAApplicable: dtaaApplicable,
-            RequestStatus: "Pending"
-            //  Status: "Draft"
+            RequestStatus: "Pending",
+            Status: "Inactive",
+            CurrentApproverId: firstApprover?.ApproverID || null,
+            VendorNameLegal: vendorNameLegal,
         };
 
         const result = await sp.insertData(
@@ -214,6 +319,8 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             );
         }
         alert("Saved Successfully");
+        history.push("/VendorCreationDashboard");
+
     };
 
     const uploadAttachment = async (
@@ -369,9 +476,18 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                     <div className="col-md-4">
                         <label>Postal Code</label>
                         <input
+                         type="number"
                             className="form-control"
                             value={postalCode}
                             onChange={(e) => setPostalCode(e.target.value)}
+                        />
+                    </div>
+                    <div className="col-md-4">
+                        <label>Vendor Type</label>
+                        <input
+                            className="form-control"
+                            value={vendorType}
+                            onChange={(e) => setVendorType(e.target.value)}
                         />
                     </div>
                 </div>
@@ -403,6 +519,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                     <div className="col-md-3">
                         <label>Phone Number</label>
                         <input
+                        type="number"
                             className="form-control"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
@@ -412,6 +529,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                     <div className="col-md-3">
                         <label>Alternate Contact</label>
                         <input
+                         type="number"
                             className="form-control"
                             value={alternateContact}
                             onChange={(e) => setAlternateContact(e.target.value)}
@@ -555,30 +673,60 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
 
                 <div className="row">
                     <div className="col-md-3">
-                        <label>Withholding Tax Applicable</label>
-                        <input
+                        <label>
+                            Withholding Tax Applicable
+                            <span style={{ color: "red" }}>*</span>
+                        </label>
+
+                        <select
                             className="form-control"
                             value={withholdingTaxApplicable}
                             onChange={(e) => setWithholdingTaxApplicable(e.target.value)}
-                        />
+                        >
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
                     </div>
 
                     <div className="col-md-3">
-                        <label>DTAA Applicable</label>
-                        <input
+                        <label>
+                            DTAA Applicable <span style={{ color: "red" }}>*</span>
+                        </label>
+
+                        <select
                             className="form-control"
                             value={dtaaApplicable}
                             onChange={(e) => setDTAAApplicable(e.target.value)}
-                        />
+                        >
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
                     </div>
 
                     <div className="col-md-3">
-                        <label>Country of Tax Residence</label>
-                        <input
+                        <label>
+                            Country of Tax Residence
+                            <span style={{ color: "red" }}>*</span>
+                        </label>
+
+                        <select
                             className="form-control"
                             value={countryOfTaxResidence}
                             onChange={(e) => setCountryOfTaxResidence(e.target.value)}
-                        />
+                        >
+                            <option value="">Select Country</option>
+
+                            {countries.map((x: any) => (
+                                <option
+                                    key={x.Id}
+                                    value={x.Country}
+                                >
+                                    {x.Country}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
             </fieldset>
@@ -673,7 +821,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                 <button className="btn btn-primary me-2" onClick={saveVendorRequest}> Submit </button>
 
                 <button className="btn btn-secondary">
-                    Edit
+                    Exit
                 </button>
             </div>
         </div>

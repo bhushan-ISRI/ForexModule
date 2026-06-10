@@ -3,20 +3,21 @@ import { useEffect, useState } from "react";
 import "../Pages/Css/VendorReviewForm.scss";
 import { IForexModuleProps } from "../IForexModuleProps";
 import { sp } from "@pnp/sp/presets/all";
-
+import { useHistory, useParams } from "react-router-dom";
+import SPCRUDOPS from "../../service/BAL/spcrud";
+// import { useHistory } from "react-router-dom";
 const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
     const [vendorData, setVendorData] = useState<any>({});
     const [taxDeclarations, setTaxDeclarations] = useState<any[]>([]);
     const [remarks, setRemarks] = useState("");
     const [loading, setLoading] = useState(false);
-
-    const vendorId =
-        Number(
-            new URLSearchParams(window.location.search)
-                .get("VendorId")
-        );
-
+    const [peData, setPeData] = useState<any>(null);
+    const [trcData, setTrcData] = useState<any>(null);
+    const [form10FData, setForm10FData] = useState<any>(null);
+    const spCrudOps = SPCRUDOPS();
+    const history = useHistory();
+    const vendorId = useParams<{ Id: string }>();
     useEffect(() => {
 
         loadVendorData();
@@ -29,58 +30,65 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
             setLoading(true);
 
-            sp.setup({
-                spfxContext: props.context
-            });
+            const spx = await spCrudOps;
 
             // =========================
             // Vendor Master
             // =========================
 
-            const vendor = await sp.web.lists
-                .getByTitle("VendorMaster")
-                .items
-                .getById(vendorId)
-                .select(
-                    "*",
+            const vendorData = await spx.getData(
+                "VendorMaster",
+                "*,NatureOfPayment/Title,Country/Country,State/Title,City/City,Currency/Currency,AttachmentFiles",
+                "NatureOfPayment,Country,State,City,Currency,AttachmentFiles",
+                `Id eq ${Number(vendorId.Id)}`,
+                { column: "Id", isAscending: false },
+                1,
+                props
+            );
 
-                    "NatureOfPayment/Title",
-                    "Country/Title",
-                    "Currency/Title",
-                    "VendorType/Title",
-                    "State/Title",
+            console.log("Vendor Data", vendorData);
 
-                    "AttachmentFiles"
-                )
-                .expand(
-                    "NatureOfPayment",
-                    "Country",
-                    "Currency",
-                    "VendorType",
-                    "State",
+            if (vendorData && vendorData.length > 0) {
 
-                    "AttachmentFiles"
-                )
-                .get();
+                setVendorData(vendorData[0]);
 
-            setVendorData(vendor);
+            }
 
             // =========================
             // Tax Declaration
             // =========================
 
-            const declarations = await sp.web.lists
-                .getByTitle("VendorTaxDeclaration")
-                .items
-                .select(
-                    "*",
-                    "AttachmentFiles"
-                )
-                .expand("AttachmentFiles")
-                .filter(`VendorMasterIdId eq ${vendorId}`)
-                .get();
+            const declarations = await spx.getData(
+                "VendorTaxDeclaration",
+                "*,AttachmentFiles",
+                "AttachmentFiles",
+                `VendorMasterIdId eq ${Number(vendorId.Id)}`,
+                { column: "Id", isAscending: false },
+                5000,
+                props
+            );
 
-            setTaxDeclarations(declarations);
+            console.log("Declarations", declarations);
+
+            console.log("Declarations", declarations);
+
+            const pe = declarations.find(
+                (x: any) => x.DeclarationType === "PE Declaration"
+            );
+
+            const trc = declarations.find(
+                (x: any) => x.DeclarationType === "TRC"
+            );
+
+            const form10f = declarations.find(
+                (x: any) => x.DeclarationType === "Form10F"
+            );
+
+            setPeData(pe);
+            setTrcData(trc);
+            setForm10FData(form10f);
+
+            setTaxDeclarations(declarations || []);
 
         } catch (error) {
 
@@ -103,17 +111,18 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
             await sp.web.lists
                 .getByTitle("VendorMaster")
-                .items.getById(vendorId)
+                .items.getById(Number(vendorId.Id))
                 .update({
 
-                    ApprovalStatus: "Approved",
+                    RequestStatus: "Approved",
 
-                    ApproverRemarks: remarks,
+                    ApproverComments: remarks,
 
-                    ApprovedDate: new Date()
+                    // ApprovedDate: new Date()
                 });
 
             alert("Vendor Approved");
+            history.push("/VendorApprovalDashboard");
 
         } catch (error) {
 
@@ -132,17 +141,18 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
             await sp.web.lists
                 .getByTitle("VendorMaster")
-                .items.getById(vendorId)
+                .items.getById(Number(vendorId.Id))
                 .update({
 
-                    ApprovalStatus: "Rejected",
+                    RequestStatus: "Rejected",
 
-                    ApproverRemarks: remarks,
+                    ApproverComments: remarks,
 
-                    ApprovedDate: new Date()
+                    // ApprovedDate: new Date()
                 });
 
             alert("Vendor Rejected");
+            history.push("/VendorApprovalDashboard");
 
         } catch (error) {
 
@@ -175,7 +185,19 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                 </h3>
 
                 <div className="grid-4">
+                    <div className="field">
+                        <label>Oracle Vendor Code</label>
+                           <span>
+                            {vendorData?.VendorCode}
+                        </span>
+                    </div>
 
+                    <div className="field">
+                        <label>Oracle Vendor Name</label>
+                           <span>
+                            {vendorData?.VendorName}
+                        </span>
+                    </div>
                     <div className="field">
                         <label>
                             Vendor Name (Legal)
@@ -212,7 +234,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </label>
 
                         <span>
-                            {vendorData?.Country}
+                            {vendorData?.Country?.Country}
                         </span>
                     </div>
 
@@ -222,7 +244,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </label>
 
                         <span>
-                            {vendorData?.Currency}
+                            {vendorData?.Currency?.Currency}
                         </span>
                     </div>
 
@@ -236,7 +258,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </span>
                     </div>
 
-                    <div className="field">
+                    {/* <div className="field">
                         <label>
                             Address Line 2
                         </label>
@@ -244,7 +266,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         <span>
                             {vendorData?.VendorAddress}
                         </span>
-                    </div>
+                    </div> */}
 
                     <div className="field">
                         <label>
@@ -252,7 +274,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </label>
 
                         <span>
-                            {vendorData?.City}
+                            {vendorData?.City?.City}
                         </span>
                     </div>
 
@@ -262,7 +284,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </label>
 
                         <span>
-                            {vendorData?.State}
+                            {vendorData?.State?.Title}
                         </span>
                     </div>
 
@@ -459,11 +481,11 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                             Nature Of Payment
                         </label>
 
-                        <span>
+                        {/* <span>
                             {
                                 vendorData?.NatureOfPayment?.Title
                             }
-                        </span>
+                        </span> */}
                     </div>
 
                     <div className="field">
@@ -510,7 +532,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
             {/* TAX DECLARATIONS */}
             {/* ========================= */}
 
-            <div className="section">
+            {/* <div className="section">
 
                 <h3>
                     Tax Declarations
@@ -651,7 +673,6 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
                                 </div>
 
-                                {/* Attachments */}
 
                                 <div className="attachment-grid mt-15">
 
@@ -684,13 +705,92 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                     )
                 }
 
+            </div> */}
+            <div className="section">
+                <h3>Permanent Establishment Declaration</h3>
+
+                <div className="grid-4">
+                    <div className="field">
+                        <label>Document Available</label>
+                        <span>{peData?.DocumentAvailable}</span>
+                    </div>
+
+                    <div className="field">
+                        <label>Document Number</label>
+                        <span>{peData?.DocumentNumber}</span>
+                    </div>
+
+                    <div className="field">
+                        <label>Document Date</label>
+                        <span>
+                            {peData?.DocumentDate}
+                        </span>
+                    </div>
+
+                    <div className="field">
+                        <label>SEP Clause</label>
+                        <span>{peData?.SEPClause ? "Yes" : "No"}</span>
+                    </div>
+                </div>
+            </div>
+            <div className="section">
+                <h3>Tax Residency Certificate</h3>
+
+                <div className="grid-4">
+                    <div className="field">
+                        <label>Document Number</label>
+                        <span>{trcData?.DocumentNumber}</span>
+                    </div>
+
+                    <div className="field">
+                        <label>Country Of Tax Residence</label>
+                        <span>{trcData?.CountryOfTaxResidence}</span>
+                    </div>
+
+                    <div className="field">
+                        <label>TIN</label>
+                        <span>{trcData?.TaxIdentificationNumber}</span>
+                    </div>
+
+                    <div className="field">
+                        <label>Document Available</label>
+                        <span>{trcData?.DocumentAvailable}</span>
+                    </div>
+                </div>
+            </div>
+            <div className="section">
+                <h3>Form 10F</h3>
+
+                <div className="grid-4">
+                    <div className="field">
+                        <label>Document Number</label>
+                        <span>{form10FData?.DocumentNumber}</span>
+                    </div>
+
+                    <div className="field">
+                        <label>Acknowledgment Number</label>
+                        <span>{form10FData?.AcknowledgmentNumber}</span>
+                    </div>
+
+                    <div className="field">
+                        <label>Document Available</label>
+                        <span>{form10FData?.DocumentAvailable}</span>
+                    </div>
+
+                    <div className="field">
+                        <label>Document Date</label>
+                        <span>
+                            {form10FData?.DocumentDate}
+                        </span>
+                    </div>
+                </div>
             </div>
 
             {/* ========================= */}
             {/* THRESHOLD DETAILS */}
             {/* ========================= */}
 
-            <div className="section">
+            {/* <div className="section">
 
                 <h3>
                     Threshold Details
@@ -727,11 +827,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                             Balance Eligible Amount
                         </label>
 
-                        <span>
-                            {
-                                vendorData?.BalanceEligibleAmount
-                            }
-                        </span>
+                        <span>{vendorData?.BalanceEligibleAmount} </span>
                     </div>
 
                     <div className="field">
@@ -742,10 +838,6 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         <span>
                             {
                                 vendorData?.FromDate
-                                    ? new Date(
-                                        vendorData.FromDate
-                                    ).toLocaleDateString()
-                                    : ""
                             }
                         </span>
                     </div>
@@ -758,23 +850,20 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         <span>
                             {
                                 vendorData?.ToDate
-                                    ? new Date(
-                                        vendorData.ToDate
-                                    ).toLocaleDateString()
-                                    : ""
+                                 
                             }
                         </span>
                     </div>
 
                 </div>
 
-            </div>
+            </div> */}
 
             {/* ========================= */}
             {/* ATTACHMENTS */}
             {/* ========================= */}
 
-            <div className="section">
+            {/* <div className="section">
 
                 <h3>
                     Compliance & Supporting Documents
@@ -804,7 +893,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
                 </div>
 
-            </div>
+            </div> */}
 
             {/* ========================= */}
             {/* REMARKS */}

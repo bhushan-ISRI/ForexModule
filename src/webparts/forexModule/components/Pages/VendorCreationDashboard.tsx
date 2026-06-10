@@ -1,6 +1,7 @@
 import * as React from "react";
 import { IForexModuleProps } from "../IForexModuleProps";
 import SPCRUDOPS from "../../service/BAL/spcrud";
+import { useHistory } from "react-router-dom";
 
 const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
@@ -9,23 +10,30 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
     const [vendorData, setVendorData] = React.useState<any[]>([]);
     const [searchText, setSearchText] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("");
+    const history = useHistory();
 
     React.useEffect(() => {
         loadData();
     }, []);
+    //     const createNewRequest = () => {
+
+    //     history.push("/VendorCreation");
+
+    // };
 
     const loadData = async () => {
 
         try {
 
             const sp = await spCrudOps;
+            const currentUserId = props.context.pageContext.legacyPageContext.userId;
 
             const data = await sp.getData(
                 "VendorMaster",
                 "*,Author/Title,Country/Country",
-                "",
                 "Author,Country",
-                { column: "Id", isAscending: false },
+                `AuthorId eq ${currentUserId}`,
+                { column: "Id", isAscending: true },
                 5000,
                 props
             );
@@ -82,16 +90,23 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
         });
 
+    // const openRequest = (id: number) => {
+
+    //     window.location.href =
+    //         `${window.location.origin}${props.context.pageContext.web.serverRelativeUrl}/SitePages/VendorCreation.aspx?Id=${id}`;
+
+    // };
     const openRequest = (id: number) => {
 
-        window.location.href =
-            `${window.location.origin}${props.context.pageContext.web.serverRelativeUrl}/SitePages/VendorCreation.aspx?Id=${id}`;
+        history.push(
+            `/VendorCreationForm/${id}`
+        );
 
     };
 
     return (
         <div className="container-fluid mt-3">
-
+            {/* 
             <div className="row mb-3">
 
                 <div className="col-md-3">
@@ -130,9 +145,9 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                     </div>
                 </div>
 
-            </div>
+            </div> */}
 
-            <div className="row mb-3">
+            {/* <div className="row mb-3">
 
                 <div className="col-md-3">
                     <div className="card bg-secondary text-white">
@@ -143,29 +158,44 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                     </div>
                 </div>
 
+            </div> */}
+
+            <div className="d-flex justify-content-between align-items-center mb-3">
+
+                <h3 className="mb-0">
+                    Vendor Dashboard
+                </h3>
+
+                <button
+                    className="btn-danger px-4"
+                    onClick={() => history.push("/CreationForm")}
+                    style={{ width: "261px !important" }}
+                >
+                    <i className="fa fa-plus me-2"></i>
+                    Vendor Creation Request
+                </button>
+
             </div>
 
-            <div className="card mb-3">
+            <div className="card shadow-sm mb-3">
 
-                <div className="card-header">
-                    Search Vendor Requests
+                <div className="card-header bg-light">
+                    <strong>Search Vendor Requests</strong>
                 </div>
 
                 <div className="card-body">
 
-                    <div className="row">
+                    <div className="row g-3">
 
-                        <div className="col-md-4">
+                        <div className="col-md-6">
 
                             <input
                                 type="text"
                                 className="form-control"
-                                placeholder="Search Vendor Name"
+                                placeholder="Search Vendor Name..."
                                 value={searchText}
                                 onChange={(e) =>
-                                    setSearchText(
-                                        e.target.value
-                                    )
+                                    setSearchText(e.target.value)
                                 }
                             />
 
@@ -174,12 +204,10 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                         <div className="col-md-3">
 
                             <select
-                                className="form-control"
+                                className="form-select"
                                 value={statusFilter}
                                 onChange={(e) =>
-                                    setStatusFilter(
-                                        e.target.value
-                                    )
+                                    setStatusFilter(e.target.value)
                                 }
                             >
                                 <option value="">
@@ -214,8 +242,14 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
             <div className="card">
 
-                <div className="card-header">
-                    Vendor Requests
+                <div className="card-header bg-primary text-white d-flex justify-content-between">
+
+                    <span>Vendor Requests</span>
+
+                    <span>
+                        Total Records : {filteredData.length}
+                    </span>
+
                 </div>
 
                 <div className="card-body">
@@ -303,7 +337,7 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                                         : "badge bg-secondary"
                                                         }
                                                     >
-                                                        {item.Status}
+                                                        {item.RequestStatus}
                                                     </span>
 
                                                 </td>
@@ -330,7 +364,8 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                             )
                                                         }
                                                     >
-                                                        View
+                                                        <i className="bi bi-pencil-square me-1"></i>
+                                                        Edit
                                                     </button>
 
                                                 </td>

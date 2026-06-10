@@ -1,9 +1,10 @@
 import * as React from "react";
 import { IForexModuleProps } from "../IForexModuleProps";
 import SPCRUDOPS from "../../service/BAL/spcrud";
+import { useHistory } from "react-router-dom";
 
 const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
-
+    const history = useHistory();
     const spCrudOps = SPCRUDOPS();
 
     const [activeTab, setActiveTab] = React.useState("My");
@@ -30,32 +31,42 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
 
             const allData = await sp.getData(
                 "VendorMaster",
-                "*,Author/Title",
-                "Author",
-                "",
+                "*,Author/Title,Country/Country,CurrentApprover/Title,CurrentApprover/ID",
+                "Author,Country,CurrentApprover",
+                "CurrentApproverId eq " + currentUserId,
                 { column: "Id", isAscending: false },
                 5000,
                 props
             );
 
-            const myData = allData.filter(
-                (x: any) => x.AuthorId === currentUserId
+            console.log("Current User Id:", currentUserId);
+            console.log("VendorMaster Data:", allData);
+            console.log("Record Count:", allData?.length);
+
+            setAllRequests(allData || []);
+
+            setMyRequests(
+                (allData || []).filter(
+                    (x: any) =>
+                        Number(x.AuthorId) === Number(currentUserId)
+                )
             );
 
-            const pendingData = allData.filter(
-                (x: any) =>
-                    Number(x.CurrentApproverId) === Number(currentUserId)
+            setPendingRequests(
+                (allData || []).filter(
+                    (x: any) =>
+                        Number(x.CurrentApproverId) === Number(currentUserId)
+                )
             );
-
-            setAllRequests(allData);
-            setMyRequests(myData);
-            setPendingRequests(pendingData);
 
         } catch (e) {
-            console.error(e);
-        }
-        finally {
+
+            console.error("Dashboard Error:", e);
+
+        } finally {
+
             setLoading(false);
+
         }
     };
 
@@ -63,14 +74,14 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
 
     const approvedRequests =
         allRequests.filter(
-            (x: any) => x.Status === "Approved"
+            (x: any) => x.RequestStatus === "Approved"
         ).length;
 
-    const rejectedRequests = allRequests.filter((x: any) => x.Status === "Rejected").length;
+    const rejectedRequests = allRequests.filter((x: any) => x.RequestStatus === "Rejected").length;
 
-    const pendingCount = allRequests.filter((x: any) => x.Status?.includes("Pending")).length;
+    const pendingCount = allRequests.filter((x: any) => x.RequestStatus?.includes("Pending")).length;
 
-    const currentData = activeTab === "My" ? myRequests : activeTab === "Pending" ? pendingRequests : allRequests;
+    const currentData = allRequests;
 
     const filteredData =
         currentData.filter((x: any) => {
@@ -83,14 +94,30 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
             );
         });
 
+    // const openRequest = (item: any) => {
+    //     if (Number(item.CurrentApproverId) === Number(props.context.pageContext.legacyPageContext.userId)) {
+    //         window.location.href = `${props.context.pageContext.web.absoluteUrl}/SitePages/VendorApproval.aspx?Id=${item.Id}`;
+    //     } else {
+    //         window.location.href = `${props.context.pageContext.web.absoluteUrl}/SitePages/VendorCreation.aspx?Id=${item.Id}`;
+    //     }
+    // };
     const openRequest = (item: any) => {
-        if (Number(item.CurrentApproverId) === Number(props.context.pageContext.legacyPageContext.userId)) {
-            window.location.href = `${props.context.pageContext.web.absoluteUrl}/SitePages/VendorApproval.aspx?Id=${item.Id}`;
-        } else {
-            window.location.href = `${props.context.pageContext.web.absoluteUrl}/SitePages/VendorCreation.aspx?Id=${item.Id}`;
-        }
-    };
 
+        if (item.RequestStatus === "Approved") {
+
+            history.push(
+                `/VendorApprovalForm/${item.Id}`
+            );
+
+        } else {
+
+            history.push(
+                `/VendorApprovalFormFirst/${item.Id}`
+            );
+
+        }
+
+    };
     return (
 
         <div className="container-fluid mt-3">
@@ -263,22 +290,62 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                             </thead>
 
                             <tbody>
-                                {filteredData.map(
-                                    (item: any) => (
 
-                                        <tr key={item.Id} >
-                                            <td>{item.Id} </td>
-                                            <td>{item.VendorCode} </td>
-                                            <td>{item.VendorName} </td>
-                                            <td> <span className={item.Status === "Approved" ? "badge bg-success" : item.Status === "Rejected" ? "badge bg-danger" : "badge bg-warning"}>{item.Status}</span> </td>
-                                            <td>{item.PendingAt}</td>
-                                            <td>{item.Author?.Title}</td>
-                                            <td> {new Date(item.Created).toLocaleDateString()} </td>
-                                            <td><button className="btn btn-primary btn-sm" onClick={() => openRequest(item)}> View </button> </td>
-                                        </tr>
-
-                                    )
+                                {filteredData.length === 0 && (
+                                    <tr>
+                                        <td colSpan={8} className="text-center text-danger">
+                                            No Records Found
+                                        </td>
+                                    </tr>
                                 )}
+
+                                {filteredData.map((item: any) => (
+
+                                    <tr key={item.Id}>
+
+                                        <td>{item.Id}</td>
+
+                                        <td>{item.VendorCode}</td>
+
+                                        <td>{item.VendorName}</td>
+
+                                        <td>
+                                            <span
+                                                className={
+                                                    item.RequestStatus === "Approved"
+                                                        ? "badge bg-success"
+                                                        : item.RequestStatus === "Rejected"
+                                                            ? "badge bg-danger"
+                                                            : "badge bg-warning"
+                                                }
+                                            >
+                                                {item.RequestStatus}
+                                            </span>
+                                        </td>
+
+                                        <td>{item.CurrentApprover?.Title}</td>
+
+                                        <td>{item.Author?.Title}</td>
+
+                                        <td>
+                                            {item.Created
+                                                ? new Date(item.Created).toLocaleDateString()
+                                                : ""}
+                                        </td>
+
+                                        <td>
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={() => openRequest(item)}
+                                            >
+                                                <i className="bi bi-pencil-square me-1"></i>
+                                                Edit
+                                            </button>
+                                        </td>
+
+                                    </tr>
+
+                                ))}
 
                             </tbody>
 

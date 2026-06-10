@@ -5,6 +5,8 @@ import { IForexModuleProps } from "../IForexModuleProps";
 import { sp } from "@pnp/sp/presets/all";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { useEffect, useState } from "react";
+import { useParams, useHistory } from "react-router-dom";
+
 const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     const [formData, setFormData] = useState({
         natureOfPayment: "",
@@ -37,6 +39,8 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
         fromDate: "",
         toDate: "",
     });
+    const itemId = useParams<{ Id: string }>();
+    const history = useHistory();
     const spCrudOps = SPCRUDOPS();
     const [vendorInvoice, setVendorInvoice] = useState<any>(null);
     const [trcFile, setTrcFile] = useState<any>(null);
@@ -48,6 +52,9 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     const [trcDeclarationFile, setTrcDeclarationFile] = useState<any>(null);
     const [form10FFile, setForm10FFile] = useState<any>(null);
     const [natureOfPaymentOptions, setNatureOfPaymentOptions] = useState<any[]>([]);
+    const [vendorInfo, setVendorInfo] = useState<any>(null);
+const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
@@ -58,7 +65,71 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     };
     useEffect(() => {
         loadNatureOfPayment();
+        loadVendorInfo(itemId.Id);
+            loadApprovalMatrix();
+
     }, []);
+
+    const loadApprovalMatrix = async () => {
+
+    try {
+
+        const spx = await spCrudOps;
+
+        const data = await spx.getData(
+            "ForexApprovalMAtrix",
+            "ID,Approver/Title,Approver/Id,RequestType,Status",
+            "Approver",
+            "RequestType eq 'IDT Checker' and Status eq 'Active'",
+            { column: "ID", isAscending: true },
+            5000,
+            props
+        );
+
+        console.log("Approval Matrix", data);
+
+        setApprovalMatrix(data);
+
+    } catch (error) {
+
+        console.log(error);
+
+    }
+};
+
+    const loadVendorInfo = async (itemId: string | undefined) => {
+
+        try {
+
+            const spx = await spCrudOps;
+
+            //    const itemId = useParams<{ Id: string }>();
+
+            if (!itemId) return;
+
+            const data = await spx.getData(
+                "VendorMaster",
+                "*,Country/Country,State/Title,City/City,Currency/Currency",
+                "Country,State,City,Currency",
+                `Id eq ${itemId}`,
+                { column: "Id", isAscending: false },
+                1,
+                props
+            );
+
+            if (data && data.length > 0) {
+
+                console.log("Vendor Info", data[0]);
+
+                setVendorInfo(data[0]);
+            }
+
+        } catch (error) {
+
+            console.log("Vendor Load Error", error);
+
+        }
+    };
     const loadNatureOfPayment = async () => {
 
         try {
@@ -83,14 +154,14 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     };
     const getUniqueFileName = (file: any) => {
 
-    const time = new Date().getTime();
+        const time = new Date().getTime();
 
-    return `${time}_${file.name}`;
-};
+        return `${time}_${file.name}`;
+    };
 
     const handleSubmit = async () => {
         try {
-        const spsf = await spCrudOps;
+            const spsf = await spCrudOps;
             // sp.setup({
             //     spfxContext: props.context
             // });
@@ -111,16 +182,17 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                 BalanceEligibleAmount: formData.balanceAmount,
                 FromDate: new Date(formData.fromDate),
                 ToDate: new Date(formData.toDate),
+                DTAAApplicable: "Yes",
+                CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null,
 
-                DTAAApplicable: "Yes"
             };
 
-            const vendorResponse = await spsf.insertData(
-                "VendorMaster",vendorData,props
+            const vendorResponse = await spsf.updateData(
+                "VendorMaster", Number(itemId.Id), vendorData, props
             )
-                
 
-            const vendorId = vendorResponse.data.Id;
+
+            // const vendorId = vendorResponse.data.Id;
 
             // ==============================
             // Upload Attachments
@@ -128,7 +200,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
 
             const item = sp.web.lists
                 .getByTitle("VendorMaster")
-                .items.getById(vendorId);
+                .items.getById(Number(itemId.Id));
 
             if (vendorInvoice) {
                 await item.attachmentFiles.add(
@@ -174,7 +246,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                 .items.add({
                     Title: "PE Declaration",
 
-                    VendorMasterIdId: vendorId,
+                    VendorMasterIdId: Number(itemId.Id),
 
                     DeclarationType: "PE Declaration",
 
@@ -218,7 +290,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                 .items.add({
                     Title: "TRC",
 
-                    VendorMasterIdId: vendorId,
+                    VendorMasterIdId: Number(itemId.Id),
 
                     DeclarationType: "TRC",
 
@@ -264,7 +336,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                 .items.add({
                     Title: "Form10F",
 
-                    VendorMasterIdId: vendorId,
+                    VendorMasterIdId: Number(itemId.Id),
 
                     DeclarationType: "Form10F",
 
@@ -299,6 +371,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
             }
 
             alert("Vendor Saved Successfully");
+            history.push("/VendorCreationDashboard");
 
         } catch (error) {
 
@@ -314,7 +387,227 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
             {/* TAX SECTION */}
             <div className="section">
                 <h3>Tax & Regulatory Information</h3>
+                {
+                    vendorInfo && (
 
+                        <div className="section">
+
+                            <h3>Vendor Information</h3>
+
+                            <div className="grid-4">
+
+                                <div className="form-group">
+                                    <label>Oracle Vendor Code</label>
+                                    <input
+                                        value={vendorInfo.VendorCode || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Vendor Name (Legal)</label>
+                                    <input
+                                        value={vendorInfo.VendorName || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Vendor Short Name</label>
+                                    <input
+                                        value={vendorInfo.VendorShortName || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Vendor Type</label>
+                                    <input
+                                        value={vendorInfo.VendorType || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                            </div>
+
+                            <div className="grid-4">
+
+                                <div className="form-group">
+                                    <label>Country</label>
+                                    <input
+                                        value={vendorInfo.Country?.Country || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>State</label>
+                                    <input
+                                        value={vendorInfo.State?.Title || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>City</label>
+                                    <input
+                                        value={vendorInfo.City?.City || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Currency</label>
+                                    <input
+                                        value={vendorInfo.Currency?.Currency || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                            </div>
+
+                            <div className="grid-3">
+
+                                <div className="form-group">
+                                    <label>Address Line 1</label>
+                                    <textarea
+                                        value={vendorInfo.VendorAddress || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                {/* <div className="form-group">
+                                    <label>Address Line 2</label>
+                                    <textarea
+                                        value={vendorInfo.AddressLine2 || ""}
+                                        disabled
+                                    />
+                                </div> */}
+
+                                <div className="form-group">
+                                    <label>Postal Code</label>
+                                    <input
+                                        value={vendorInfo.PostalCode || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    )
+                }
+                {
+                    vendorInfo && (
+
+                        <div className="section">
+
+                            <h3>Contact Information</h3>
+
+                            <div className="grid-4">
+
+                                <div className="form-group">
+                                    <label>Contact Person</label>
+                                    <input
+                                        value={vendorInfo.ContactPersonName || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Email</label>
+                                    <input
+                                        value={vendorInfo.EmailId || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Phone Number</label>
+                                    <input
+                                        value={vendorInfo.PhoneNumber || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Alternate Contact</label>
+                                    <input
+                                        value={vendorInfo.AlternateContact || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    )
+                }
+                {
+                    vendorInfo && (
+
+                        <div className="section">
+
+                            <h3>Banking Details</h3>
+
+                            <div className="grid-4">
+
+                                <div className="form-group">
+                                    <label>Beneficiary Name</label>
+                                    <input
+                                        value={vendorInfo.BeneficiaryName || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Bank Name</label>
+                                    <input
+                                        value={vendorInfo.BankName || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Account Number / IBAN</label>
+                                    <input
+                                        value={vendorInfo.AccountNumberIBAN || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>SWIFT / BIC</label>
+                                    <input
+                                        value={vendorInfo.SWIFTBICCode || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>IFSC Code</label>
+                                    <input
+                                        value={vendorInfo.IFSCCode || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Routing Number / ABA</label>
+                                    <input
+                                        value={vendorInfo.RoutingNumberABA || ""}
+                                        disabled
+                                    />
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    )
+                }
                 <div className="grid-4">
                     <div className="form-group">
                         <label>Nature of Payment</label>

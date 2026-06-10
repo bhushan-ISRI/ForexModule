@@ -23,6 +23,7 @@ import VendorApprovalForm from './Pages/IDCApprovalForm';
 import CreationForm from './Pages/Creationform';
 import VendorDashboard from './Pages/VendorCreationDashboard';
 import VendorApprovalDashboard from './Pages/VendorApprovalDashboard';
+import VendorApprovalFormFirst from './Pages/VendorApprovalForm';
 
 const ForexModule: React.FC<IForexModuleProps> = (props) => {
   const {
@@ -62,11 +63,13 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
           <Route exact path="/TrackerApprovalForm/:Id" render={() => <TrackerApprovalForm {...props} />} />
           <Route exact path="/ApprovedRejectedByMe" render={() => <ModernForexDashboard {...props} />} />
           <Route exact path="/VendorReviewForm" render={() => <VendorReviewForm {...props} />} />
-          <Route exact path="/VendorCreationForm" render={() => <VendorCreationForm {...props} />} />
-          <Route exact path="/VendorApprovalForm" render={() => <VendorApprovalForm {...props} />} />
+          <Route exact path="/VendorCreationForm/:Id" render={() => <VendorCreationForm {...props} />} />
+          <Route exact path="/VendorApprovalForm/:Id" render={() => <VendorApprovalForm {...props} />} />
           <Route exact path="/CreationForm" render={() => <CreationForm {...props} />} />
           <Route exact path="/VendorCreationDashboard" render={() => <VendorDashboard {...props} />} />
           <Route exact path="/VendorApprovalDashboard" render={() => <VendorApprovalDashboard {...props} />} />
+          <Route exact path="/VendorApprovalFormFirst/:Id" render={() => <VendorApprovalFormFirst {...props} />} />
+
         </Switch>
       </div>
     </div>
