@@ -168,6 +168,7 @@ input[type="file"] {
 }
 
 @media (max-width: 768px) {
+
   .grid-2,
   .grid-3,
   .grid-4,
@@ -181,53 +182,125 @@ input[type="file"] {
 }
 
 .section {
-    background: #fff;
-    border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  background: #fff;
+  border-radius: 10px;
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
 }
 
 .section h3 {
-    color: #003366;
-    border-bottom: 1px solid #e5e5e5;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+  color: #003366;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
 }
 
 .grid-4 {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
 
 .field {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .field label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #666;
-    margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 6px;
 }
 
 .field span {
-    font-size: 15px;
-    color: #222;
-    word-break: break-word;
-    line-height: 22px;
+  font-size: 15px;
+  color: #222;
+  word-break: break-word;
+  line-height: 22px;
 }
 
-@media(max-width:1200px){
-    .grid-4{
-        grid-template-columns: repeat(2,1fr);
-    }
+@media(max-width:1200px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-@media(max-width:768px){
-    .grid-4{
-        grid-template-columns: 1fr;
-    }
+@media(max-width:768px) {
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.navlist {
+  display: flex;
+  list-style: none;
+  margin: 10px !important;
+  padding: 0px;
+}
+
+.nav-linklist {
+  border: none;
+  background-color: transparent;
+  color: #000 !important;
+}
+
+.nav-linklist.active {
+  color: red !important;
+  border: none;
+  background-color: transparent;
+  font-weight: 600;
+}
+.nav-item{
+  border: none;
+}
+
+.fontblock{
+  display: block;
+}
+.attachment-table-container {
+    margin-top: 10px;
+    overflow-x: auto;
+}
+
+.attachment-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.attachment-table th {
+    background: #000;
+    color: #fff;
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.attachment-table td {
+    padding: 14px 18px;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+    font-size: 14px;
+}
+
+.attachment-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.view-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.view-icon img {
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.view-icon img:hover {
+    transform: scale(1.15);
 }

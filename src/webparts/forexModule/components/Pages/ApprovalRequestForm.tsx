@@ -1688,10 +1688,10 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                     </div>
                                     <div className='main-formcontainer'>
                                         <div className='row mb-20'>
-                                            <div className='col-md-4'>
+                                            {/* <div className='col-md-4'>
                                                 <label className='font'>Nature of Payment</label>
                                                 <input type="text" value={paymentType} className="form-control readonly" />
-                                            </div>
+                                            </div> */}
                                             <div className='col-md-4'>
                                                 <label className='font fontblock'>Tax Document Available?</label>
                                                 <select onChange={(e) => { setTaxDocumentView(e.target.value) }} disabled

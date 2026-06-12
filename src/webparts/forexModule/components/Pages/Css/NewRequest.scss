@@ -489,7 +489,7 @@ label {
   padding: 8px 16px;
   background-color: #008000;
   border: 1px solid #008000;
-  color: rgb(255, 255, 255);
+  color: rgb(255, 255, 255) !important ;
   font-size: 12px;
   border-radius: 3px;
   text-decoration: none;
@@ -500,7 +500,7 @@ label {
   padding: 8px 16px;
   background-color: #fb8513;
   border: 1px solid #fb8513;
-  color: rgb(255, 255, 255);
+  color: rgb(255, 255, 255) !important;
   font-size: 12px;
   border-radius: 3px;
   text-decoration: none;
@@ -511,7 +511,7 @@ label {
   padding: 8px 16px;
   background-color: #ff0000;
   border: 1px solid #ff0000;
-  color: rgb(255, 255, 255);
+  color: rgb(255, 255, 255) !important;
   font-size: 12px;
   border-radius: 3px;
   text-decoration: none;
@@ -521,7 +521,7 @@ label {
 .Exit-btn {
   padding: 8px 16px;
   background: rgb(179, 25, 25);
-  color: rgb(255, 255, 255);
+  color: rgb(255, 255, 255) !important;
   font-size: 12px;
   border: 1px solid rgb(179, 25, 25);
   border-radius: 3px;

@@ -3,6 +3,8 @@ import { IForexModuleProps } from "../IForexModuleProps";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { useHistory } from "react-router-dom";
 
+import edit from '../../assets/Pencil.png';
+
 const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
     const history = useHistory();
     const spCrudOps = SPCRUDOPS();
@@ -13,6 +15,8 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
     const [allRequests, setAllRequests] = React.useState<any[]>([]);
     const [searchText, setSearchText] = React.useState("");
     const [loading, setLoading] = React.useState(false);
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const recordsPerPage = 10;
 
     React.useEffect(() => {
         loadDashboard();
@@ -33,7 +37,7 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                 "VendorMaster",
                 "*,Author/Title,Country/Country,CurrentApprover/Title,CurrentApprover/ID",
                 "Author,Country,CurrentApprover",
-                "CurrentApproverId eq " + currentUserId,
+                `CurrentApproverId eq ${currentUserId} and ApprovedByIDTChecker eq 'No'` ,
                 { column: "Id", isAscending: false },
                 5000,
                 props
@@ -83,24 +87,27 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
 
     const currentData = allRequests;
 
-    const filteredData =
-        currentData.filter((x: any) => {
+    const filteredData = currentData.filter((x: any) => {
 
-            if (!searchText)
-                return true;
+        if (!searchText)
+            return true;
 
-            return (
-                x.VendorName?.toLowerCase().includes(searchText.toLowerCase()) || x.VendorCode?.toLowerCase().includes(searchText.toLowerCase())
-            );
-        });
+        return (
+            x.VendorName?.toLowerCase().includes(searchText.toLowerCase()) || x.VendorCode?.toLowerCase().includes(searchText.toLowerCase())
+        );
+    });
 
-    // const openRequest = (item: any) => {
-    //     if (Number(item.CurrentApproverId) === Number(props.context.pageContext.legacyPageContext.userId)) {
-    //         window.location.href = `${props.context.pageContext.web.absoluteUrl}/SitePages/VendorApproval.aspx?Id=${item.Id}`;
-    //     } else {
-    //         window.location.href = `${props.context.pageContext.web.absoluteUrl}/SitePages/VendorCreation.aspx?Id=${item.Id}`;
-    //     }
-    // };
+    const indexOfLastRecord = currentPage * recordsPerPage;
+    const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+
+    const currentRecords = filteredData.slice(
+        indexOfFirstRecord,
+        indexOfLastRecord
+    );
+
+    const totalPages = Math.ceil(
+        filteredData.length / recordsPerPage
+    );
     const openRequest = (item: any) => {
 
         if (item.RequestStatus === "Approved") {
@@ -120,11 +127,13 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
     };
     return (
 
-        <div className="container-fluid mt-3">
+        <>
 
-            <h3 className="mb-3">
+
+
+            {/* <h3 className="mb-3">
                 Vendor Approval Dashboard
-            </h3>
+            </h3> */}
 
             {/* Summary Cards */}
 
@@ -168,90 +177,34 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
 
             </div> */}
 
-            {/* Tabs */}
 
-            <ul className="nav nav-tabs mb-3">
 
-                <li className="nav-item">
-                    <button
-                        className={`nav-link ${activeTab === "My"
-                            ? "active"
-                            : ""
-                            }`}
-                        onClick={() =>
-                            setActiveTab("My")
-                        }
-                    >
-                        My Requests
-                    </button>
-                </li>
-
-                <li className="nav-item">
-                    <button
-                        className={`nav-link ${activeTab === "Pending"
-                            ? "active"
-                            : ""
-                            }`}
-                        onClick={() =>
-                            setActiveTab("Pending")
-                        }
-                    >
-                        Pending For Me
-                    </button>
-                </li>
-
-                <li className="nav-item">
-                    <button
-                        className={`nav-link ${activeTab === "All"
-                            ? "active"
-                            : ""
-                            }`}
-                        onClick={() =>
-                            setActiveTab("All")
-                        }
-                    >
-                        All Requests
-                    </button>
-                </li>
-
-            </ul>
-
-            {/* Search */}
-
-            <div className="card mb-3">
-
-                <div className="card-body">
-
-                    <div className="row">
-
-                        <div className="col-md-4">
-
-                            <input
-                                className="form-control"
-                                placeholder="Search Vendor Name / Code"
-                                value={searchText}
-                                onChange={(e) =>
-                                    setSearchText(
-                                        e.target.value
-                                    )
-                                }
-                            />
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+            <div className="header">
+                <h2> Vendor Approval Dashboard </h2>
             </div>
 
-            {/* Grid */}
+            <div className="mainsecondapprove">
+                <div>
+                    <input
+                        className="form-control"
+                        style={{ width: "250px;" }}
+                        placeholder="Search Vendor Name / Code"
+                        value={searchText}
+                        onChange={(e) =>
+                            setSearchText(
+                                e.target.value
+                            )
+                        }
+                    />
+                </div>
+            </div>
+
 
             <div className="card">
 
-                <div className="card-header">
+                {/* <div className="card-header">
                     Vendor Requests
-                </div>
+                </div> */}
 
                 <div className="card-body">
 
@@ -261,9 +214,9 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                         </h5>
                     )}
 
-                    <div className="table-responsive">
+                    <div style={{ overflowX: "auto" }}>
 
-                        <table className="table table-bordered table-striped">
+                        <table className="custom-table">
 
                             <thead>
 
@@ -291,7 +244,7 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
 
                             <tbody>
 
-                                {filteredData.length === 0 && (
+                                {currentRecords.length === 0 && (
                                     <tr>
                                         <td colSpan={8} className="text-center text-danger">
                                             No Records Found
@@ -299,7 +252,7 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                                     </tr>
                                 )}
 
-                                {filteredData.map((item: any) => (
+                                {currentRecords.map((item: any) => (
 
                                     <tr key={item.Id}>
 
@@ -311,13 +264,13 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
 
                                         <td>
                                             <span
-                                                className={
-                                                    item.RequestStatus === "Approved"
-                                                        ? "badge bg-success"
-                                                        : item.RequestStatus === "Rejected"
-                                                            ? "badge bg-danger"
-                                                            : "badge bg-warning"
-                                                }
+                                            // className={
+                                            //     item.RequestStatus === "Approved"
+                                            //         ? ""
+                                            //         : item.RequestStatus === "Rejected"
+                                            //             ? ""
+                                            //             : "badge bg-warning"
+                                            // }
                                             >
                                                 {item.RequestStatus}
                                             </span>
@@ -334,13 +287,16 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                                         </td>
 
                                         <td>
-                                            <button
+                                            <a onClick={() => openRequest(item)}>
+                                                <img src={edit} alt="" width={15} />
+                                            </a>
+                                            {/* <button
                                                 className="btn btn-primary btn-sm"
                                                 onClick={() => openRequest(item)}
                                             >
                                                 <i className="bi bi-pencil-square me-1"></i>
                                                 Edit
-                                            </button>
+                                            </button> */}
                                         </td>
 
                                     </tr>
@@ -350,6 +306,37 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                             </tbody>
 
                         </table>
+                        <div className="d-flex justify-content-center mt-3">
+
+                            <button
+                                className="btn btn-secondary me-2"
+                                disabled={currentPage === 1}
+                                onClick={() =>
+                                    setCurrentPage(currentPage - 1)
+                                }
+                            >
+                                Previous
+                            </button>
+
+                            <span
+                                style={{
+                                    padding: "8px 15px"
+                                }}
+                            >
+                                Page {currentPage} of {totalPages}
+                            </span>
+
+                            <button
+                                className="btn btn-secondary ms-2"
+                                disabled={currentPage === totalPages}
+                                onClick={() =>
+                                    setCurrentPage(currentPage + 1)
+                                }
+                            >
+                                Next
+                            </button>
+
+                        </div>
 
                     </div>
 
@@ -357,7 +344,7 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
 
             </div>
 
-        </div>
+        </>
     );
 };
 

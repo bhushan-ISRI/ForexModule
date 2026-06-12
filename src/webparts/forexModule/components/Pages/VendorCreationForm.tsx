@@ -6,6 +6,7 @@ import { sp } from "@pnp/sp/presets/all";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { useEffect, useState } from "react";
 import { useParams, useHistory } from "react-router-dom";
+import logo from "../../assets/sona-comstarlogo.png";
 
 const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     const [formData, setFormData] = useState({
@@ -41,6 +42,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     });
     const itemId = useParams<{ Id: string }>();
     const history = useHistory();
+
     const spCrudOps = SPCRUDOPS();
     const [vendorInvoice, setVendorInvoice] = useState<any>(null);
     const [trcFile, setTrcFile] = useState<any>(null);
@@ -53,7 +55,9 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     const [form10FFile, setForm10FFile] = useState<any>(null);
     const [natureOfPaymentOptions, setNatureOfPaymentOptions] = useState<any[]>([]);
     const [vendorInfo, setVendorInfo] = useState<any>(null);
-const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
+    const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
+    const [countryOfTaxResidence, setCountryOfTaxResidence] = React.useState("");
+    const [countries, setCountries] = React.useState<any[]>([]);
 
     // const handleChange = (
     //     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -65,37 +69,52 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
     // };
     useEffect(() => {
         loadNatureOfPayment();
+        loadcontries();
         loadVendorInfo(itemId.Id);
-            loadApprovalMatrix();
+        loadApprovalMatrix();
 
     }, []);
 
-    const loadApprovalMatrix = async () => {
-
-    try {
-
+    const loadcontries = async () => {
         const spx = await spCrudOps;
-
-        const data = await spx.getData(
-            "ForexApprovalMAtrix",
-            "ID,Approver/Title,Approver/Id,RequestType,Status",
-            "Approver",
-            "RequestType eq 'IDT Checker' and Status eq 'Active'",
-            { column: "ID", isAscending: true },
+        const countryData = await spx.getData(
+            "CountryMaster",
+            "Id,Country",
+            "",
+            "",
+            { column: "Country", isAscending: true },
             5000,
             props
         );
-
-        console.log("Approval Matrix", data);
-
-        setApprovalMatrix(data);
-
-    } catch (error) {
-
-        console.log(error);
-
+        setCountries(countryData);
     }
-};
+
+    const loadApprovalMatrix = async () => {
+
+        try {
+
+            const spx = await spCrudOps;
+
+            const data = await spx.getData(
+                "ForexApprovalMAtrix",
+                "ID,Approver/Title,Approver/Id,RequestType,Status",
+                "Approver",
+                "RequestType eq 'IDT Checker' and Status eq 'Active'",
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            console.log("Approval Matrix", data);
+
+            setApprovalMatrix(data);
+
+        } catch (error) {
+
+            console.log(error);
+
+        }
+    };
 
     const loadVendorInfo = async (itemId: string | undefined) => {
 
@@ -165,6 +184,98 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
             // sp.setup({
             //     spfxContext: props.context
             // });
+            // Permanent Establishment Declaration
+            if (!formData.peDocumentNumber?.trim()) {
+                alert("PE Declaration Document Number is mandatory.");
+                return;
+            }
+
+            if (!formData.peDocumentDate) {
+                alert("PE Declaration Document Date is mandatory.");
+                return;
+            }
+
+            if (!formData.peStartDate) {
+                alert("PE Declaration Validity Start Date is mandatory.");
+                return;
+            }
+
+            if (!formData.peEndDate) {
+                alert("PE Declaration Validity End Date is mandatory.");
+                return;
+            }
+
+            if (!peFile) {
+                alert("PE Declaration Document Upload is mandatory.");
+                return;
+            }
+
+            // Tax Residency Certificate
+            if (!formData.trcDocumentNumber?.trim()) {
+                alert("TRC Document Number is mandatory.");
+                return;
+            }
+
+            if (!formData.trcDocumentDate) {
+                alert("TRC Document Date is mandatory.");
+                return;
+            }
+
+            if (!formData.taxIdentificationNumber?.trim()) {
+                alert("Tax Identification Number is mandatory.");
+                return;
+            }
+
+            if (countryOfTaxResidence) {
+                alert("Country Of Tax Residence is mandatory.");
+                return;
+            }
+
+            if (!formData.trcStartDate) {
+                alert("TRC Validity Start Date is mandatory.");
+                return;
+            }
+
+            if (!formData.trcEndDate) {
+                alert("TRC Validity End Date is mandatory.");
+                return;
+            }
+
+            if (!trcDeclarationFile) {
+                alert("TRC Upload Document is mandatory.");
+                return;
+            }
+
+            // Form 10F
+            if (!formData.form10FDocumentNumber?.trim()) {
+                alert("Form 10F Document Number is mandatory.");
+                return;
+            }
+
+            if (!formData.form10FDocumentDate) {
+                alert("Form 10F Document Date is mandatory.");
+                return;
+            }
+
+            if (!formData.acknowledgmentNumber?.trim()) {
+                alert("Form 10F Acknowledgment Number is mandatory.");
+                return;
+            }
+
+            if (!formData.form10FStartDate) {
+                alert("Form 10F Validity Start Date is mandatory.");
+                return;
+            }
+
+            if (!formData.form10FEndDate) {
+                alert("Form 10F Validity End Date is mandatory.");
+                return;
+            }
+
+            if (!form10FFile) {
+                alert("Form 10F Upload Document is mandatory.");
+                return;
+            }
 
             // ==============================
             // SAVE IN VendorMaster
@@ -173,18 +284,19 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
             const vendorData: any = {
                 Title: "Vendor",
 
-                NatureOfPaymentId: parseInt(formData.natureOfPayment),
+                // NatureOfPaymentId: parseInt(formData.natureOfPayment),
                 TaxDocumentAvailable: formData.taxDocumentAvailable,
                 PEDeclaration: formData.peDocumentAvailable,
-                CountryOfTaxResidence: formData.countryOfTaxResidence,
+                CountryOfTaxResidence: countryOfTaxResidence,
                 EligibleAmountWithoutWHT: formData.eligibleAmount,
                 ApprovedAmountPaidAmount: formData.approvedAmount,
                 BalanceEligibleAmount: formData.balanceAmount,
                 FromDate: new Date(formData.fromDate),
                 ToDate: new Date(formData.toDate),
                 DTAAApplicable: "Yes",
-                CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null
-                
+                CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null,
+                ApprovedByIDTChecker:"No"
+
 
             };
 
@@ -205,35 +317,35 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
 
             if (vendorInvoice) {
                 await item.attachmentFiles.add(
-                    getUniqueFileName(vendorInvoice),
+                    `VendorInvoice_${getUniqueFileName(vendorInvoice)}`,
                     vendorInvoice
                 );
             }
 
             if (trcFile) {
                 await item.attachmentFiles.add(
-                    getUniqueFileName(trcFile),
+                    `TRC_${getUniqueFileName(trcFile)}`,
                     trcFile
                 );
             }
 
             if (bankFile) {
                 await item.attachmentFiles.add(
-                    getUniqueFileName(bankFile),
+                    `BankConfirmation_${getUniqueFileName(bankFile)}`,
                     bankFile
                 );
             }
 
             if (kycFile) {
                 await item.attachmentFiles.add(
-                    getUniqueFileName(kycFile),
+                    `KYC_${getUniqueFileName(kycFile)}`,
                     kycFile
                 );
             }
 
             if (otherFile) {
                 await item.attachmentFiles.add(
-                    getUniqueFileName(otherFile),
+                    `OtherDocument_${getUniqueFileName(otherFile)}`,
                     otherFile
                 );
             }
@@ -267,7 +379,7 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
 
                     ValidityEndDate:
                         new Date(formData.peEndDate) || null,
-                        VendorCodeId: Number(vendorInfo.Id)
+                    VendorCodeId: Number(vendorInfo.Id)
                 });
 
             // Upload PE File
@@ -316,7 +428,7 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
 
                     ValidityEndDate:
                         formData.trcEndDate || null,
-                         VendorCodeId: Number(vendorInfo.Id)
+                    VendorCodeId: Number(vendorInfo.Id)
                 });
 
             if (trcDeclarationFile) {
@@ -360,7 +472,7 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
 
                     ValidityEndDate:
                         formData.form10FEndDate || null,
-                         VendorCodeId: Number(vendorInfo.Id)
+                    VendorCodeId: Number(vendorInfo.Id)
                 });
 
             if (form10FFile) {
@@ -415,135 +527,150 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
         }
         const maxSize = 20 * 1024 * 1024;
 
-    if (file.size > maxSize) {
+        if (file.size > maxSize) {
 
-        alert(
-            `File '${file.name}' exceeds the maximum size limit of 20 MB.`
-        );
+            alert(
+                `File '${file.name}' exceeds the maximum size limit of 20 MB.`
+            );
 
-        return false;
-    }
+            return false;
+        }
 
 
         return true;
     };
     const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-) => {
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
 
-    const updatedForm = {
-        ...formData,
-        [e.target.name]: e.target.value
+        const updatedForm = {
+            ...formData,
+            [e.target.name]: e.target.value
+        };
+
+        const eligible = Number(updatedForm.eligibleAmount || 0);
+
+        const approved = Number(updatedForm.approvedAmount || 0);
+
+        const balanceAmount = eligible - approved;
+
+        updatedForm.balanceAmount = String(balanceAmount);
+
+        setFormData(updatedForm);
+
+        if (balanceAmount < 0) {
+            alert(
+                "WHT would be applicable on this transaction as threshold limit has exceeded."
+            );
+            return;
+        }
     };
-
-    const eligible =
-        Number(updatedForm.eligibleAmount || 0);
-
-    const approved =
-        Number(updatedForm.approvedAmount || 0);
-
-    updatedForm.balanceAmount =
-        String(eligible - approved);
-
-    setFormData(updatedForm);
-};
     return (
-        <div className="vendor-tax-container">
-            <h2 className="title">Vendor Taxation Document Upload</h2>
-
-            {/* TAX SECTION */}
-            <div className="section">
-                <h3>Tax & Regulatory Information</h3>
-                {
-                    vendorInfo && (
-
-                        <div className="section">
-
-                            <h3>Vendor Information bhushan</h3>
-
-                            <div className="grid-4">
-
-                                <div className="form-group">
-                                    <label>Oracle Vendor Code</label>
-                                    <input
-                                        value={vendorInfo.VendorCode || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Vendor Name (Legal)</label>
-                                    <input
-                                        value={vendorInfo.VendorName || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Vendor Short Name</label>
-                                    <input
-                                        value={vendorInfo.VendorShortName || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Vendor Type</label>
-                                    <input
-                                        value={vendorInfo.VendorType || ""}
-                                        disabled
-                                    />
-                                </div>
-
+        <>
+            <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        <div className='Main-Boxpoup'>
+                            <div className="bordered">
+                                <a><img src={logo} /></a>
+                                <h1>Vendor Taxation Document Upload</h1>
                             </div>
+                            <div className='borderedbox'>
+                                {
+                                    vendorInfo && (
+                                        <>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Vendor Information</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className="row mb-20">
 
-                            <div className="grid-4">
+                                                    <div className="col-md-3 form-group">
+                                                        <label>Oracle Vendor Code</label>
+                                                        <input
+                                                            value={vendorInfo.VendorCode || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-3 form-group">
+                                                        <label>Oracle Vendor Name</label>
+                                                        <input
+                                                            value={vendorInfo.VendorName || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                                <div className="form-group">
-                                    <label>Country</label>
-                                    <input
-                                        value={vendorInfo.Country?.Country || ""}
-                                        disabled
-                                    />
-                                </div>
+                                                    <div className="col-md-3 form-group">
+                                                        <label>Vendor Name (Legal)</label>
+                                                        <input
+                                                            value={vendorInfo.VendorName || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                                <div className="form-group">
-                                    <label>State</label>
-                                    <input
-                                        value={vendorInfo.State?.Title || ""}
-                                        disabled
-                                    />
-                                </div>
+                                                    <div className="col-md-3 form-group">
+                                                        <label>Vendor Short Name</label>
+                                                        <input
+                                                            value={vendorInfo.VendorShortName || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                                <div className="form-group">
-                                    <label>City</label>
-                                    <input
-                                        value={vendorInfo.City?.City || ""}
-                                        disabled
-                                    />
-                                </div>
+                                                    {/* <div className="col-md-3 form-group">
+                                                        <label>Vendor Type</label>
+                                                        <input
+                                                            value={vendorInfo.VendorType || ""}
+                                                            disabled
+                                                        />
+                                                    </div> */}
 
-                                <div className="form-group">
-                                    <label>Currency</label>
-                                    <input
-                                        value={vendorInfo.Currency?.Currency || ""}
-                                        disabled
-                                    />
-                                </div>
+                                                </div>
+                                                <div className="row mb-20">
 
-                            </div>
+                                                    <div className="col-md-3 form-group">
+                                                        <label>Country</label>
+                                                        <input
+                                                            value={vendorInfo.Country?.Country || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                            <div className="grid-3">
+                                                    <div className="col-md-3 form-group">
+                                                        <label>State</label>
+                                                        <input
+                                                            value={vendorInfo.state0 || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                                <div className="form-group">
-                                    <label>Address Line 1</label>
-                                    <textarea
-                                        value={vendorInfo.VendorAddress || ""}
-                                        disabled
-                                    />
-                                </div>
+                                                    <div className="col-md-3 form-group">
+                                                        <label>City</label>
+                                                        <input
+                                                            value={vendorInfo.city0 || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                                {/* <div className="form-group">
+                                                    <div className="col-md-3 form-group">
+                                                        <label>Currency</label>
+                                                        <input
+                                                            value={vendorInfo.Currency?.Currency || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+                                                </div>
+                                                <div className="row mb-20">
+
+                                                    <div className="col-md-3 form-group">
+                                                        <label>Address Line 1</label>
+                                                        <textarea
+                                                            value={vendorInfo.VendorAddress || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+                                                    {/* <div className="col-md-3">
                                     <label>Address Line 2</label>
                                     <textarea
                                         value={vendorInfo.AddressLine2 || ""}
@@ -551,567 +678,583 @@ const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
                                     />
                                 </div> */}
 
-                                <div className="form-group">
-                                    <label>Postal Code</label>
-                                    <input
-                                        value={vendorInfo.Pincode || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    )
-                }
-                {
-                    vendorInfo && (
-
-                        <div className="section">
-
-                            <h3>Contact Information</h3>
-
-                            <div className="grid-4">
-
-                                <div className="form-group">
-                                    <label>Contact Person</label>
-                                    <input
-                                        value={vendorInfo.ContactPersonName || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Email</label>
-                                    <input
-                                        value={vendorInfo.EmailId || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Phone Number</label>
-                                    <input
-                                        value={vendorInfo.PhoneNumber || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Alternate Contact</label>
-                                    <input
-                                        value={vendorInfo.AlternateContact || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    )
-                }
-                {
-                    vendorInfo && (
-
-                        <div className="section">
-
-                            <h3>Banking Details</h3>
-
-                            <div className="grid-4">
-
-                                <div className="form-group">
-                                    <label>Beneficiary Name</label>
-                                    <input
-                                        value={vendorInfo.BeneficiaryName || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Bank Name</label>
-                                    <input
-                                        value={vendorInfo.BankName || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Account Number / IBAN</label>
-                                    <input
-                                        value={vendorInfo.AccountNumberIBAN || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>SWIFT / BIC</label>
-                                    <input
-                                        value={vendorInfo.SWIFTBICCode || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>IFSC Code</label>
-                                    <input
-                                        value={vendorInfo.IFSCCode || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Routing Number / ABA</label>
-                                    <input
-                                        value={vendorInfo.RoutingNumberABA || ""}
-                                        disabled
-                                    />
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    )
-                }
-                <div className="grid-4">
-                    <div className="form-group">
-                        <label>Nature of Payment</label>
-
-                        <select
-                            name="natureOfPayment"
-                            value={formData.natureOfPayment}
-                            onChange={handleChange}
-                        >
-                            <option value="">Select</option>
-
-                            {
-                                natureOfPaymentOptions.map((item: any) => (
-                                    <option key={item.Id} value={item.Id}>
-                                        {item.Title}
-                                    </option>
-                                ))
-                            }
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>
-                            Whether tax document is available
-                            <span className="red-text">
-                                {" "}
-                                (If No, withholding tax applicable)
-                            </span>
-                        </label>
-
-                        <select
-                            name="taxDocumentAvailable"
-                            value={formData.taxDocumentAvailable}
-                            onChange={handleChange}
-                        >
-                            <option>Yes</option>
-                            <option>No</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            {/* PE DECLARATION */}
-            <div className="section">
-                <h3>Permanent Establishment Declaration</h3>
-
-                <div className="grid-5">
-                    <div className="form-group">
-                        <label>Document Available</label>
-
-                        <select
-                            name="peDocumentAvailable"
-                            value={formData.peDocumentAvailable}
-                            onChange={handleChange}
-                        >
-                            <option>Yes</option>
-                            <option>No</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Document Number</label>
-
-                        <input
-                            type="text"
-                            name="peDocumentNumber"
-                            value={formData.peDocumentNumber}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Document Date</label>
-
-                        <input
-                            type="date"
-                            name="peDocumentDate"
-                            value={formData.peDocumentDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Upload Document</label>
-                        <input
-                            type="file"
-                            onChange={(e: any) => setPeFile(e.target.files[0])}
-                        />
-                    </div>
-                </div>
-
-                <div className="grid-4 mt-20">
-                    <div className="checkbox-group">
-                        <input type="checkbox" />
-                        <label>SEP Clause</label>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Validity Start Date</label>
-
-                        <input
-                            type="date"
-                            name="peStartDate"
-                            value={formData.peStartDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Validity End Date</label>
-
-                        <input
-                            type="date"
-                            name="peEndDate"
-                            value={formData.peEndDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* TRC */}
-            <div className="section">
-                <h3>Tax Residency Certificate</h3>
-
-                <div className="grid-5">
-                    <div className="form-group">
-                        <label>Document Available</label>
-
-                        <select
-                            name="trcDocumentAvailable"
-                            value={formData.trcDocumentAvailable}
-                            onChange={handleChange}
-                        >
-                            <option>Yes</option>
-                            <option>No</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Document Number</label>
-
-                        <input
-                            type="text"
-                            name="trcDocumentNumber"
-                            value={formData.trcDocumentNumber}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Document Date</label>
-
-                        <input
-                            type="date"
-                            name="trcDocumentDate"
-                            value={formData.trcDocumentDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Tax Identification Number</label>
-
-                        <input
-                            type="text"
-                            name="taxIdentificationNumber"
-                            value={formData.taxIdentificationNumber}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Upload Document</label>
-                        <input
-                            type="file"
-                            onChange={(e: any) => setTrcDeclarationFile(e.target.files[0])}
-                        />
-                    </div>
-                </div>
-
-                <div className="grid-4 mt-20">
-                    <div className="form-group">
-                        <label>Country of Tax Residence</label>
-
-                        <input
-                            type="text"
-                            name="countryOfTaxResidence"
-                            value={formData.countryOfTaxResidence}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Validity Start Date</label>
-
-                        <input
-                            type="date"
-                            name="trcStartDate"
-                            value={formData.trcStartDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Validity End Date</label>
-
-                        <input
-                            type="date"
-                            name="trcEndDate"
-                            value={formData.trcEndDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* FORM 10F */}
-            <div className="section">
-                <h3>Form 10F</h3>
-
-                <div className="grid-5">
-                    <div className="form-group">
-                        <label>Document Available</label>
-
-                        <select
-                            name="form10FDocumentAvailable"
-                            value={formData.form10FDocumentAvailable}
-                            onChange={handleChange}
-                        >
-                            <option>Yes</option>
-                            <option>No</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Document Number</label>
-
-                        <input
-                            type="text"
-                            name="form10FDocumentNumber"
-                            value={formData.form10FDocumentNumber}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Document Date</label>
-
-                        <input
-                            type="date"
-                            name="form10FDocumentDate"
-                            value={formData.form10FDocumentDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Acknowledgment Number</label>
-
-                        <input
-                            type="text"
-                            name="acknowledgmentNumber"
-                            value={formData.acknowledgmentNumber}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Upload Document</label>
-                        <input
-                            type="file"
-                            onChange={(e: any) => setForm10FFile(e.target.files[0])}
-                        />
-                    </div>
-                </div>
-
-                <div className="grid-4 mt-20">
-                    <div className="form-group">
-                        <label>Validity Start Date</label>
-
-                        <input
-                            type="date"
-                            name="form10FStartDate"
-                            value={formData.form10FStartDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Validity End Date</label>
-
-                        <input
-                            type="date"
-                            name="form10FEndDate"
-                            value={formData.form10FEndDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* ELIGIBLE AMOUNT */}
-            <div className="section">
-                <h3>Threshold Details</h3>
-
-                <div className="grid-3">
-                    <div className="form-group">
-                        <label>Eligible Amount</label>
-
-                        <input
-                            type="number"
-                            name="eligibleAmount"
-                            value={formData.eligibleAmount}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Approved / Paid Amount</label>
-
-                        <input
-                            type="number"
-                            name="approvedAmount"
-                            value={formData.approvedAmount}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Balance Amount</label>
-
-                        <input
-                            type="number"
-                            name="balanceAmount"
-                            value={formData.balanceAmount}
-                            onChange={handleChange}
-                        />
-                    </div>
-                </div>
-
-                <div className="grid-3 mt-20">
-                    <div className="form-group">
-                        <label>From Date</label>
-
-                        <input
-                            type="date"
-                            name="fromDate"
-                            value={formData.fromDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>To Date</label>
-
-                        <input
-                            type="date"
-                            name="toDate"
-                            value={formData.toDate}
-                            onChange={handleChange}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* DOCUMENTS */}
-            <div className="section">
-                <h3>Compliance & Supporting Documents</h3>
-
-                <div className="grid-2">
-                    <div className="form-group">
-                        <label>Vendor Invoice / Proforma Invoice</label>
-                        <input
-                            type="file"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
-                            onChange={(e: any) => {
-                                if (validateFile(e.target.files[0])) {
-                                    setVendorInvoice(e.target.files[0]);
+                                                    <div className="col-md-3 form-group">
+                                                        <label>Postal Code</label>
+                                                        <input
+                                                            value={vendorInfo.Pincode || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </>)
                                 }
-                            }}
-                        />
+                                {
+                                    vendorInfo && (
+                                        <>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Contact Information</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className="row mb-20">
 
-                    </div>
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Contact Person</label>
+                                                        <input
+                                                            value={vendorInfo.ContactPersonName || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                    <div className="form-group">
-                        <label>TRC</label>
-                        <input
-                            type="file"
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
-                            onChange={(e: any) => setTrcFile(e.target.files[0])}
-                        />
-                    </div>
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Email</label>
+                                                        <input
+                                                            value={vendorInfo.EmailId || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                    <div className="form-group">
-                        <label>Bank Confirmation / Cancelled Cheque</label>
-                        <input
-                            type="file"
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
-                            onChange={(e: any) => setBankFile(e.target.files[0])}
-                        />
-                    </div>
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Phone Number</label>
+                                                        <input
+                                                            value={vendorInfo.PhoneNumber || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                    <div className="form-group">
-                        <label>KYC Documents</label>
-                        <input
-                            type="file"
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
-                            onChange={(e: any) => setKycFile(e.target.files[0])}
-                        />
-                    </div>
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Alternate Contact</label>
+                                                        <input
+                                                            value={vendorInfo.AlternateContact || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
 
-                    <div className="form-group">
-                        <label>Other Documents</label>
-                        <input
-                            type="file"
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
-                            onChange={(e: any) => {
-                                if (validateFile(e.target.files[0])) {
-                                    setOtherFile(e.target.files[0]);
+                                                </div>
+                                            </div>
+                                        </>
+                                    )
                                 }
-                            }}
-                        />
+                                {
+                                    vendorInfo && (
+                                        <>
+                                            <div className="heading1" style={{ marginTop: "10px" }}>
+                                                <label>Banking Details</label>
+                                            </div>
+                                            <div className='main-formcontainer'>
+                                                <div className="row mb-20">
+
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Beneficiary Name</label>
+                                                        <input
+                                                            value={vendorInfo.BeneficiaryName || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Bank Name</label>
+                                                        <input
+                                                            value={vendorInfo.BankName || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Bank Address</label>
+                                                        <input
+                                                            value={vendorInfo.BankAddress || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Account Number / IBAN</label>
+                                                        <input
+                                                            value={vendorInfo.AccountNumberIBAN || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+                                                    <div className="col-md-3  form-group">
+                                                        <label>SWIFT / BIC</label>
+                                                        <input
+                                                            value={vendorInfo.SWIFTBICCode || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-3  form-group">
+                                                        <label>Routing Number / ABA</label>
+                                                        <input
+                                                            value={vendorInfo.RoutingNumberABA || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+                                                    <div className="col-md-3  form-group">
+                                                        <label>IFSC Code</label>
+                                                        <input
+                                                            value={vendorInfo.IFSCCode || ""}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+
+                                                    <div className="col-md-3">
+                                                        <label className='font'>Intermediary Bank</label>
+                                                        <input
+                                                            className="form-control"
+                                                            value={vendorInfo.IntermediaryBank}
+                                                            // onChange={(e) => setIntermediaryBank(e.target.value)}
+                                                            disabled
+                                                        />
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </>
+                                    )
+                                }
+                                <div className='main-formcontainer' style={{ marginTop: "10px" }}>
+                                    <div className="row mb-20">
+                                        {/* <div className="col-md-3  form-group">
+                                            <label>Nature of Payment</label>
+
+                                            <select
+                                                name="natureOfPayment"
+                                                value={formData.natureOfPayment}
+                                                onChange={handleChange}
+                                            >
+                                                <option value="">Select</option>
+
+                                                {
+                                                    natureOfPaymentOptions.map((item: any) => (
+                                                        <option key={item.Id} value={item.Id}>
+                                                            {item.Title}
+                                                        </option>
+                                                    ))
+                                                }
+                                            </select>
+                                        </div> */}
+
+                                        <div className="col-md-3  form-group">
+                                            <label>
+                                                Whether tax document is available
+                                                <span className="red-text">
+                                                    {" "}
+                                                    (If No, withholding tax applicable)
+                                                </span>
+                                            </label>
+
+                                            <select
+                                                name="taxDocumentAvailable"
+                                                value={formData.taxDocumentAvailable}
+                                                onChange={handleChange}
+                                            >
+                                                <option>Yes</option>
+                                                <option>No</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Permanent Establishment Declaration</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Available <span style={{ color: "red" }}>*</span></label>
+
+                                            <select
+                                                name="peDocumentAvailable"
+                                                value={formData.peDocumentAvailable}
+                                                onChange={handleChange}
+                                            >
+                                                <option>Yes</option>
+                                                <option>No</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Number <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="text"
+                                                name="peDocumentNumber"
+                                                value={formData.peDocumentNumber}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="peDocumentDate"
+                                                value={formData.peDocumentDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Upload Document <span style={{ color: "red" }}>*</span></label>
+                                            <input
+                                                type="file"
+                                                onChange={(e: any) => setPeFile(e.target.files[0])}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3  form-group">
+                                            <div style={{ display: "flex", gap: "5px", alignItems: "center", justifyContent: "start" }}>
+                                                <input type="checkbox" style={{ width: "15px", height: "15px" }} />
+                                                <label>SEP Clause</label>
+                                            </div>
+                                        </div>
+                                        <div className="col-md-3  form-group">
+                                            <label>Validity Start Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="peStartDate"
+                                                value={formData.peStartDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                        <div className="col-md-3  form-group">
+                                            <label>Validity End Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="peEndDate"
+                                                value={formData.peEndDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Tax Residency Certificate</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Available <span style={{ color: "red" }}>*</span></label>
+
+                                            <select
+                                                name="trcDocumentAvailable"
+                                                value={formData.trcDocumentAvailable}
+                                                onChange={handleChange}
+                                            >
+                                                <option>Yes</option>
+                                                <option>No</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Number <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="text"
+                                                name="trcDocumentNumber"
+                                                value={formData.trcDocumentNumber}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="trcDocumentDate"
+                                                value={formData.trcDocumentDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Tax Identification Number <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="text"
+                                                name="taxIdentificationNumber"
+                                                value={formData.taxIdentificationNumber}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Upload Document <span style={{ color: "red" }}>*</span></label>
+                                            <input
+                                                type="file"
+                                                onChange={(e: any) => setTrcDeclarationFile(e.target.files[0])}
+                                            />
+                                        </div>
+
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Country of Tax Residence <span style={{ color: "red" }}>*</span></label>
+
+                                            <select
+                                                className="form-control"
+                                                value={countryOfTaxResidence}
+                                                onChange={(e) => setCountryOfTaxResidence(e.target.value)}
+                                            >
+                                                <option value="">Select Country</option>
+
+                                                {countries.map((x: any) => (
+                                                    <option
+                                                        key={x.Country}
+                                                        value={x.Country}
+                                                    >
+                                                        {x.Country}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Validity Start Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="trcStartDate"
+                                                value={formData.trcStartDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Validity End Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="trcEndDate"
+                                                value={formData.trcEndDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Form 10F</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Available <span style={{ color: "red" }}>*</span></label>
+
+                                            <select
+                                                name="form10FDocumentAvailable"
+                                                value={formData.form10FDocumentAvailable}
+                                                onChange={handleChange}
+                                            >
+                                                <option>Yes</option>
+                                                <option>No</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Number <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="text"
+                                                name="form10FDocumentNumber"
+                                                value={formData.form10FDocumentNumber}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Document Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="form10FDocumentDate"
+                                                value={formData.form10FDocumentDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Acknowledgment Number <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="text"
+                                                name="acknowledgmentNumber"
+                                                value={formData.acknowledgmentNumber}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Upload Document <span style={{ color: "red" }}>*</span></label>
+                                            <input
+                                                type="file"
+                                                onChange={(e: any) => setForm10FFile(e.target.files[0])}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Validity Start Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="form10FStartDate"
+                                                value={formData.form10FStartDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Validity End Date <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="date"
+                                                name="form10FEndDate"
+                                                value={formData.form10FEndDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Threshold Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3  form-group">
+                                            <label>Eligible Amount</label>
+
+                                            <input
+                                                type="number"
+                                                name="eligibleAmount"
+                                                value={formData.eligibleAmount}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Approved / Paid Amount</label>
+
+                                            <input
+                                                type="number"
+                                                name="approvedAmount"
+                                                value={formData.approvedAmount}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Balance Amount</label>
+
+                                            <input
+                                                type="number"
+                                                name="balanceAmount"
+                                                value={formData.balanceAmount}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>From Date</label>
+
+                                            <input
+                                                type="date"
+                                                name="fromDate"
+                                                value={formData.fromDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>To Date</label>
+
+                                            <input
+                                                type="date"
+                                                name="toDate"
+                                                value={formData.toDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Compliance & Supporting Documents</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-4  form-group">
+                                            <label>Vendor Invoice / Proforma Invoice</label>
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                                                onChange={(e: any) => {
+                                                    if (validateFile(e.target.files[0])) {
+                                                        setVendorInvoice(e.target.files[0]);
+                                                    }
+                                                }}
+                                            />
+
+                                        </div>
+
+                                        <div className="col-md-4  form-group">
+                                            <label>TRC</label>
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                                                onChange={(e: any) => setTrcFile(e.target.files[0])}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-4  form-group">
+                                            <label>Bank Confirmation / Cancelled Cheque</label>
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                                                onChange={(e: any) => setBankFile(e.target.files[0])}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-4 form-group">
+                                            <label>KYC Documents</label>
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                                                onChange={(e: any) => setKycFile(e.target.files[0])}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-4  form-group">
+                                            <label>Other Documents</label>
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                                                onChange={(e: any) => {
+                                                    if (validateFile(e.target.files[0])) {
+                                                        setOtherFile(e.target.files[0]);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="mandatory-text">
+                                        ** Mandatory taxation document upload
+                                    </p>
+                                </div>
+                                <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
+                                    <a className="Submit-btn" onClick={handleSubmit}> Submit </a>
+                                    <a className="Exit-btn" onClick={history.goBack}>Exit</a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <p className="mandatory-text">
-                    ** Mandatory taxation document upload
-                </p>
             </div>
 
-            {/* BUTTONS */}
-            <div className="button-group">
-                <button className="submit-btn" onClick={handleSubmit}>Submit</button>
-                <button className="exit-btn">Exit</button>
-            </div>
-        </div>
+        </>
     );
 };
 

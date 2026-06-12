@@ -1,7 +1,8 @@
 import * as React from "react";
 import { IForexModuleProps } from "../IForexModuleProps";
 import SPCRUDOPS from "../../service/BAL/spcrud";
-import { useHistory } from "react-router-dom";
+import { useHistory, Link } from "react-router-dom";
+import edit from '../../assets/Pencil.png';
 
 const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
@@ -10,6 +11,8 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
     const [vendorData, setVendorData] = React.useState<any[]>([]);
     const [searchText, setSearchText] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("");
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const recordsPerPage = 10;
     const history = useHistory();
 
     React.useEffect(() => {
@@ -50,44 +53,54 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
     const pendingRequests =
         vendorData.filter(
             (x: any) =>
-                x.Status === "Pending"
+                x.RequestStatus === "Pending"
         ).length;
 
     const approvedRequests =
         vendorData.filter(
             (x: any) =>
-                x.Status === "Approved"
+                x.RequestStatus === "Approved"
         ).length;
 
     const rejectedRequests =
         vendorData.filter(
             (x: any) =>
-                x.Status === "Rejected"
+                x.RequestStatus === "Rejected"
         ).length;
 
     const draftRequests =
         vendorData.filter(
             (x: any) =>
-                x.Status === "Draft"
+                x.RequestStatus === "Draft"
         ).length;
 
-   const filteredData = vendorData
-    .filter((x: any) => {
+    const filteredData = vendorData
+        .filter((x: any) => {
 
-        const vendorMatch =
-            !searchText ||
-            x.VendorName?.toLowerCase().includes(
-                searchText.toLowerCase()
-            );
+            const vendorMatch =
+                !searchText ||
+                x.VendorName?.toLowerCase().includes(
+                    searchText.toLowerCase()
+                );
 
-        const statusMatch =
-            !statusFilter ||
-            x.Status === statusFilter;
+            const statusMatch =
+                !statusFilter ||
+                x.RequestStatus === statusFilter;
 
-        return vendorMatch && statusMatch;
-    })
-    .sort((a: any, b: any) => b.Id - a.Id);
+            return vendorMatch && statusMatch;
+        })
+        .sort((a: any, b: any) => b.Id - a.Id);
 
+    const indexOfLastRecord = currentPage * recordsPerPage;
+
+    const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+
+    const currentRecords = filteredData.slice(
+        indexOfFirstRecord,
+        indexOfLastRecord
+    );
+
+    const totalPages = Math.ceil(filteredData.length / recordsPerPage);
     // const openRequest = (id: number) => {
 
     //     window.location.href =
@@ -103,7 +116,10 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
     };
 
     return (
-        <div className="container-fluid mt-3">
+
+
+        <>
+
             {/* 
             <div className="row mb-3">
 
@@ -158,7 +174,56 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
             </div> */}
 
-            <div className="d-flex justify-content-between align-items-center mb-3">
+
+
+            <div className="header">
+                <h2> Vendor Dashboard </h2>
+            </div>
+            <div className="mainsecondapprove">
+                <div className="mainsecondsmall">
+                    <div>
+                        <input
+                            type="text"
+                            className="form-control"
+                            style={{ width: "250px;" }}
+                            placeholder="Search Vendor Name..."
+                            value={searchText}
+                            onChange={(e) =>
+                                setSearchText(e.target.value)
+                            }
+                        />
+
+                    </div>
+                    <div>
+                        <select className="form-controltext" style={{ width: "250px" }}
+                            value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                            <option value=""> All Status </option>
+                            <option value="Draft"> Draft </option>
+                            <option value="Pending">
+                                Pending
+                            </option>
+
+                            <option value="Approved">
+                                Approved
+                            </option>
+
+                            <option value="Rejected">
+                                Rejected
+                            </option>
+
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <Link to="/CreationForm" className="create-button"> + Vendor Creation Request </Link>
+                </div>
+            </div>
+
+
+
+
+
+            {/* <div className="d-flex justify-content-between align-items-center mb-3">
 
                 <h3 className="mb-0">
                     Vendor Dashboard
@@ -173,15 +238,15 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                     Vendor Creation Request
                 </button>
 
-            </div>
+            </div> */}
 
-            <div className="card shadow-sm mb-3">
+            {/* <div className="card shadow-sm mb-3"> */}
 
-                <div className="card-header bg-light">
+            {/* <div className="card-header bg-light">
                     <strong>Search Vendor Requests</strong>
-                </div>
+                </div> */}
 
-                <div className="card-body">
+            {/* <div className="card-body">
 
                     <div className="row g-3">
 
@@ -234,13 +299,14 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
                     </div>
 
-                </div>
+                </div> */}
 
-            </div>
+            {/* </div> */}
 
             <div className="card">
 
-                <div className="card-header bg-primary text-white d-flex justify-content-between">
+
+                {/* <div className="card-header bg-primary text-white d-flex justify-content-between">
 
                     <span>Vendor Requests</span>
 
@@ -248,13 +314,13 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                         Total Records : {filteredData.length}
                     </span>
 
-                </div>
+                </div> */}
 
                 <div className="card-body">
 
-                    <div className="table-responsive">
+                    <div style={{ overflowX: "auto" }}>
 
-                        <table className="table table-bordered table-striped">
+                        <table className="custom-table">
 
                             <thead>
 
@@ -266,7 +332,7 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
                                     <th>Vendor Name</th>
 
-                                    <th>Vendor Type</th>
+                                    {/* <th>Vendor Type</th> */}
 
                                     <th>Country</th>
 
@@ -297,7 +363,7 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
                                 ) : (
 
-                                    filteredData.map(
+                                    currentRecords.map(
                                         (item: any) => (
 
                                             <tr key={item.Id}>
@@ -314,9 +380,9 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                     {item.VendorName}
                                                 </td>
 
-                                                <td>
+                                                {/* <td>
                                                     {item.VendorType}
-                                                </td>
+                                                </td> */}
 
                                                 <td>
                                                     {item.Country?.Country}
@@ -332,7 +398,7 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                                     ? "badge bg-danger"
                                                                     : item.Status === "Pending"
                                                                         ? "badge bg-warning"
-                                                                        : "badge bg-secondary"
+                                                                        : "badge"
                                                         }
                                                     >
                                                         {item.RequestStatus}
@@ -353,14 +419,12 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                 </td>
 
                                                 <td>
-                                                    {(item.RequestStatus === "Approved" && item.TaxDocumentAvailable ==="No") && (
-                                                        <button
-                                                            className="btn btn-primary btn-sm me-1"
-                                                            onClick={() => openRequest(item.Id)}
-                                                        >
-                                                            <i className="bi bi-pencil-square me-1"></i>
-                                                            Edit
-                                                        </button>
+                                                    {(item.RequestStatus === "Approved" && item.TaxDocumentAvailable === "No") && (
+
+                                                    <a  onClick={() => openRequest(item.Id)}>
+                                                        <img src={edit} alt="" width={15} />
+                                                    </a>
+                                                   
                                                     )}
                                                 </td>
 
@@ -374,6 +438,37 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                             </tbody>
 
                         </table>
+                        <div className="d-flex justify-content-center mt-3">
+
+                            <button
+                                className="btn btn-secondary me-2"
+                                disabled={currentPage === 1}
+                                onClick={() =>
+                                    setCurrentPage(currentPage - 1)
+                                }
+                            >
+                                Previous
+                            </button>
+
+                            <span
+                                style={{
+                                    padding: "8px 15px"
+                                }}
+                            >
+                                Page {currentPage} of {totalPages}
+                            </span>
+
+                            <button
+                                className="btn btn-secondary ms-2"
+                                disabled={currentPage === totalPages}
+                                onClick={() =>
+                                    setCurrentPage(currentPage + 1)
+                                }
+                            >
+                                Next
+                            </button>
+
+                        </div>
 
                     </div>
 
@@ -381,7 +476,7 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
             </div>
 
-        </div>
+        </>
     );
 };
 

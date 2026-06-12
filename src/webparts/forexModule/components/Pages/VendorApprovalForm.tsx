@@ -3,6 +3,8 @@ import { IForexModuleProps } from "../IForexModuleProps";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { useParams } from "react-router-dom";
 import { useHistory } from "react-router-dom";
+import logo from "../../assets/sona-comstarlogo.png";
+import view from "../../assets/Eye.png";
 
 const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
     const history = useHistory();
@@ -26,8 +28,8 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
 
         const data = await sp.getData(
             "VendorMaster",
-            "*,AttachmentFiles",
-            "AttachmentFiles",
+            "*,Currency/Currency,Country/Country,AttachmentFiles",
+            "AttachmentFiles,Currency,Country",
             `Id eq ${Number(itemId)}`,
             { column: "Id", isAscending: false },
             1000,
@@ -54,7 +56,7 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                 RequestStatus: "Approved",
                 ApproverComments: comments,
                 CurrentApproverId: null,
-                Status:"Active"
+                Status: "Active"
             },
             props
         );
@@ -87,295 +89,421 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
     }
 
     return (
-        <div className="container-fluid mt-3">
+        <>
 
-            <h4 className="text-center text-primary mb-4">
-                Vendor Approval Form
-            </h4>
+            <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        <div className='Main-Boxpoup'>
+                            <div className="bordered">
+                                <a><img src={logo} /></a>
+                                <h1>Vendor Approval Form</h1>
+                            </div>
+                            <div className='borderedbox'>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label> Vendor Basic Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3">
+                                            <label>Oracle Vendor Code</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.VendorCode || ""}
+                                                disabled
+                                            />
+                                        </div>
 
-            {/* Vendor Basic Details */}
+                                        <div className="col-md-3">
+                                            <label>Oracle Vendor Name</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.VendorName || ""}
+                                                disabled
+                                            />
+                                        </div>
 
-            <fieldset className="border p-3 mb-3">
+                                        <div className="col-md-3">
+                                            <label>Vendor Name (Legal)</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.VendorNameLegal || ""}
+                                                disabled
+                                            />
+                                        </div>
 
-                <legend className="w-auto px-2">
-                    Vendor Basic Details
-                </legend>
+                                        <div className="col-md-3">
+                                            <label>Vendor Short Name</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.VendorShortName || ""}
+                                                disabled
+                                            />
+                                        </div>
 
-                <div className="row mb-2">
+                                    </div>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3">
+                                            <label className='font'>Currency  <span style={{ color: "red" }}>*</span></label>
+                                            <input
+                                                className="form-control"
+                                                value={item.Currency?.Currency || ""}
+                                                disabled
+                                            />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className='font'>Country  <span style={{ color: "red" }}>*</span></label>
+                                            <input
+                                                className="form-control"
+                                                value={item.Country?.Country || ""}
+                                                disabled
+                                            />
+                                        </div>
 
-                    <div className="col-md-3">
-                        <label>Oracle Vendor Code</label>
-                        <input
-                            className="form-control"
-                            value={item.VendorCode || ""}
-                            disabled
-                        />
+
+
+                                        <div className="col-md-3">
+                                            <label className='font'>State  <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="text"
+                                                className="form-controltext"
+                                                value={item.state0 || ""}
+                                                // onChange={(e) => setStateName(e.target.value)}
+                                                // placeholder="Enter State"
+                                                disabled
+                                            />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="font">City  <span style={{ color: "red" }}>*</span></label>
+
+                                            <input
+                                                type="text"
+                                                className="form-controltext"
+                                                value={item.city0 || ""}
+                                                // onChange={(e) => setCityName(e.target.value)}
+                                                // placeholder="Enter City"
+                                                disabled
+                                            />
+                                        </div>
+
+
+                                    </div>
+                                    <div className="row mb-20">
+
+
+                                        <div className="col-md-4">
+                                            <label className='font'>Postal Code  <span style={{ color: "red" }}>*</span></label>
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                value={item.Pincode || ""}
+                                                // onChange={(e) => setPostalCode(e.target.value)}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-5">
+                                            <label className='font'>Address Line 1  <span style={{ color: "red" }}>*</span></label>
+                                            <textarea
+                                                className="form-control"
+                                                rows={2}
+                                                value={item.VendorAddress || ""}
+                                                // onChange={(e) => setAddress(e.target.value)}
+                                                disabled
+                                            />
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label> Contact Information</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3">
+                                            <label>Contact Person Name</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.ContactPersonName || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>Email Id</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.EmailId || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>Phone Number</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.PhoneNumber || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>Alternate Contact</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.AlternateContact || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Banking Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+
+                                        <div className="col-md-3">
+                                            <label>Beneficiary Name</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.BeneficiaryName || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>Bank Name</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.BankName || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>Bank Address</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.BankAddress || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>Account Number / IBAN</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.AccountNumberIBAN || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                    </div>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3">
+                                            <label className='font'>SWIFT / BIC Code  <span style={{ color: "red" }}>*</span></label>
+                                            <input
+                                                className="form-control"
+                                                value={item.SWIFTBICCode}
+                                                // onChange={(e) => setSwiftCode(e.target.value)}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className='font'>Routing Number / ABA</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.RoutingNumberABA}
+                                                // onChange={(e) => setRoutingNumberABA(e.target.value)}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className='font'>IFSC Code</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.IFSCCode}
+                                                // onChange={(e) => setIfscCode(e.target.value)}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className='font'>Intermediary Bank</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.IntermediaryBank}
+                                                // onChange={(e) => setIntermediaryBank(e.target.value)}
+                                                disabled
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Tax & Regulatory Information</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+
+                                        <div className="col-md-3">
+                                            <label>Purpose Code</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.PurposeCodeRBI || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>TRC</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.TaxResidencyCertificateTRC || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>PE Declaration</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.PEDeclaration || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label>DTAA Applicable</label>
+                                            <input
+                                                className="form-control"
+                                                value={item.DTAAApplicable || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                    </div>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3">
+                                            <label className='font'>
+                                                Withholding Tax Applicable
+                                                
+                                            </label>
+                                            <input
+                                                className="form-control"
+                                                value={item.withholdingTaxApplicable}
+                                                // onChange={(e) => setIntermediaryBank(e.target.value)}
+                                                disabled
+                                            />
+
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className='font'>
+                                                Country of Tax Residence
+                                               
+                                            </label>
+                                            <input
+                                                className="form-control"
+                                                value={item.CountryOfTaxResidence}
+                                                // onChange={(e) => setIntermediaryBank(e.target.value)}
+                                                disabled
+                                            />
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Attachments</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-12">
+                                            <table className="custom-table">
+
+                                                <thead>
+                                                    <tr>
+                                                        <th>Document Type</th>
+                                                        <th>File Name</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+
+                                                    {(item.AttachmentFiles || []).map((f: any) => (
+
+                                                        <tr key={f.FileName}>
+
+                                                            <td>
+                                                                {
+                                                                    f.FileName.startsWith("VendorInvoice_")
+                                                                        ? "Vendor Invoice / Proforma Invoice"
+                                                                        : f.FileName.startsWith("TRC_")
+                                                                            ? "TRC"
+                                                                            : f.FileName.startsWith("KYC_")
+                                                                                ? "KYC Documents"
+                                                                                : f.FileName.startsWith("BankConfirmation_")
+                                                                                    ? "Bank Confirmation / Cancelled Cheque"
+                                                                                    : f.FileName.startsWith("OtherDocument_")
+                                                                                        ? "Other Documents"
+                                                                                        : "Attachment"
+                                                                }
+                                                            </td>
+
+                                                            <td>{f.FileName}</td>
+
+                                                            <td>
+                                                                <a
+                                                                    href={f.ServerRelativeUrl}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                >
+                                                                    <img src={view} width="15" />
+                                                                </a>
+                                                            </td>
+
+                                                        </tr>
+
+                                                    ))}
+
+                                                </tbody>
+
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Approver Comments</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb20">
+                                        <div className="col-md-12">
+                                            <textarea
+                                                className="form-control"
+                                                rows={4}
+                                                value={comments}
+                                                onChange={(e) =>
+                                                    setComments(e.target.value)
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
+                                    <a className="Submit-btn" onClick={approveRequest}> Approve </a>
+                                    <a className="Reject-btn" onClick={rejectRequest}>Reject</a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
-                    <div className="col-md-3">
-                        <label>Oracle Vendor Name</label>
-                        <input
-                            className="form-control"
-                            value={item.VendorName || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>Vendor Name (Legal)</label>
-                        <input
-                            className="form-control"
-                            value={item.VendorNameLegal || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>Vendor Short Name</label>
-                        <input
-                            className="form-control"
-                            value={item.VendorShortName || ""}
-                            disabled
-                        />
-                    </div>
-
                 </div>
-
-            </fieldset>
-
-            {/* Contact Information */}
-
-            <fieldset className="border p-3 mb-3">
-
-                <legend className="w-auto px-2">
-                    Contact Information
-                </legend>
-
-                <div className="row">
-
-                    <div className="col-md-3">
-                        <label>Contact Person Name</label>
-                        <input
-                            className="form-control"
-                            value={item.ContactPersonName || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>Email Id</label>
-                        <input
-                            className="form-control"
-                            value={item.EmailId || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>Phone Number</label>
-                        <input
-                            className="form-control"
-                            value={item.PhoneNumber || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>Alternate Contact</label>
-                        <input
-                            className="form-control"
-                            value={item.AlternateContact || ""}
-                            disabled
-                        />
-                    </div>
-
-                </div>
-
-            </fieldset>
-
-            {/* Banking Details */}
-
-            <fieldset className="border p-3 mb-3">
-
-                <legend className="w-auto px-2">
-                    Banking Details
-                </legend>
-
-                <div className="row">
-
-                    <div className="col-md-3">
-                        <label>Beneficiary Name</label>
-                        <input
-                            className="form-control"
-                            value={item.BeneficiaryName || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>Bank Name</label>
-                        <input
-                            className="form-control"
-                            value={item.BankName || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>Bank Address</label>
-                        <input
-                            className="form-control"
-                            value={item.BankAddress || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>Account Number / IBAN</label>
-                        <input
-                            className="form-control"
-                            value={item.AccountNumberIBAN || ""}
-                            disabled
-                        />
-                    </div>
-
-                </div>
-
-            </fieldset>
-
-            {/* Tax Information */}
-
-            <fieldset className="border p-3 mb-3">
-
-                <legend className="w-auto px-2">
-                    Tax Information
-                </legend>
-
-                <div className="row">
-
-                    <div className="col-md-3">
-                        <label>Purpose Code</label>
-                        <input
-                            className="form-control"
-                            value={item.PurposeCodeRBI || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>TRC</label>
-                        <input
-                            className="form-control"
-                            value={item.TaxResidencyCertificateTRC || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>PE Declaration</label>
-                        <input
-                            className="form-control"
-                            value={item.PEDeclaration || ""}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label>DTAA Applicable</label>
-                        <input
-                            className="form-control"
-                            value={item.DTAAApplicable || ""}
-                            disabled
-                        />
-                    </div>
-
-                </div>
-
-            </fieldset>
-
-            {/* Attachments */}
-
-            <fieldset className="border p-3 mb-3">
-
-                <legend className="w-auto px-2">
-                    Attachments
-                </legend>
-
-                <table className="table table-bordered">
-
-                    <thead>
-                        <tr>
-                            <th>File Name</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        {(item.AttachmentFiles || []).map((f: any) => (
-
-                            <tr key={f.FileName}>
-
-                                <td>{f.FileName}</td>
-
-                                <td>
-                                    <a
-                                        href={f.ServerRelativeUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        View
-                                    </a>
-                                </td>
-
-                            </tr>
-
-                        ))}
-
-                    </tbody>
-
-                </table>
-
-            </fieldset>
-
-            {/* Comments */}
-
-            <fieldset className="border p-3 mb-3">
-
-                <legend className="w-auto px-2">
-                    Approver Comments
-                </legend>
-
-                <textarea
-                    className="form-control"
-                    rows={4}
-                    value={comments}
-                    onChange={(e) =>
-                        setComments(e.target.value)
-                    }
-                />
-
-            </fieldset>
-
-            <div className="text-center">
-
-                <button
-                    className="btn btn-success me-2"
-                    onClick={approveRequest}
-                >
-                    Approve
-                </button>
-
-                <button
-                    className="btn btn-danger"
-                    onClick={rejectRequest}
-                >
-                    Reject
-                </button>
-
-            </div>
-
-        </div>
+            </div >
+        </>
     );
 };
 

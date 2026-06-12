@@ -47,7 +47,7 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
     <div className="container-fluid" style={{ display: 'flex', width: '100%' }}>
       {!hideSidebar && <Sidebar {...props} />}
       <div className="main" style={{
-        width: hideSidebar ? "100%" : "calc(100% - 250px)",
+        width: hideSidebar ? "100%" : "calc(100% - 200px)",
         transition: "width 0.3s ease"
       }}>
         <Switch>

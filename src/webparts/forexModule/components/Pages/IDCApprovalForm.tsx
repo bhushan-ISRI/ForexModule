@@ -6,6 +6,10 @@ import { sp } from "@pnp/sp/presets/all";
 import { useHistory, useParams } from "react-router-dom";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 // import { useHistory } from "react-router-dom";
+
+import logo from "../../assets/sona-comstarlogo.png";
+import view from "../../assets/Eye.png";
+
 const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
     const [vendorData, setVendorData] = useState<any>({});
@@ -23,7 +27,37 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
         loadVendorData();
 
     }, []);
+    const [formData, setFormData] = useState({
+        natureOfPayment: "",
+        taxDocumentAvailable: "Yes",
 
+        peDocumentAvailable: "Yes",
+        peDocumentNumber: "",
+        peDocumentDate: "",
+        peStartDate: "",
+        peEndDate: "",
+
+        trcDocumentAvailable: "Yes",
+        trcDocumentNumber: "",
+        trcDocumentDate: "",
+        taxIdentificationNumber: "",
+        trcStartDate: "",
+        trcEndDate: "",
+        countryOfTaxResidence: "",
+
+        form10FDocumentAvailable: "Yes",
+        form10FDocumentNumber: "",
+        form10FDocumentDate: "",
+        acknowledgmentNumber: "",
+        form10FStartDate: "",
+        form10FEndDate: "",
+
+        eligibleAmount: "",
+        approvedAmount: "",
+        balanceAmount: "",
+        fromDate: "",
+        toDate: "",
+    });
     const loadVendorData = async () => {
 
         try {
@@ -73,15 +107,15 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
             console.log("Declarations", declarations);
 
             const pe = declarations.find(
-                (x: any) => x.DeclarationType === "PE Declaration"
+                (x: any) => x.DeclarationType === "Permanent Establishment"
             );
 
             const trc = declarations.find(
-                (x: any) => x.DeclarationType === "TRC"
+                (x: any) => x.DeclarationType === "TAX Residency Certificate"
             );
 
             const form10f = declarations.find(
-                (x: any) => x.DeclarationType === "Form10F"
+                (x: any) => x.DeclarationType === "Form 10 F"
             );
 
             setPeData(pe);
@@ -115,9 +149,13 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                 .update({
 
                     RequestStatus: "Approved",
-
                     ApproverComments: remarks,
-
+                    EligibleAmountWithoutWHT: formData.eligibleAmount,
+                    ApprovedAmountPaidAmount: formData.approvedAmount,
+                    BalanceEligibleAmount: formData.balanceAmount,
+                    FromDate: new Date(formData.fromDate),
+                    ToDate: new Date(formData.toDate),
+                    ApprovedByIDTChecker: "Yes"
                     // ApprovedDate: new Date()
                 });
 
@@ -160,106 +198,151 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
         }
     };
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
 
+        const updatedForm = {
+            ...formData,
+            [e.target.name]: e.target.value
+        };
+
+        const eligible = Number(updatedForm.eligibleAmount || 0);
+
+        const approved = Number(updatedForm.approvedAmount || 0);
+
+        const balanceAmount = eligible - approved;
+
+        updatedForm.balanceAmount = String(balanceAmount);
+
+        setFormData(updatedForm);
+
+        if (balanceAmount < 0) {
+            alert(
+                "WHT would be applicable on this transaction as threshold limit has exceeded."
+            );
+        }
+    };
     if (loading) {
 
         return <div>Loading...</div>;
     }
+    const formatDate = (date: any) => {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString("en-GB");
+};
 
     return (
 
-        <div className="vendor-approval-container">
+        <>
 
-            <h2 className="main-title">
-                Vendor Checker Form
-            </h2>
+            <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        <div className='Main-Boxpoup'>
+                            <div className="bordered">
+                                <a><img src={logo} /></a>
+                                <h1>Vendor Checker Form</h1>
+                            </div>
+                            <div className='borderedbox'>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label> Vendor Basic Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Oracle Vendor Code</label>
+                                            <span>
+                                                {vendorData?.VendorCode}
+                                            </span>
+                                        </div>
 
-            {/* ========================= */}
-            {/* BASIC DETAILS */}
-            {/* ========================= */}
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Oracle Vendor Name</label>
+                                            <span>
+                                                {vendorData?.VendorName}
+                                            </span>
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Vendor Name (Legal)
+                                            </label>
 
-            <div className="section">
+                                            <span>
+                                                {vendorData?.VendorNameLegal}
+                                            </span>
+                                        </div>
 
-                <h3>
-                    Vendor Basic Details
-                </h3>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Vendor Short Name
+                                            </label>
 
-                <div className="grid-4">
-                    <div className="field">
-                        <label>Oracle Vendor Code</label>
-                        <span>
-                            {vendorData?.VendorCode}
-                        </span>
-                    </div>
+                                            <span>
+                                                {vendorData?.VendorShortName}
+                                            </span>
+                                        </div>
 
-                    <div className="field">
-                        <label>Oracle Vendor Name</label>
-                        <span>
-                            {vendorData?.VendorName}
-                        </span>
-                    </div>
-                    <div className="field">
-                        <label>
-                            Vendor Name (Legal)
-                        </label>
+                                        {/* <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Vendor Type
+                                            </label>
 
-                        <span>
-                            {vendorData?.VendorNameLegal}
-                        </span>
-                    </div>
+                                            <span>
+                                                {vendorData?.VendorType}
+                                            </span>
+                                        </div> */}
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Currency
+                                            </label>
 
-                    <div className="field">
-                        <label>
-                            Vendor Short Name
-                        </label>
+                                            <span>
+                                                {vendorData?.Currency?.Currency}
+                                            </span>
+                                        </div>
 
-                        <span>
-                            {vendorData?.VendorShortName}
-                        </span>
-                    </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Country
+                                            </label>
 
-                    <div className="field">
-                        <label>
-                            Vendor Type
-                        </label>
+                                            <span>
+                                                {vendorData?.Country?.Country}
+                                            </span>
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                State
+                                            </label>
 
-                        <span>
-                            {vendorData?.VendorType}
-                        </span>
-                    </div>
+                                            <span>
+                                                {vendorData?.state0}
+                                            </span>
+                                        </div>
 
-                    <div className="field">
-                        <label>
-                            Country
-                        </label>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                City
+                                            </label>
 
-                        <span>
-                            {vendorData?.Country?.Country}
-                        </span>
-                    </div>
+                                            <span>
+                                                {vendorData?.city0}
+                                            </span>
+                                        </div>
 
-                    <div className="field">
-                        <label>
-                            Currency
-                        </label>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Address Line 1
+                                            </label>
 
-                        <span>
-                            {vendorData?.Currency?.Currency}
-                        </span>
-                    </div>
+                                            <span>
+                                                {vendorData?.VendorAddress}
+                                            </span>
+                                        </div>
 
-                    <div className="field">
-                        <label>
-                            Address Line 1
-                        </label>
-
-                        <span>
-                            {vendorData?.VendorAddress}
-                        </span>
-                    </div>
-
-                    {/* <div className="field">
-                        <label>
+                                        {/* <div className="col-md-3">
+                        <label className= "font fontblock">
                             Address Line 2
                         </label>
 
@@ -268,190 +351,157 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </span>
                     </div> */}
 
-                    <div className="field">
-                        <label>
-                            City
-                        </label>
 
-                        <span>
-                            {vendorData?.City?.City}
-                        </span>
-                    </div>
 
-                    <div className="field">
-                        <label>
-                            State
-                        </label>
 
-                        <span>
-                            {vendorData?.State?.Title}
-                        </span>
-                    </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Postal Code
+                                            </label>
 
-                    <div className="field">
-                        <label>
-                            Postal Code
-                        </label>
+                                            <span>
+                                                {vendorData?.Pincode}
+                                            </span>
+                                        </div>
 
-                        <span>
-                            {vendorData?.Pincode}
-                        </span>
-                    </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label> Contact Information</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
 
-                </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Contact Person Name
+                                            </label>
 
-            </div>
+                                            <span>
+                                                {vendorData?.ContactPersonName}
+                                            </span>
+                                        </div>
 
-            {/* ========================= */}
-            {/* CONTACT DETAILS */}
-            {/* ========================= */}
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Email Id
+                                            </label>
 
-            <div className="section">
+                                            <span>
+                                                {vendorData?.EmailId}
+                                            </span>
+                                        </div>
 
-                <h3>
-                    Contact Information
-                </h3>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Phone Number
+                                            </label>
 
-                <div className="grid-4">
+                                            <span>
+                                                {vendorData?.PhoneNumber}
+                                            </span>
+                                        </div>
 
-                    <div className="field">
-                        <label>
-                            Contact Person Name
-                        </label>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Alternate Contact
+                                            </label>
 
-                        <span>
-                            {vendorData?.ContactPersonName}
-                        </span>
-                    </div>
+                                            <span>
+                                                {vendorData?.AlternateContact}
+                                            </span>
+                                        </div>
 
-                    <div className="field">
-                        <label>
-                            Email Id
-                        </label>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Banking Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
 
-                        <span>
-                            {vendorData?.EmailId}
-                        </span>
-                    </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Beneficiary Name
+                                            </label>
 
-                    <div className="field">
-                        <label>
-                            Phone Number
-                        </label>
+                                            <span>
+                                                {vendorData?.BeneficiaryName}
+                                            </span>
+                                        </div>
 
-                        <span>
-                            {vendorData?.PhoneNumber}
-                        </span>
-                    </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Bank Name
+                                            </label>
 
-                    <div className="field">
-                        <label>
-                            Alternate Contact
-                        </label>
+                                            <span>
+                                                {vendorData?.BankName}
+                                            </span>
+                                        </div>
 
-                        <span>
-                            {vendorData?.AlternateContact}
-                        </span>
-                    </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Bank Address
+                                            </label>
 
-                </div>
+                                            <span>
+                                                {vendorData?.BankAddress}
+                                            </span>
+                                        </div>
 
-            </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Account Number / IBAN
+                                            </label>
 
-            {/* ========================= */}
-            {/* BANK DETAILS */}
-            {/* ========================= */}
+                                            <span>
+                                                {vendorData?.AccountNumberIBAN}
+                                            </span>
+                                        </div>
 
-            <div className="section">
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                SWIFT / BIC Code
+                                            </label>
 
-                <h3>
-                    Banking Details
-                </h3>
+                                            <span>
+                                                {vendorData?.SWIFTBICCode}
+                                            </span>
+                                        </div>
 
-                <div className="grid-4">
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Routing Number / ABA
+                                            </label>
 
-                    <div className="field">
-                        <label>
-                            Beneficiary Name
-                        </label>
+                                            <span>
+                                                {vendorData?.RoutingNumberABA}
+                                            </span>
+                                        </div>
 
-                        <span>
-                            {vendorData?.BeneficiaryName}
-                        </span>
-                    </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                IFSC Code
+                                            </label>
 
-                    <div className="field">
-                        <label>
-                            Bank Name
-                        </label>
+                                            <span>
+                                                {vendorData?.IFSCCode}
+                                            </span>
+                                        </div>
 
-                        <span>
-                            {vendorData?.BankName}
-                        </span>
-                    </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Intermediary Bank
+                                            </label>
 
-                    <div className="field">
-                        <label>
-                            Bank Address
-                        </label>
+                                            <span>
+                                                {vendorData?.IntermediaryBank}
+                                            </span>
+                                        </div>
 
-                        <span>
-                            {vendorData?.BankAddress}
-                        </span>
-                    </div>
-
-                    <div className="field">
-                        <label>
-                            Account Number / IBAN
-                        </label>
-
-                        <span>
-                            {vendorData?.AccountNumberIBAN}
-                        </span>
-                    </div>
-
-                    <div className="field">
-                        <label>
-                            SWIFT / BIC Code
-                        </label>
-
-                        <span>
-                            {vendorData?.SWIFTBICCode}
-                        </span>
-                    </div>
-
-                    <div className="field">
-                        <label>
-                            Routing Number / ABA
-                        </label>
-
-                        <span>
-                            {vendorData?.RoutingNumberABA}
-                        </span>
-                    </div>
-
-                    <div className="field">
-                        <label>
-                            IFSC Code
-                        </label>
-
-                        <span>
-                            {vendorData?.IFSCCode}
-                        </span>
-                    </div>
-
-                    <div className="field">
-                        <label>
-                            Intermediary Bank
-                        </label>
-
-                        <span>
-                            {vendorData?.IntermediaryBank}
-                        </span>
-                    </div>
-
-                    {/* <div className="field">
-                        <label>
+                                        {/* <div className="col-md-3">
+                        <label className= "font fontblock">
                             Intermediary SWIFT Code
                         </label>
 
@@ -460,73 +510,438 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                         </span>
                     </div> */}
 
-                </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Tax & Regulatory Information</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
 
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Nature Of Payment
+                                            </label>
+
+                                            <span>
+                                                {
+                                                    vendorData?.NatureOfPayment?.Title
+                                                }
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Tax Document Available
+                                            </label>
+
+                                            <span>
+                                                {
+                                                    vendorData?.TaxDocumentAvailable
+                                                }
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                DTAA Applicable
+                                            </label>
+
+                                            <span>
+                                                {
+                                                    vendorData?.DTAAApplicable
+                                                }
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Country Of Tax Residence
+                                            </label>
+
+                                            <span>
+                                                {
+                                                    vendorData?.CountryOfTaxResidence
+                                                }
+                                            </span>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Permanent Establishment Declaration</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Document Available</label>
+                                            <span>{peData?.DocumentAvailable}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Document Number</label>
+                                            <span>{peData?.DocumentNumber}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Document Date</label>
+                                            <span>
+                                                {formatDate(peData?.DocumentDate)}
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">SEP Clause</label>
+                                            <span>{peData?.SEPClause ? "Yes" : "No"}</span>
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Uploaded Document</label>
+
+                                            {peData?.AttachmentFiles?.length > 0 ? (
+                                                peData.AttachmentFiles.map((file: any, index: number) => (
+                                                    <div key={index}>
+                                                        <a
+                                                            href={file.ServerRelativeUrl}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                        >
+                                                            {file.FileName}
+                                                        </a>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span>No Document Uploaded</span>
+                                            )}
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Validity Start Date</label>
+                                            <span>
+                                                {peData?.ValidityStartDate
+                                                    ? new Date(peData.ValidityStartDate).toLocaleDateString()
+                                                    : ""}
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Validity End Date</label>
+                                            <span>
+                                                {peData?.ValidityEndDate
+                                                    ? new Date(peData.ValidityEndDate).toLocaleDateString()
+                                                    : ""}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Tax Residency Certificate</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Document Number</label>
+                                            <span>{trcData?.DocumentNumber}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Country Of Tax Residence</label>
+                                            <span>{trcData?.CountryOfTaxResidence}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">TIN</label>
+                                            <span>{trcData?.TaxIdentificationNumber}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Document Available</label>
+                                            <span>{trcData?.DocumentAvailable}</span>
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Tax Identification Number</label>
+                                            <span>{trcData?.TaxIdentificationNumber}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Validity Start Date</label>
+                                            <span>
+                                                {trcData?.ValidityStartDate
+                                                    ? new Date(trcData.ValidityStartDate).toLocaleDateString()
+                                                    : ""}
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Validity End Date</label>
+                                            <span>
+                                                {trcData?.ValidityEndDate
+                                                    ? new Date(trcData.ValidityEndDate).toLocaleDateString()
+                                                    : ""}
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Uploaded Document</label>
+
+                                            {trcData?.AttachmentFiles?.length > 0 ? (
+                                                trcData.AttachmentFiles.map((file: any, index: number) => (
+                                                    <div key={index}>
+                                                        <a
+                                                            href={file.ServerRelativeUrl}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                        >
+                                                            {file.FileName}
+                                                        </a>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span>No Document Uploaded</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Form 10F</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Document Number</label>
+                                            <span>{form10FData?.DocumentNumber}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Acknowledgment Number</label>
+                                            <span>{form10FData?.AcknowledgmentNumber}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Document Available</label>
+                                            <span>{form10FData?.DocumentAvailable}</span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Document Date</label>
+                                            <span>
+                                                {form10FData?.DocumentDate
+                                                    ? new Date(form10FData.DocumentDate).toLocaleDateString()
+                                                    : ""}
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Validity Start Date</label>
+                                            <span>
+                                                {form10FData?.ValidityStartDate
+                                                    ? new Date(form10FData.ValidityStartDate).toLocaleDateString()
+                                                    : ""}
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Validity End Date</label>
+                                            <span>
+                                                {form10FData?.ValidityEndDate
+                                                    ? new Date(form10FData.ValidityEndDate).toLocaleDateString()
+                                                    : ""}
+                                            </span>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">Uploaded Document</label>
+
+                                            {form10FData?.AttachmentFiles?.length > 0 ? (
+                                                form10FData.AttachmentFiles.map(
+                                                    (file: any, index: number) => (
+                                                        <div key={index}>
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                            >
+                                                                {file.FileName}
+                                                            </a>
+                                                        </div>
+                                                    )
+                                                )
+                                            ) : (
+                                                <span>No Document Uploaded</span>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Compliance & Supporting Documents</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className='row mb-20'>
+                                        <div className='col-md-12'>
+                                            <div className="attachment-table-container">
+                                                <table className="attachment-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Document Type</th>
+                                                            <th>File Name</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody>
+                                                        {vendorData?.AttachmentFiles?.map(
+                                                            (file: any, index: number) => {
+
+                                                                let documentType = "Attachment";
+
+                                                                if (file.FileName.startsWith("VendorInvoice_")) {
+                                                                    documentType = "Vendor Invoice / Proforma Invoice";
+                                                                }
+                                                                else if (file.FileName.startsWith("TRC_")) {
+                                                                    documentType = "TRC";
+                                                                }
+                                                                else if (file.FileName.startsWith("KYC_")) {
+                                                                    documentType = "KYC Documents";
+                                                                }
+                                                                else if (file.FileName.startsWith("BankConfirmation_")) {
+                                                                    documentType = "Bank Confirmation / Cancelled Cheque";
+                                                                }
+                                                                else if (file.FileName.startsWith("OtherDocument_")) {
+                                                                    documentType = "Other Documents";
+                                                                }
+
+                                                                return (
+                                                                    <tr key={index}>
+                                                                        <td>{documentType}</td>
+
+                                                                        <td>
+                                                                            {file.FileName}
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <a
+                                                                                href={file.ServerRelativeUrl}
+                                                                                target="_blank"
+                                                                                rel="noreferrer"
+                                                                                className="view-icon"
+                                                                            >
+                                                                                <img
+                                                                                    src={view}
+                                                                                    alt="View"
+                                                                                    width="18"
+                                                                                />
+                                                                            </a>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            }
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Threshold Details</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-3  form-group">
+                                            <label>Eligible Amount</label>
+
+                                            <input
+                                                type="number"
+                                                name="eligibleAmount"
+                                                value={formData.eligibleAmount}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Approved / Paid Amount</label>
+
+                                            <input
+                                                type="number"
+                                                name="approvedAmount"
+                                                value={formData.approvedAmount}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>Balance Amount</label>
+
+                                            <input
+                                                type="number"
+                                                name="balanceAmount"
+                                                value={formData.balanceAmount}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>From Date</label>
+
+                                            <input
+                                                type="date"
+                                                name="fromDate"
+                                                value={formData.fromDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-3  form-group">
+                                            <label>To Date</label>
+
+                                            <input
+                                                type="date"
+                                                name="toDate"
+                                                value={formData.toDate}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                    <label>Checker Remarks</label>
+                                </div>
+                                <div className='main-formcontainer'>
+                                    <div className="row mb-20">
+                                        <div className="col-md-12">
+                                            <textarea
+                                                className="remarks-box col-md-12"
+                                                value={remarks}
+                                                onChange={(e) =>
+                                                    setRemarks(e.target.value)
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
+                                    <a className="Submit-btn" onClick={handleApprove}>Submit</a>
+                                    <a className="Reject-btn" onClick={handleReject}>Reject</a>
+                                    <a className="Exit-btn" onClick={history.goBack}>Exit</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* ========================= */}
-            {/* TAX DETAILS */}
-            {/* ========================= */}
 
-            <div className="section">
 
-                <h3>
-                    Tax & Regulatory Information
-                </h3>
 
-                <div className="grid-4">
 
-                    <div className="field">
-                        <label>
-                            Nature Of Payment
-                        </label>
 
-                        <span>
-                            {
-                                vendorData?.NatureOfPayment?.Title
-                            }
-                        </span>
-                    </div>
 
-                    <div className="field">
-                        <label>
-                            Tax Document Available
-                        </label>
 
-                        <span>
-                            {
-                                vendorData?.TaxDocumentAvailable
-                            }
-                        </span>
-                    </div>
 
-                    <div className="field">
-                        <label>
-                            DTAA Applicable
-                        </label>
 
-                        <span>
-                            {
-                                vendorData?.DTAAApplicable
-                            }
-                        </span>
-                    </div>
 
-                    <div className="field">
-                        <label>
-                            Country Of Tax Residence
-                        </label>
 
-                        <span>
-                            {
-                                vendorData?.CountryOfTaxResidence
-                            }
-                        </span>
-                    </div>
 
-                </div>
-
-            </div>
 
             {/* ========================= */}
             {/* TAX DECLARATIONS */}
@@ -550,7 +965,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                 <div className="grid-4">
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             Declaration Type
                                         </label>
 
@@ -562,7 +977,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             Document Available
                                         </label>
 
@@ -574,7 +989,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             Document Number
                                         </label>
 
@@ -586,7 +1001,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             Document Date
                                         </label>
 
@@ -602,7 +1017,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             Validity Start Date
                                         </label>
 
@@ -618,7 +1033,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             Validity End Date
                                         </label>
 
@@ -634,7 +1049,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             Tax Identification Number
                                         </label>
 
@@ -646,7 +1061,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             Acknowledgment Number
                                         </label>
 
@@ -658,7 +1073,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
 
                                     <div className="field">
-                                        <label>
+                                        <label className= "font fontblock">
                                             SEP Clause
                                         </label>
 
@@ -706,206 +1121,11 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                 }
 
             </div> */}
-            <div className="section">
-                <h3>Permanent Establishment Declaration</h3>
 
-                <div className="grid-4">
-                    <div className="field">
-                        <label>Document Available</label>
-                        <span>{peData?.DocumentAvailable}</span>
-                    </div>
 
-                    <div className="field">
-                        <label>Document Number</label>
-                        <span>{peData?.DocumentNumber}</span>
-                    </div>
 
-                    <div className="field">
-                        <label>Document Date</label>
-                        <span>
-                            {peData?.DocumentDate}
-                        </span>
-                    </div>
 
-                    <div className="field">
-                        <label>SEP Clause</label>
-                        <span>{peData?.SEPClause ? "Yes" : "No"}</span>
-                    </div>
-                    <div className="field">
-                        <label>Uploaded Document</label>
 
-                        {peData?.AttachmentFiles?.length > 0 ? (
-                            peData.AttachmentFiles.map((file: any, index: number) => (
-                                <div key={index}>
-                                    <a
-                                        href={file.ServerRelativeUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        {file.FileName}
-                                    </a>
-                                </div>
-                            ))
-                        ) : (
-                            <span>No Document Uploaded</span>
-                        )}
-                    </div>
-                    <div className="field">
-                        <label>Validity Start Date</label>
-                        <span>
-                            {peData?.ValidityStartDate
-                                ? new Date(peData.ValidityStartDate).toLocaleDateString()
-                                : ""}
-                        </span>
-                    </div>
-
-                    <div className="field">
-                        <label>Validity End Date</label>
-                        <span>
-                            {peData?.ValidityEndDate
-                                ? new Date(peData.ValidityEndDate).toLocaleDateString()
-                                : ""}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div className="section">
-                <h3>Tax Residency Certificate</h3>
-
-                <div className="grid-4">
-                    <div className="field">
-                        <label>Document Number</label>
-                        <span>{trcData?.DocumentNumber}</span>
-                    </div>
-
-                    <div className="field">
-                        <label>Country Of Tax Residence</label>
-                        <span>{trcData?.CountryOfTaxResidence}</span>
-                    </div>
-
-                    <div className="field">
-                        <label>TIN</label>
-                        <span>{trcData?.TaxIdentificationNumber}</span>
-                    </div>
-
-                    <div className="field">
-                        <label>Document Available</label>
-                        <span>{trcData?.DocumentAvailable}</span>
-                    </div>
-                    <div className="field">
-                        <label>Tax Identification Number</label>
-                        <span>{trcData?.TaxIdentificationNumber}</span>
-                    </div>
-
-                    <div className="field">
-                        <label>Validity Start Date</label>
-                        <span>
-                            {trcData?.ValidityStartDate
-                                ? new Date(trcData.ValidityStartDate).toLocaleDateString()
-                                : ""}
-                        </span>
-                    </div>
-
-                    <div className="field">
-                        <label>Validity End Date</label>
-                        <span>
-                            {trcData?.ValidityEndDate
-                                ? new Date(trcData.ValidityEndDate).toLocaleDateString()
-                                : ""}
-                        </span>
-                    </div>
-
-                    <div className="field">
-                        <label>Uploaded Document</label>
-
-                        {trcData?.AttachmentFiles?.length > 0 ? (
-                            trcData.AttachmentFiles.map((file: any, index: number) => (
-                                <div key={index}>
-                                    <a
-                                        href={file.ServerRelativeUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        {file.FileName}
-                                    </a>
-                                </div>
-                            ))
-                        ) : (
-                            <span>No Document Uploaded</span>
-                        )}
-                    </div>                </div>
-            </div>
-            <div className="section">
-    <h3>Form 10F</h3>
-
-    <div className="grid-4">
-
-        <div className="field">
-            <label>Document Number</label>
-            <span>{form10FData?.DocumentNumber}</span>
-        </div>
-
-        <div className="field">
-            <label>Acknowledgment Number</label>
-            <span>{form10FData?.AcknowledgmentNumber}</span>
-        </div>
-
-        <div className="field">
-            <label>Document Available</label>
-            <span>{form10FData?.DocumentAvailable}</span>
-        </div>
-
-        <div className="field">
-            <label>Document Date</label>
-            <span>
-                {form10FData?.DocumentDate
-                    ? new Date(form10FData.DocumentDate).toLocaleDateString()
-                    : ""}
-            </span>
-        </div>
-
-        <div className="field">
-            <label>Validity Start Date</label>
-            <span>
-                {form10FData?.ValidityStartDate
-                    ? new Date(form10FData.ValidityStartDate).toLocaleDateString()
-                    : ""}
-            </span>
-        </div>
-
-        <div className="field">
-            <label>Validity End Date</label>
-            <span>
-                {form10FData?.ValidityEndDate
-                    ? new Date(form10FData.ValidityEndDate).toLocaleDateString()
-                    : ""}
-            </span>
-        </div>
-
-        <div className="field">
-            <label>Uploaded Document</label>
-
-            {form10FData?.AttachmentFiles?.length > 0 ? (
-                form10FData.AttachmentFiles.map(
-                    (file: any, index: number) => (
-                        <div key={index}>
-                            <a
-                                href={file.ServerRelativeUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                {file.FileName}
-                            </a>
-                        </div>
-                    )
-                )
-            ) : (
-                <span>No Document Uploaded</span>
-            )}
-        </div>
-
-    </div>
-</div>
             {/* ========================= */}
             {/* THRESHOLD DETAILS */}
             {/* ========================= */}
@@ -919,7 +1139,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                 <div className="grid-4">
 
                     <div className="field">
-                        <label>
+                        <label className= "font fontblock">
                             Eligible Amount Without WHT
                         </label>
 
@@ -931,7 +1151,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                     </div>
 
                     <div className="field">
-                        <label>
+                        <label className= "font fontblock">
                             Approved / Paid Amount
                         </label>
 
@@ -943,7 +1163,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                     </div>
 
                     <div className="field">
-                        <label>
+                        <label className= "font fontblock">
                             Balance Eligible Amount
                         </label>
 
@@ -951,7 +1171,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                     </div>
 
                     <div className="field">
-                        <label>
+                        <label className= "font fontblock">
                             From Date
                         </label>
 
@@ -963,7 +1183,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                     </div>
 
                     <div className="field">
-                        <label>
+                        <label className= "font fontblock">
                             To Date
                         </label>
 
@@ -979,94 +1199,8 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
 
             </div> */}
 
-            {/* ========================= */}
-            {/* ATTACHMENTS */}
-            {/* ========================= */}
 
-            {/* <div className="section">
-
-                <h3>
-                    Compliance & Supporting Documents
-                </h3>
-
-                <div className="attachment-grid">
-
-                    {
-                        vendorData?.AttachmentFiles?.map(
-                            (
-                                file: any,
-                                index: number
-                            ) => (
-
-                                <a
-                                    key={index}
-                                    href={file.ServerRelativeUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="attachment-link"
-                                >
-                                    {file.FileName}
-                                </a>
-                            )
-                        )
-                    }
-
-                </div>
-
-            </div> */}
-
-            {/* ========================= */}
-            {/* REMARKS */}
-            {/* ========================= */}
-
-            <div className="section">
-
-                <h3>
-                    Checker Remarks
-                </h3>
-
-                <textarea
-                    className="remarks-box"
-                    value={remarks}
-                    onChange={(e) =>
-                        setRemarks(e.target.value)
-                    }
-                />
-
-            </div>
-
-            {/* ========================= */}
-            {/* BUTTONS */}
-            {/* ========================= */}
-
-            <div className="button-section">
-
-                <button
-                    className="approve-btn"
-                    onClick={handleApprove}
-                >
-                    Approve
-                </button>
-
-                <button
-                    className="reject-btn"
-                    onClick={handleReject}
-                >
-                    Reject
-                </button>
-
-                <button
-                    className="cancel-btn"
-                    onClick={() =>
-                        window.history.back()
-                    }
-                >
-                    Exit
-                </button>
-
-            </div>
-
-        </div>
+        </>
     );
 };
 
