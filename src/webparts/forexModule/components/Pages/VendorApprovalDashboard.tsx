@@ -4,7 +4,7 @@ import SPCRUDOPS from "../../service/BAL/spcrud";
 import { useHistory } from "react-router-dom";
 
 import edit from '../../assets/Pencil.png';
-
+import view from '../../assets/Eye.png';
 const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
     const history = useHistory();
     const spCrudOps = SPCRUDOPS();
@@ -37,7 +37,7 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                 "VendorMaster",
                 "*,Author/Title,Country/Country,CurrentApprover/Title,CurrentApprover/ID",
                 "Author,Country,CurrentApprover",
-                `CurrentApproverId eq ${currentUserId} and ApprovedByIDTChecker eq 'No'` ,
+                `CurrentApproverId eq ${currentUserId} ` ,//and ApprovedByIDTChecker eq 'No'
                 { column: "Id", isAscending: false },
                 5000,
                 props
@@ -290,6 +290,9 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                                             <a onClick={() => openRequest(item)}>
                                                 <img src={edit} alt="" width={15} />
                                             </a>
+                                              <a  onClick={() => history.push(`/VendorViewForm/${item.Id}`)}>
+                                                        <img src={view} alt="" width={15} />
+                                                    </a>
                                             {/* <button
                                                 className="btn btn-primary btn-sm"
                                                 onClick={() => openRequest(item)}

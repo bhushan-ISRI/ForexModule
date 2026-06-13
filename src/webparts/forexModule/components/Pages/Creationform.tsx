@@ -52,11 +52,11 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
     const [intermediarySwiftCode, setIntermediarySwiftCode] = React.useState("");
     // const [address, setAddress] = React.useState("");
     // const [postalCode, setPostalCode] = React.useState("");
-    const [vendorInvoice, setVendorInvoice] = React.useState<File | null>(null);
-    const [trcFile, setTrcFile] = React.useState<File | null>(null);
-    const [kycFile, setKycFile] = React.useState<File | null>(null);
+    const [vendorInvoice, setVendorInvoice] = React.useState<File[]>([]);
+    const [kycFile, setKycFile] = React.useState<File[]>([]);
+    const [otherDocumentFile, setOtherDocumentFile] = React.useState<File[]>([]);
     const [bankConfirmationFile, setBankConfirmationFile] = React.useState<File | null>(null);
-    const [otherDocumentFile, setOtherDocumentFile] = React.useState<File | null>(null);
+    // const [otherDocumentFile, setOtherDocumentFile] = React.useState<File | null>(null);
     const [cityName, setCityName] = React.useState("");
     const [stateName, setStateName] = React.useState("");
     const loadLookups = async () => {
@@ -174,115 +174,113 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             alert("Address Line 1 is mandatory.");
             return;
         }
-      if (!vendorShortName?.trim()) {
-    alert("Vendor Short Name is mandatory.");
-    return;
-}
+        //       if (!vendorShortName?.trim()) {
+        //     alert("Vendor Short Name is mandatory.");
+        //     return;
+        // }
 
-if (!currencyId) {
-    alert("Currency is mandatory.");
-    return;
-}
-
-if (!countryId) {
-    alert("Country is mandatory.");
-    return;
-}
-
-if (!stateName?.trim()) {
-    alert("State is mandatory.");
-    return;
-}
-
-if (!cityName?.trim()) {
-    alert("City is mandatory.");
-    return;
-}
-
-if (!postalCode?.trim()) {
-    alert("Postal Code is mandatory.");
-    return;
-}
-
-if (!beneficiaryName?.trim()) {
-    alert("Beneficiary Name is mandatory.");
-    return;
-}
-
-if (!bankName?.trim()) {
-    alert("Bank Name is mandatory.");
-    return;
-}
-
-if (!bankAddress?.trim()) {
-    alert("Bank Address is mandatory.");
-    return;
-}
-
-if (!accountNumberIBAN?.trim()) {
-    alert("Account Number / IBAN is mandatory.");
-    return;
-}
-
-if (!swiftCode?.trim()) {
-    alert("SWIFT / BIC Code is mandatory.");
-    return;
-}
-  if (!dtaaApplicable) {
-            alert("DTAA Applicable is mandatory.");
+        if (!currencyId) {
+            alert("Currency is mandatory.");
             return;
         }
 
-        if (!withholdingTaxApplicable) {
-            alert("Withholding Tax Applicable is mandatory.");
+        if (!countryId) {
+            alert("Country is mandatory.");
             return;
         }
 
-        if (!countryOfTaxResidence) {
-            alert("Country Of Tax Residence is mandatory.");
+        // if (!stateName?.trim()) {
+        //     alert("State is mandatory.");
+        //     return;
+        // }
+
+        if (!cityName?.trim()) {
+            alert("City is mandatory.");
             return;
         }
 
-if (!purposeCodeRBI?.trim()) {
-    alert("Purpose Code (FIR) is mandatory.");
-    return;
-}
+        if (!postalCode?.trim()) {
+            alert("Postal Code is mandatory.");
+            return;
+        }
 
-if (!taxResidencyCertificateTRC?.trim()) {
-    alert("Tax Residency Certificate is mandatory.");
-    return;
-}
+        if (!beneficiaryName?.trim()) {
+            alert("Beneficiary Name is mandatory.");
+            return;
+        }
 
-if (!peDeclaration?.trim()) {
-    alert("PE Declaration is mandatory.");
-    return;
-}
-// if (!vendorInvoice) {
-//     alert("Vendor Invoice / Proforma Invoice is mandatory.");
-//     return;
-// }
+        if (!bankName?.trim()) {
+            alert("Bank Name is mandatory.");
+            return;
+        }
 
-// if (!trcFile) {
-//     alert("TRC document is mandatory.");
-//     return;
-// }
+        if (!bankAddress?.trim()) {
+            alert("Bank Address is mandatory.");
+            return;
+        }
 
-// if (!kycFile) {
-//     alert("KYC document is mandatory.");
-//     return;
-// }
+        if (!accountNumberIBAN?.trim()) {
+            alert("Account Number / IBAN is mandatory.");
+            return;
+        }
 
-// if (!bankConfirmationFile) {
-//     alert("Bank Confirmation / Cancelled Cheque is mandatory.");
-//     return;
-// }
+        if (!swiftCode?.trim()) {
+            alert("SWIFT / BIC Code is mandatory.");
+            return;
+        }
+        // if (!dtaaApplicable) {
+        //     alert("DTAA Applicable is mandatory.");
+        //     return;
+        // }
+
+        // if (!withholdingTaxApplicable) {
+        //     alert("Withholding Tax Applicable is mandatory.");
+        //     return;
+        // }
+
+        // if (!countryOfTaxResidence) {
+        //     alert("Country Of Tax Residence is mandatory.");
+        //     return;
+        // }
+
+        // if (!purposeCodeRBI?.trim()) {
+        //     alert("Purpose Code (FIR) is mandatory.");
+        //     return;
+        // }
+
+        // if (!taxResidencyCertificateTRC?.trim()) {
+        //     alert("Tax Residency Certificate is mandatory.");
+        //     return;
+        // }
+
+        // if (!peDeclaration?.trim()) {
+        //     alert("PE Declaration is mandatory.");
+        //     return;
+        // }
+        if (vendorInvoice.length === 0) {
+            alert("Vendor Invoice / Proforma Invoice is mandatory.");
+            return;
+        }
+
+        // if (!trcFile) {
+        //     alert("TRC document is mandatory.");
+        //     return;
+        // }
+
+        if (kycFile.length === 0) {
+            alert("KYC Documents are mandatory.");
+            return;
+        }
+
+        // if (!bankConfirmationFile) {
+        //     alert("Bank Confirmation / Cancelled Cheque is mandatory.");
+        //     return;
+        // }
 
         if (
-            !validateFile(vendorInvoice) ||
-            !validateFile(trcFile) ||
-            !validateFile(kycFile) ||
-            !validateFile(bankConfirmationFile) ||
-            !validateFile(otherDocumentFile)
+            vendorInvoice.some(file => !validateFile(file)) ||
+            kycFile.some(file => !validateFile(file)) ||
+            otherDocumentFile.some(file => !validateFile(file))
         ) {
             return;
         }
@@ -367,8 +365,8 @@ if (!peDeclaration?.trim()) {
             CurrentApproverId: firstApprover?.ApproverID || null,
             VendorNameLegal: vendorNameLegal,
             TaxDocumentAvailable: "No",
-            withholdingTaxApplicable:withholdingTaxApplicable,
-            ApprovedByIDTChecker:"No"
+            withholdingTaxApplicable: withholdingTaxApplicable,
+            ApprovedByIDTChecker: "No"
         };
 
         const result = await sp.insertData(
@@ -379,57 +377,41 @@ if (!peDeclaration?.trim()) {
         const itemId = result.data.Id;
 
 
-        if (vendorInvoice) {
+        for (const file of vendorInvoice) {
             await uploadAttachment(
                 "VendorMaster",
                 itemId,
-                vendorInvoice,
+                file,
                 "VendorInvoice",
                 props
             );
         }
 
-        if (trcFile) {
-            await uploadAttachment(
-                "VendorMaster",
-                itemId,
-                trcFile,
-                "TRC",
-                props
-            );
-        }
 
-        if (kycFile) {
+
+        for (const file of kycFile) {
             await uploadAttachment(
                 "VendorMaster",
                 itemId,
-                kycFile,
+                file,
                 "KYC",
                 props
             );
         }
 
-        if (bankConfirmationFile) {
-            await uploadAttachment(
-                "VendorMaster",
-                itemId,
-                bankConfirmationFile,
-                "BankConfirmation",
-                props
-            );
-        }
 
-        if (otherDocumentFile) {
+
+        for (const file of otherDocumentFile) {
             await uploadAttachment(
                 "VendorMaster",
                 itemId,
-                otherDocumentFile,
+                file,
                 "OtherDocument",
                 props
             );
         }
         alert("Saved Successfully");
-        history.push("/VendorCreationDashboard");
+        history.push(`/VendorCreationForm/${itemId}`);
 
     };
 
@@ -540,18 +522,6 @@ if (!peDeclaration?.trim()) {
                                                 onChange={(e) => setVendorNameLegal(e.target.value)}
                                             />
                                         </div>
-
-                                        <div className="col-md-3">
-                                            <label className='font'>Vendor Short Name  <span style={{ color: "red" }}>*</span></label>
-                                            <input
-                                                className="form-control"
-                                                value={vendorShortName}
-                                                onChange={(e) => setVendorShortName(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="row mb-20">
                                         <div className="col-md-3">
                                             <label className='font'>Currency  <span style={{ color: "red" }}>*</span></label>
                                             <select
@@ -568,6 +538,18 @@ if (!peDeclaration?.trim()) {
                                                 ))}
                                             </select>
                                         </div>
+
+                                        {/* <div className="col-md-3">
+                                            <label className='font'>Vendor Short Name  <span style={{ color: "red" }}>*</span></label>
+                                            <input
+                                                className="form-control"
+                                                value={vendorShortName}
+                                                onChange={(e) => setVendorShortName(e.target.value)}
+                                            />
+                                        </div> */}
+                                    </div>
+
+                                    <div className="row mb-20">
                                         <div className="col-md-3">
                                             <label className='font'>Country  <span style={{ color: "red" }}>*</span></label>
                                             <select
@@ -584,27 +566,8 @@ if (!peDeclaration?.trim()) {
                                                 ))}
                                             </select>
                                         </div>
-                                        {/* 
-                                        
-
-                                        <div className="col-md-2">
-                                            <label className='font'>City</label>
-                                            <select
-                                                className="form-controltext"
-                                                value={cityId}
-                                                onChange={(e) => setCityId(Number(e.target.value))}
-                                            >
-                                                <option value="">Select City</option>
-
-                                                {cities.map((x) => (
-                                                    <option key={x.Id} value={x.Id}>
-                                                        {x.City}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div> */}
                                         <div className="col-md-3">
-                                            <label className='font'>State  <span style={{ color: "red" }}>*</span></label>
+                                            <label className='font'>State</label>
                                             {/* <select
                                                 className="form-controltext"
                                                 value={stateId}
@@ -638,14 +601,7 @@ if (!peDeclaration?.trim()) {
                                                 placeholder="Enter City"
                                             />
                                         </div>
-
-
-                                    </div>
-
-                                    <div className="row mb-20">
-
-
-                                        <div className="col-md-4">
+                                        <div className="col-md-3">
                                             <label className='font'>Postal Code  <span style={{ color: "red" }}>*</span></label>
                                             <input
                                                 type="number"
@@ -654,15 +610,8 @@ if (!peDeclaration?.trim()) {
                                                 onChange={(e) => setPostalCode(e.target.value)}
                                             />
                                         </div>
-                                        {/* <div className="col-md-4">
-                                            <label className='font'>Vendor Type</label>
-                                            <input
-                                                className="form-control"
-                                                value={vendorType}
-                                                onChange={(e) => setVendorType(e.target.value)}
-                                            />
-                                        </div> */}
-                                        <div className="col-md-5">
+
+                                        <div className="col-md-3">
                                             <label className='font'>Address Line 1  <span style={{ color: "red" }}>*</span></label>
                                             <textarea
                                                 className="form-control"
@@ -671,6 +620,22 @@ if (!peDeclaration?.trim()) {
                                                 onChange={(e) => setAddress(e.target.value)}
                                             />
                                         </div>
+
+                                    </div>
+
+                                    <div className="row mb-20">
+
+
+
+                                        {/* <div className="col-md-4">
+                                            <label className='font'>Vendor Type</label>
+                                            <input
+                                                className="form-control"
+                                                value={vendorType}
+                                                onChange={(e) => setVendorType(e.target.value)}
+                                            />
+                                        </div> */}
+
                                     </div>
                                 </div>
                                 <div className="heading1" style={{ marginTop: "10px" }}>
@@ -777,46 +742,31 @@ if (!peDeclaration?.trim()) {
                                             />
                                         </div>
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className='font'>IFSC Code</label>
                                             <input
                                                 className="form-control"
                                                 value={ifscCode}
                                                 onChange={(e) => setIfscCode(e.target.value)}
                                             />
-                                        </div>
+                                        </div> */}
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className='font'>Intermediary Bank</label>
                                             <input
                                                 className="form-control"
                                                 value={intermediaryBank}
                                                 onChange={(e) => setIntermediaryBank(e.target.value)}
                                             />
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
-                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Tax & Regulatory Information</label>
                                 </div>
                                 <div className='main-formcontainer'>
                                     <div className="row mb-20">
-                                        {/* <div className="col-md-3">
-                                            <label className='font'>Nature of Payment</label>
-                                            <select
-                                                className="form-control"
-                                                value={natureOfPaymentId}
-                                                onChange={(e) => setNatureOfPaymentId(Number(e.target.value))}
-                                            >
-                                                <option value="">Select Nature Of Payment</option>
-
-                                                {natureOfPayments.map((x) => (
-                                                    <option key={x.Id} value={x.Id}>
-                                                        {x.Title}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div> */}
+                                       
 
                                         <div className="col-md-3">
                                             <label className='font'>Purpose Code (FIR)  <span style={{ color: "red" }}>*</span></label>
@@ -862,7 +812,7 @@ if (!peDeclaration?.trim()) {
                                         </div>
                                     </div>
                                     <div className="row mb-20">
-                                        
+
 
                                         <div className="col-md-3">
                                             <label className='font'>
@@ -904,29 +854,26 @@ if (!peDeclaration?.trim()) {
                                             </select>
                                         </div>
                                     </div>
-                                </div>
+                                </div> */}
                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Compliance & Supporting Documents</label>
                                 </div>
                                 <div className='main-formcontainer'>
                                     <div className="row mb-20">
                                         <div className="col-md-4">
-                                            <label className='font'>Vendor Invoice / Proforma Invoice </label>
+                                            <label className='font'>Vendor Invoice / Proforma Invoice  <span style={{ color: "red" }}>*</span></label>
                                             <input
                                                 type="file"
+                                                multiple
                                                 className="form-control"
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                                                 onChange={(e) =>
-                                                    setVendorInvoice(
-                                                        e.target.files?.length
-                                                            ? e.target.files[0]
-                                                            : null
-                                                    )
+                                                    setVendorInvoice(Array.from(e.target.files || []))
                                                 }
                                             />
                                         </div>
 
-                                        <div className="col-md-4">
+                                        {/* <div className="col-md-4">
                                             <label className='font'>TRC </label>
                                             <input
                                                 type="file"
@@ -940,26 +887,35 @@ if (!peDeclaration?.trim()) {
                                                     )
                                                 }
                                             />
-                                        </div>
+                                        </div> */}
 
                                         <div className="col-md-4">
-                                            <label className='font'>KYC Documents </label>
+                                            <label className='font'>KYC Documents  <span style={{ color: "red" }}>*</span></label>
                                             <input
                                                 type="file"
+                                                multiple
                                                 className="form-control"
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                                                 onChange={(e) =>
-                                                    setKycFile(
-                                                        e.target.files?.length
-                                                            ? e.target.files[0]
-                                                            : null
-                                                    )
+                                                    setKycFile(Array.from(e.target.files || []))
+                                                }
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className='font'>Other Documents </label>
+                                            <input
+                                                type="file"
+                                                multiple
+                                                className="form-control"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                                                onChange={(e) =>
+                                                    setOtherDocumentFile(Array.from(e.target.files || []))
                                                 }
                                             />
                                         </div>
                                     </div>
                                     <div className="row mb-20">
-                                        <div className="col-md-4">
+                                        {/* <div className="col-md-4">
                                             <label className='font'>Bank Confirmation / Cancelled Cheque </label>
                                             <input
                                                 type="file"
@@ -973,27 +929,13 @@ if (!peDeclaration?.trim()) {
                                                     )
                                                 }
                                             />
-                                        </div>
+                                        </div> */}
 
-                                        <div className="col-md-4">
-                                            <label className='font'>Other Documents </label>
-                                            <input
-                                                type="file"
-                                                className="form-control"
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
-                                                onChange={(e) =>
-                                                    setOtherDocumentFile(
-                                                        e.target.files?.length
-                                                            ? e.target.files[0]
-                                                            : null
-                                                    )
-                                                }
-                                            />
-                                        </div>
+
                                     </div>
                                 </div>
                                 <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
-                                    <a className="Submit-btn" onClick={saveVendorRequest}> Submit </a>
+                                    <a className="Submit-btn" onClick={saveVendorRequest}>  Save and sent to treasury  </a>
                                     <a className="Exit-btn" onClick={history.goBack}>Exit</a>
                                 </div>
                             </div>

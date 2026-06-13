@@ -3,7 +3,7 @@ import { IForexModuleProps } from "../IForexModuleProps";
 import SPCRUDOPS from "../../service/BAL/spcrud";
 import { useHistory, Link } from "react-router-dom";
 import edit from '../../assets/Pencil.png';
-
+import view from '../../assets/Eye.png';
 const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
     const spCrudOps = SPCRUDOPS();
@@ -426,6 +426,9 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                     </a>
                                                    
                                                     )}
+                                                      <a  onClick={() => history.push(`/VendorViewForm/${item.Id}`)}>
+                                                        <img src={view} alt="" width={15} />
+                                                    </a>
                                                 </td>
 
                                             </tr>

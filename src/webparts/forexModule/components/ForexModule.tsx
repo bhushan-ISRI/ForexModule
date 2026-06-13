@@ -24,6 +24,7 @@ import CreationForm from './Pages/Creationform';
 import VendorDashboard from './Pages/VendorCreationDashboard';
 import VendorApprovalDashboard from './Pages/VendorApprovalDashboard';
 import VendorApprovalFormFirst from './Pages/VendorApprovalForm';
+import VendorViewForm from './Pages/VendorViewForm';
 
 const ForexModule: React.FC<IForexModuleProps> = (props) => {
   const {
@@ -69,7 +70,7 @@ const ForexModule: React.FC<IForexModuleProps> = (props) => {
           <Route exact path="/VendorCreationDashboard" render={() => <VendorDashboard {...props} />} />
           <Route exact path="/VendorApprovalDashboard" render={() => <VendorApprovalDashboard {...props} />} />
           <Route exact path="/VendorApprovalFormFirst/:Id" render={() => <VendorApprovalFormFirst {...props} />} />
-
+          <Route exact path="/VendorViewForm/:Id" render={() => <VendorViewForm {...props} />} />
         </Switch>
       </div>
     </div>

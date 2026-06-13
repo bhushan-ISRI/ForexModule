@@ -132,17 +132,14 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                             />
                                         </div>
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label>Vendor Short Name</label>
                                             <input
                                                 className="form-control"
                                                 value={item.VendorShortName || ""}
                                                 disabled
                                             />
-                                        </div>
-
-                                    </div>
-                                    <div className="row mb-20">
+                                        </div> */}
                                         <div className="col-md-3">
                                             <label className='font'>Currency  <span style={{ color: "red" }}>*</span></label>
                                             <input
@@ -151,6 +148,10 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                                 disabled
                                             />
                                         </div>
+
+                                    </div>
+                                    <div className="row mb-20">
+                                        
                                         <div className="col-md-3">
                                             <label className='font'>Country  <span style={{ color: "red" }}>*</span></label>
                                             <input
@@ -186,13 +187,7 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                                 disabled
                                             />
                                         </div>
-
-
-                                    </div>
-                                    <div className="row mb-20">
-
-
-                                        <div className="col-md-4">
+                                         <div className="col-md-3">
                                             <label className='font'>Postal Code  <span style={{ color: "red" }}>*</span></label>
                                             <input
                                                 type="number"
@@ -203,7 +198,7 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                             />
                                         </div>
 
-                                        <div className="col-md-5">
+                                            <div className="col-md-3">
                                             <label className='font'>Address Line 1  <span style={{ color: "red" }}>*</span></label>
                                             <textarea
                                                 className="form-control"
@@ -213,6 +208,13 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                                 disabled
                                             />
                                         </div>
+                                    </div>
+                                    <div className="row mb-20">
+
+
+                                       
+
+                                        
                                     </div>
 
                                 </div>
@@ -323,7 +325,7 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                             />
                                         </div>
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className='font'>IFSC Code</label>
                                             <input
                                                 className="form-control"
@@ -331,9 +333,9 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                                 // onChange={(e) => setIfscCode(e.target.value)}
                                                 disabled
                                             />
-                                        </div>
+                                        </div> */}
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className='font'>Intermediary Bank</label>
                                             <input
                                                 className="form-control"
@@ -341,7 +343,7 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                                 // onChange={(e) => setIntermediaryBank(e.target.value)}
                                                 disabled
                                             />
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
                                 <div className="heading1" style={{ marginTop: "10px" }}>

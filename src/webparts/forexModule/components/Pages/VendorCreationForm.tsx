@@ -58,7 +58,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
     const [countryOfTaxResidence, setCountryOfTaxResidence] = React.useState("");
     const [countries, setCountries] = React.useState<any[]>([]);
-
+    const [dtaaApplicable, setDTAAApplicable] = React.useState("");
     // const handleChange = (
     //     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     // ) => {
@@ -185,98 +185,106 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
             //     spfxContext: props.context
             // });
             // Permanent Establishment Declaration
-            if (!formData.peDocumentNumber?.trim()) {
-                alert("PE Declaration Document Number is mandatory.");
-                return;
-            }
+            if (formData.peDocumentAvailable === "Yes" && formData.taxDocumentAvailable === "Yes") {
 
-            if (!formData.peDocumentDate) {
-                alert("PE Declaration Document Date is mandatory.");
-                return;
-            }
+                if (!formData.peDocumentNumber?.trim()) {
+                    alert("PE Declaration Document Number is mandatory.");
+                    return;
+                }
 
-            if (!formData.peStartDate) {
-                alert("PE Declaration Validity Start Date is mandatory.");
-                return;
-            }
+                if (!formData.peDocumentDate) {
+                    alert("PE Declaration Document Date is mandatory.");
+                    return;
+                }
 
-            if (!formData.peEndDate) {
-                alert("PE Declaration Validity End Date is mandatory.");
-                return;
-            }
+                if (!formData.peStartDate) {
+                    alert("PE Declaration Validity Start Date is mandatory.");
+                    return;
+                }
 
-            if (!peFile) {
-                alert("PE Declaration Document Upload is mandatory.");
-                return;
+                if (!formData.peEndDate) {
+                    alert("PE Declaration Validity End Date is mandatory.");
+                    return;
+                }
+
+                if (!peFile) {
+                    alert("PE Declaration Document Upload is mandatory.");
+                    return;
+                }
             }
 
             // Tax Residency Certificate
-            if (!formData.trcDocumentNumber?.trim()) {
-                alert("TRC Document Number is mandatory.");
-                return;
-            }
+            if (formData.trcDocumentAvailable === "Yes") {
 
-            if (!formData.trcDocumentDate) {
-                alert("TRC Document Date is mandatory.");
-                return;
-            }
+                if (!formData.trcDocumentNumber?.trim()) {
+                    alert("TRC Document Number is mandatory.");
+                    return;
+                }
 
-            if (!formData.taxIdentificationNumber?.trim()) {
-                alert("Tax Identification Number is mandatory.");
-                return;
-            }
+                if (!formData.trcDocumentDate) {
+                    alert("TRC Document Date is mandatory.");
+                    return;
+                }
 
-            if (countryOfTaxResidence) {
-                alert("Country Of Tax Residence is mandatory.");
-                return;
-            }
+                if (!formData.taxIdentificationNumber?.trim()) {
+                    alert("Tax Identification Number is mandatory.");
+                    return;
+                }
 
-            if (!formData.trcStartDate) {
-                alert("TRC Validity Start Date is mandatory.");
-                return;
-            }
+                if (!countryOfTaxResidence) {
+                    alert("Country Of Tax Residence is mandatory.");
+                    return;
+                }
 
-            if (!formData.trcEndDate) {
-                alert("TRC Validity End Date is mandatory.");
-                return;
-            }
+                if (!formData.trcStartDate) {
+                    alert("TRC Validity Start Date is mandatory.");
+                    return;
+                }
 
-            if (!trcDeclarationFile) {
-                alert("TRC Upload Document is mandatory.");
-                return;
+                if (!formData.trcEndDate) {
+                    alert("TRC Validity End Date is mandatory.");
+                    return;
+                }
+
+                if (!trcDeclarationFile) {
+                    alert("TRC Upload Document is mandatory.");
+                    return;
+                }
             }
 
             // Form 10F
-            if (!formData.form10FDocumentNumber?.trim()) {
-                alert("Form 10F Document Number is mandatory.");
-                return;
-            }
+            if (formData.form10FDocumentAvailable === "Yes") {
 
-            if (!formData.form10FDocumentDate) {
-                alert("Form 10F Document Date is mandatory.");
-                return;
-            }
+                if (!formData.form10FDocumentNumber?.trim()) {
+                    alert("Form 10F Document Number is mandatory.");
+                    return;
+                }
 
-            if (!formData.acknowledgmentNumber?.trim()) {
-                alert("Form 10F Acknowledgment Number is mandatory.");
-                return;
-            }
+                if (!formData.form10FDocumentDate) {
+                    alert("Form 10F Document Date is mandatory.");
+                    return;
+                }
 
-            if (!formData.form10FStartDate) {
-                alert("Form 10F Validity Start Date is mandatory.");
-                return;
-            }
+                if (!formData.acknowledgmentNumber?.trim()) {
+                    alert("Form 10F Acknowledgment Number is mandatory.");
+                    return;
+                }
 
-            if (!formData.form10FEndDate) {
-                alert("Form 10F Validity End Date is mandatory.");
-                return;
-            }
+                if (!formData.form10FStartDate) {
+                    alert("Form 10F Validity Start Date is mandatory.");
+                    return;
+                }
 
-            if (!form10FFile) {
-                alert("Form 10F Upload Document is mandatory.");
-                return;
-            }
+                if (!formData.form10FEndDate) {
+                    alert("Form 10F Validity End Date is mandatory.");
+                    return;
+                }
 
+                if (!form10FFile) {
+                    alert("Form 10F Upload Document is mandatory.");
+                    return;
+                }
+            }
             // ==============================
             // SAVE IN VendorMaster
             // ==============================
@@ -293,9 +301,9 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                 BalanceEligibleAmount: formData.balanceAmount,
                 FromDate: new Date(formData.fromDate),
                 ToDate: new Date(formData.toDate),
-                DTAAApplicable: "Yes",
+                DTAAApplicable: dtaaApplicable,
                 CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null,
-                ApprovedByIDTChecker:"No"
+                ApprovedByIDTChecker: "No"
 
 
             };
@@ -418,7 +426,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                         formData.trcDocumentDate || null,
 
                     CountryOfTaxResidence:
-                        formData.countryOfTaxResidence,
+                        countryOfTaxResidence,
 
                     TaxIdentificationNumber:
                         formData.taxIdentificationNumber,
@@ -547,24 +555,25 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
             ...formData,
             [e.target.name]: e.target.value
         };
-
-        const eligible = Number(updatedForm.eligibleAmount || 0);
-
-        const approved = Number(updatedForm.approvedAmount || 0);
-
-        const balanceAmount = eligible - approved;
-
-        updatedForm.balanceAmount = String(balanceAmount);
-
         setFormData(updatedForm);
+        // const eligible = Number(updatedForm.eligibleAmount || 0);
 
-        if (balanceAmount < 0) {
-            alert(
-                "WHT would be applicable on this transaction as threshold limit has exceeded."
-            );
-            return;
-        }
+        // const approved = Number(updatedForm.approvedAmount || 0);
+
+        // const balanceAmount = eligible - approved;
+
+        // updatedForm.balanceAmount = String(balanceAmount);
+
+        // setFormData(updatedForm);
+
+        // if (balanceAmount < 0) {
+        //     alert(
+        //         "WHT would be applicable on this transaction as threshold limit has exceeded."
+        //     );
+        //     return;
+        // }
     };
+    const isTaxDocAvailable = formData.taxDocumentAvailable === "Yes";
     return (
         <>
             <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
@@ -791,7 +800,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                         />
                                                     </div>
 
-                                                    <div className="col-md-3  form-group">
+                                                    {/* <div className="col-md-3  form-group">
                                                         <label>IFSC Code</label>
                                                         <input
                                                             value={vendorInfo.IFSCCode || ""}
@@ -808,7 +817,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                             // onChange={(e) => setIntermediaryBank(e.target.value)}
                                                             disabled
                                                         />
-                                                    </div>
+                                                    </div> */}
 
                                                 </div>
                                             </div>
@@ -849,10 +858,38 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                             <select
                                                 name="taxDocumentAvailable"
                                                 value={formData.taxDocumentAvailable}
-                                                onChange={handleChange}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+
+                                                    setFormData({
+                                                        ...formData,
+                                                        taxDocumentAvailable: value,
+
+                                                        ...(value === "No" && {
+                                                            peDocumentAvailable: "No",
+                                                            trcDocumentAvailable: "No",
+                                                            form10FDocumentAvailable: "No"
+                                                        })
+                                                    });
+                                                }}
                                             >
-                                                <option>Yes</option>
-                                                <option>No</option>
+                                                <option value="Yes">Yes</option>
+                                                <option value="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className='font'>
+                                                DTAA Applicable <span style={{ color: "red" }}>*</span>
+                                            </label>
+
+                                            <select
+                                                className="form-control"
+                                                value={dtaaApplicable}
+                                                onChange={(e) => setDTAAApplicable(e.target.value)}
+                                            >
+                                                <option value="">Select</option>
+                                                <option value="Yes">Yes</option>
+                                                <option value="No">No</option>
                                             </select>
                                         </div>
                                     </div>
@@ -869,6 +906,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="peDocumentAvailable"
                                                 value={formData.peDocumentAvailable}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             >
                                                 <option>Yes</option>
                                                 <option>No</option>
@@ -883,6 +921,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="peDocumentNumber"
                                                 value={formData.peDocumentNumber}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -894,6 +933,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="peDocumentDate"
                                                 value={formData.peDocumentDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -902,6 +942,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                             <input
                                                 type="file"
                                                 onChange={(e: any) => setPeFile(e.target.files[0])}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
                                     </div>
@@ -920,6 +961,8 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="peStartDate"
                                                 value={formData.peStartDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
+
                                             />
                                         </div>
                                         <div className="col-md-3  form-group">
@@ -930,6 +973,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="peEndDate"
                                                 value={formData.peEndDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
                                     </div>
@@ -946,6 +990,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="trcDocumentAvailable"
                                                 value={formData.trcDocumentAvailable}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             >
                                                 <option>Yes</option>
                                                 <option>No</option>
@@ -960,6 +1005,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="trcDocumentNumber"
                                                 value={formData.trcDocumentNumber}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -971,6 +1017,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="trcDocumentDate"
                                                 value={formData.trcDocumentDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -982,6 +1029,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="taxIdentificationNumber"
                                                 value={formData.taxIdentificationNumber}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -990,6 +1038,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                             <input
                                                 type="file"
                                                 onChange={(e: any) => setTrcDeclarationFile(e.target.files[0])}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -1001,6 +1050,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 className="form-control"
                                                 value={countryOfTaxResidence}
                                                 onChange={(e) => setCountryOfTaxResidence(e.target.value)}
+                                                disabled={!isTaxDocAvailable}
                                             >
                                                 <option value="">Select Country</option>
 
@@ -1023,6 +1073,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="trcStartDate"
                                                 value={formData.trcStartDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -1034,6 +1085,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="trcEndDate"
                                                 value={formData.trcEndDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
                                     </div>
@@ -1050,6 +1102,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="form10FDocumentAvailable"
                                                 value={formData.form10FDocumentAvailable}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             >
                                                 <option>Yes</option>
                                                 <option>No</option>
@@ -1064,6 +1117,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="form10FDocumentNumber"
                                                 value={formData.form10FDocumentNumber}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -1075,6 +1129,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="form10FDocumentDate"
                                                 value={formData.form10FDocumentDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -1086,6 +1141,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="acknowledgmentNumber"
                                                 value={formData.acknowledgmentNumber}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -1094,6 +1150,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                             <input
                                                 type="file"
                                                 onChange={(e: any) => setForm10FFile(e.target.files[0])}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -1105,6 +1162,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="form10FStartDate"
                                                 value={formData.form10FStartDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
 
@@ -1116,11 +1174,12 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                 name="form10FEndDate"
                                                 value={formData.form10FEndDate}
                                                 onChange={handleChange}
+                                                disabled={!isTaxDocAvailable}
                                             />
                                         </div>
                                     </div>
                                 </div>
-                                <div className="heading1" style={{ marginTop: "10px" }}>
+                                {/* <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Threshold Details</label>
                                 </div>
                                 <div className='main-formcontainer'>
@@ -1243,7 +1302,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                     <p className="mandatory-text">
                                         ** Mandatory taxation document upload
                                     </p>
-                                </div>
+                                </div> */}
                                 <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
                                     <a className="Submit-btn" onClick={handleSubmit}> Submit </a>
                                     <a className="Exit-btn" onClick={history.goBack}>Exit</a>

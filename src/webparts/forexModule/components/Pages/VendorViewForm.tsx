@@ -10,7 +10,7 @@ import SPCRUDOPS from "../../service/BAL/spcrud";
 import logo from "../../assets/sona-comstarlogo.png";
 import view from "../../assets/Eye.png";
 
-const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
+const VendorViewForm: React.FC<IForexModuleProps> = (props) => {
 
     const [vendorData, setVendorData] = useState<any>({});
     const [taxDeclarations, setTaxDeclarations] = useState<any[]>([]);
@@ -135,102 +135,16 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
         }
     };
 
-    // =============================
-    // APPROVE
-    // =============================
 
-    const handleApprove = async () => {
 
-        try {
-
-            await sp.web.lists
-                .getByTitle("VendorMaster")
-                .items.getById(Number(vendorId.Id))
-                .update({
-
-                    RequestStatus: "Approved",
-                    ApproverComments: remarks,
-                    EligibleAmountWithoutWHT: formData.eligibleAmount,
-                    ApprovedAmountPaidAmount: formData.approvedAmount,
-                    BalanceEligibleAmount: formData.balanceAmount,
-                    FromDate: new Date(formData.fromDate),
-                    ToDate: new Date(formData.toDate),
-                    ApprovedByIDTChecker: "Yes"
-                    // ApprovedDate: new Date()
-                });
-
-            alert("Vendor Approved");
-            history.push("/VendorApprovalDashboard");
-
-        } catch (error) {
-
-            console.log(error);
-
-        }
-    };
-
-    // =============================
-    // REJECT
-    // =============================
-
-    const handleReject = async () => {
-
-        try {
-
-            await sp.web.lists
-                .getByTitle("VendorMaster")
-                .items.getById(Number(vendorId.Id))
-                .update({
-
-                    RequestStatus: "Rejected",
-
-                    ApproverComments: remarks,
-
-                    // ApprovedDate: new Date()
-                });
-
-            alert("Vendor Rejected");
-            history.push("/VendorApprovalDashboard");
-
-        } catch (error) {
-
-            console.log(error);
-
-        }
-    };
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-
-        const updatedForm = {
-            ...formData,
-            [e.target.name]: e.target.value
-        };
-
-        const eligible = Number(updatedForm.eligibleAmount || 0);
-
-        const approved = Number(updatedForm.approvedAmount || 0);
-
-        const balanceAmount = eligible - approved;
-
-        updatedForm.balanceAmount = String(balanceAmount);
-
-        setFormData(updatedForm);
-
-        if (balanceAmount <= 0) {
-            alert(
-                "WHT would be applicable on this transaction as threshold limit has exceeded."
-            );
-        }
-    };
     if (loading) {
 
         return <div>Loading...</div>;
     }
     const formatDate = (date: any) => {
-    if (!date) return "";
-    return new Date(date).toLocaleDateString("en-GB");
-};
+        if (!date) return "";
+        return new Date(date).toLocaleDateString("en-GB");
+    };
 
     return (
 
@@ -845,83 +759,73 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Threshold Details</label>
                                 </div>
-                                <div className='main-formcontainer'>
+
+                                <div className="main-formcontainer">
                                     <div className="row mb-20">
-                                        <div className="col-md-3  form-group">
-                                            <label>Eligible Amount</label>
 
-                                            <input
-                                                type="number"
-                                                name="eligibleAmount"
-                                                value={formData.eligibleAmount}
-                                                onChange={handleChange}
-                                            />
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Eligible Amount
+                                            </label>
+                                            <span>
+                                                {vendorData?.EligibleAmountWithoutWHT}
+                                            </span>
                                         </div>
 
-                                        <div className="col-md-3  form-group">
-                                            <label>Approved / Paid Amount</label>
-
-                                            <input
-                                                type="number"
-                                                name="approvedAmount"
-                                                value={formData.approvedAmount}
-                                                onChange={handleChange}
-                                            />
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Approved / Paid Amount
+                                            </label>
+                                            <span>
+                                                {vendorData?.ApprovedAmountPaidAmount}
+                                            </span>
                                         </div>
 
-                                        <div className="col-md-3  form-group">
-                                            <label>Balance Amount</label>
-
-                                            <input
-                                                type="number"
-                                                name="balanceAmount"
-                                                value={formData.balanceAmount}
-                                                onChange={handleChange}
-                                            />
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                Balance Amount
+                                            </label>
+                                            <span>
+                                                {vendorData?.BalanceEligibleAmount}
+                                            </span>
                                         </div>
 
-                                        <div className="col-md-3  form-group">
-                                            <label>From Date</label>
-
-                                            <input
-                                                type="date"
-                                                name="fromDate"
-                                                value={formData.fromDate}
-                                                onChange={handleChange}
-                                            />
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                From Date
+                                            </label>
+                                            <span>
+                                                {formatDate(vendorData?.FromDate)}
+                                            </span>
                                         </div>
 
-                                        <div className="col-md-3  form-group">
-                                            <label>To Date</label>
-
-                                            <input
-                                                type="date"
-                                                name="toDate"
-                                                value={formData.toDate}
-                                                onChange={handleChange}
-                                            />
+                                        <div className="col-md-3">
+                                            <label className="font fontblock">
+                                                To Date
+                                            </label>
+                                            <span>
+                                                {formatDate(vendorData?.ToDate)}
+                                            </span>
                                         </div>
+
                                     </div>
                                 </div>
                                 <div className="heading1" style={{ marginTop: "10px" }}>
-                                    <label>Checker Remarks</label>
+                                    <label>Remarks</label>
                                 </div>
-                                <div className='main-formcontainer'>
+
+                                <div className="main-formcontainer">
                                     <div className="row mb-20">
                                         <div className="col-md-12">
-                                            <textarea
-                                                className="remarks-box col-md-12"
-                                                value={remarks}
-                                                onChange={(e) =>
-                                                    setRemarks(e.target.value)
-                                                }
-                                            />
+                                            <span>
+                                                {vendorData?.ApproverComments || "No Remarks"}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                                 <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
-                                    <a className="Submit-btn" onClick={handleApprove}>Submit</a>
-                                    <a className="Reject-btn" onClick={handleReject}>Reject</a>
+                                    {/* <a className="Submit-btn" onClick={handleApprove}>Submit</a>
+                                    <a className="Reject-btn" onClick={handleReject}>Reject</a> */}
                                     <a className="Exit-btn" onClick={history.goBack}>Exit</a>
                                 </div>
                             </div>
@@ -1204,4 +1108,4 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
     );
 };
 
-export default VendorApprovalForm;
+export default VendorViewForm;
