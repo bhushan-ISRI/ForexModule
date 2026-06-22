@@ -579,7 +579,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
                 } else {
                     //alert("Vendor not found");
-                   // setShowVendorPopup(true);
+                    // setShowVendorPopup(true);
                 }
 
             })
@@ -1014,15 +1014,21 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 }
 
                 finalRemark = treasuryPaymentRemarks; // or treasuryRemarks if you want
-                const totalAmountAdd = Number(paidAmount) + Number(totalAmount)
+                const totalAmountAdd = Number(paidAmount) + Number(inrAmount)
 
-                await sp.web.lists
-                    .getByTitle("VendorMaster")
-                    .items.getById(Number(VendorId))
-                    .update({
-                        ApprovedAmountPaidAmount: totalAmountAdd
-                    })
-
+                // await sp.web.lists
+                //     .getByTitle("VendorMaster")
+                //     .items.getById(Number(VendorId))
+                //     .update({
+                //         ApprovedAmountPaidAmount: totalAmountAdd
+                //     })
+                await sp.updateData(
+                    "VendorMaster",
+                    Number(VendorId),
+                    {
+                        ApprovedAmountPaidAmount: ""+totalAmountAdd
+                    },
+                    props)
 
             }
 

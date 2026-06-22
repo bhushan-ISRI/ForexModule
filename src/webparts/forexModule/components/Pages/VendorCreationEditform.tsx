@@ -249,18 +249,18 @@ const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
                 setVendorInfo(data[0]);
                 if (data && data.length > 0) {
 
-    setVendorInfo(data[0]);
+                    setVendorInfo(data[0]);
 
-    setFormData((prev) => ({
-        ...prev,
-        taxDocumentAvailable:
-            data[0]?.TaxDocumentAvailable || "Yes"
-    }));
+                    setFormData((prev) => ({
+                        ...prev,
+                        taxDocumentAvailable:
+                            data[0]?.TaxDocumentAvailable || "Yes"
+                    }));
 
-    setDTAAApplicable(
-        data[0]?.DTAAApplicable || ""
-    );
-}
+                    setDTAAApplicable(
+                        data[0]?.DTAAApplicable || ""
+                    );
+                }
             }
 
         } catch (error) {
@@ -517,10 +517,10 @@ const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
                 });
 
             // Upload PE File
-
             if (peFile?.length > 0) {
-
                 for (const file of peFile) {
+
+                    if (!file.name) continue; // skip existing attachments
 
                     await sp.web.lists
                         .getByTitle("VendorTaxDeclaration")
@@ -569,14 +569,15 @@ const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
                     VendorCodeId: Number(vendorInfo.Id)
                 });
             if (trcDeclarationFile?.length > 0) {
-                for (const file in trcDeclarationFile) {
+                for (const file of trcDeclarationFile) {
 
+                    if (!file.name) continue; // skip existing attachments
 
                     await sp.web.lists
                         .getByTitle("VendorTaxDeclaration")
                         .items.getById(trcDeclarationId)
                         .attachmentFiles.add(
-                            getUniqueFileName(trcDeclarationFile),
+                            getUniqueFileName(file),
                             file
                         );
                 }
@@ -615,20 +616,22 @@ const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
                         formData.form10FEndDate || null,
                     VendorCodeId: Number(vendorInfo.Id)
                 });
-
             if (form10FFile?.length > 0) {
-                for (const file in form10FFile) {
+                for (const file of form10FFile) {
 
+                    if (!file.name) continue; // skip existing attachments
 
                     await sp.web.lists
                         .getByTitle("VendorTaxDeclaration")
                         .items.getById(form10FDeclarationId)
                         .attachmentFiles.add(
-                            getUniqueFileName(form10FFile),
+                            getUniqueFileName(file),
                             file
                         );
                 }
             }
+
+
 
             alert("Vendor Saved Successfully");
             history.push("/VendorCreationDashboard");
@@ -708,6 +711,61 @@ const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
         //     );
         //     return;
         // }
+    };
+    const handleDeleteFile = async (fileUrl: string, index: number) => {
+        try {
+            await sp.web
+                .getFileByServerRelativePath(fileUrl)
+                .recycle();
+
+            setPeFile((prev: any[]) =>
+                prev.filter((_, i) => i !== index)
+            );
+        } catch (error) {
+            console.error("Error deleting file:", error);
+        }
+    };
+    const handleDeleteForm10FFile = async (
+        fileUrl: string,
+        index: number
+    ) => {
+        try {
+            // Delete from SharePoint
+            await sp.web
+                .getFileByServerRelativePath(fileUrl)
+                .recycle();
+
+            // Remove from state
+            setForm10FFile((prev: any[]) =>
+                prev.filter((_, i) => i !== index)
+            );
+
+            alert("File deleted successfully");
+        } catch (error) {
+            console.error("Error deleting file:", error);
+            alert("Failed to delete file");
+        }
+    };
+
+    const handleDeleteTRCFile = async (
+        fileUrl: string,
+        index: number
+    ) => {
+        try {
+            // Delete from SharePoint if already uploaded
+            await sp.web
+                .getFileByServerRelativePath(fileUrl)
+                .recycle();
+
+            // Remove from state
+            setTrcDeclarationFile((prev: any[]) =>
+                prev.filter((_, i) => i !== index)
+            );
+
+            alert("TRC file deleted successfully");
+        } catch (error) {
+            console.error("Error deleting TRC file:", error);
+        }
     };
     const isTaxDocAvailable = formData.taxDocumentAvailable === "Yes";
     return (
@@ -1077,20 +1135,35 @@ const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
                                             <label>Upload Document </label>
                                             <input
                                                 type="file"
-                                                onChange={(e: any) => setPeFile(e.target.files[0])}
+                                                onChange={(e: any) =>
+                                                    setPeFile(Array.from(e.target.files || []))
+                                                }
                                                 disabled={!isTaxDocAvailable}
                                             />
                                             {peFile.length > 0 && (
-                                                <div>
+                                                <div className="mt-2">
                                                     {peFile.map((file: any, index: number) => (
-                                                        <div key={index}>
+                                                        <div
+                                                            key={index}
+                                                            className="d-flex align-items-center mb-1"
+                                                        >
                                                             <a
-                                                                href={file.ServerRelativeUrl}
+                                                                href={file.ServerRelativeUrl || "#"}
                                                                 target="_blank"
                                                                 rel="noreferrer"
                                                             >
-                                                                {file.FileName}
+                                                                {file.FileName || file.name}
                                                             </a>
+
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-danger btn-sm ms-2"
+                                                                onClick={() =>
+                                                                    handleDeleteFile(file.ServerRelativeUrl, index)
+                                                                }
+                                                            >
+                                                                Delete
+                                                            </button>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1188,24 +1261,35 @@ const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
                                             <label>Upload Document </label>
                                             <input
                                                 type="file"
-                                                onChange={(e: any) => setTrcDeclarationFile(e.target.files[0])}
+                                                onChange={(e: any) =>
+                                                    setTrcDeclarationFile(Array.from(e.target.files || []))
+                                                }
+                                                //onChange={(e: any) => setTrcDeclarationFile(e.target.files[0])}
                                                 disabled={!isTaxDocAvailable}
                                             />
-                                            {trcDeclarationFile.length > 0 && (
-                                                <div>
-                                                    {trcDeclarationFile.map((file: any, index: number) => (
-                                                        <div key={index}>
-                                                            <a
-                                                                href={file.ServerRelativeUrl}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                            >
-                                                                {file.FileName}
-                                                            </a>
-                                                        </div>
-                                                    ))}
+                                            {trcDeclarationFile.map((file: any, index: number) => (
+                                                <div key={index}>
+                                                    {file.ServerRelativeUrl ? (
+                                                        <a
+                                                            href={file.ServerRelativeUrl}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                        >
+                                                            {file.FileName}
+                                                        </a>
+                                                    ) : (
+                                                        <span>{file.name}</span>
+                                                    )}
+
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-danger btn-sm ms-2"
+                                                        onClick={() => handleDeleteTRCFile(file.ServerRelativeUrl, index)}
+                                                    >
+                                                        Delete
+                                                    </button>
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
 
 
@@ -1310,29 +1394,41 @@ const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
                                                 disabled={!isTaxDocAvailable}
                                             />
                                         </div>
-
                                         <div className="col-md-3  form-group">
                                             <label>Upload Document </label>
                                             <input
                                                 type="file"
-                                                onChange={(e: any) => setForm10FFile(e.target.files[0])}
+                                                // onChange={(e: any) => setForm10FFile(e.target.files[0])}
+                                                onChange={(e: any) =>
+                                                    setForm10FFile(Array.from(e.target.files || []))
+                                                }
                                                 disabled={!isTaxDocAvailable}
                                             />
-                                            {form10FFile.length > 0 && (
-                                                <div>
-                                                    {form10FFile.map((file: any, index: number) => (
-                                                        <div key={index}>
-                                                            <a
-                                                                href={file.ServerRelativeUrl}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                            >
-                                                                {file.FileName}
-                                                            </a>
-                                                        </div>
-                                                    ))}
+                                            {form10FFile.map((file: any, index: number) => (
+                                                <div key={index}>
+                                                    {file.ServerRelativeUrl ? (
+                                                        <a
+                                                            href={file.ServerRelativeUrl}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                        >
+                                                            {file.FileName}
+                                                        </a>
+                                                    ) : (
+                                                        <span>{file.name}</span>
+                                                    )}
+
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-danger btn-sm ms-2"
+                                                        onClick={() =>
+                                                            handleDeleteForm10FFile(file.ServerRelativeUrl, index)
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </button>
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
 
                                         <div className="col-md-3  form-group">

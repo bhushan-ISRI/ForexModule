@@ -774,6 +774,11 @@ const ensureUser = async (email: string): Promise<number> => {
                     setDTAAApplicable(v.DTAAApplicable || "");
                     setTaxDocumentView(v.TaxDocumentAvailable || "");
 
+const balanceAmount =
+    (Number(v?.EligibleAmountWithoutWHT) || 0) -
+    (Number(v?.ApprovedAmountPaidAmount) || 0);
+
+setBallenceEligibleAmount(String(balanceAmount));
 
                 } else {
                     //alert("Vendor not found");
