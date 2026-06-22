@@ -19,12 +19,15 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
     const [peData, setPeData] = useState<any>(null);
     const [trcData, setTrcData] = useState<any>(null);
     const [form10FData, setForm10FData] = useState<any>(null);
+    const [approvalMatrix, setApprovalMatrix] = React.useState<any[]>([]);
+
     const spCrudOps = SPCRUDOPS();
     const history = useHistory();
     const vendorId = useParams<{ Id: string }>();
     useEffect(() => {
 
         loadVendorData();
+        loadApprovalMatrix();
 
     }, []);
     const [formData, setFormData] = useState({
@@ -58,6 +61,33 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
         fromDate: "",
         toDate: "",
     });
+
+    const loadApprovalMatrix = async () => {
+
+        try {
+
+            const spx = await spCrudOps;
+
+            const data = await spx.getData(
+                "ForexApprovalMAtrix",
+                "ID,Approver/Title,Approver/Id,RequestType,Status",
+                "Approver",
+                "RequestType eq 'IDT Checker' and Status eq 'Active'",
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            console.log("Approval Matrix", data);
+
+            setApprovalMatrix(data);
+
+        } catch (error) {
+
+            console.log(error);
+
+        }
+    };
     const loadVendorData = async () => {
 
         try {
@@ -138,7 +168,40 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
     // =============================
     // APPROVE
     // =============================
+    const handleSendBack = async () => {
 
+        try {
+
+            if (!remarks.trim()) {
+                alert("Please enter remarks before sending back.");
+                return;
+            }
+
+            await sp.web.lists
+                .getByTitle("VendorMaster")
+                .items.getById(Number(vendorId.Id))
+                .update({
+
+                    RequestStatus: "Sent Back",
+
+                    ApproverComments: remarks,
+
+                    ApprovedByIDTChecker: "No",
+
+                    CurrentApproverId: vendorData?.AuthorId
+                });
+
+            alert("Request Sent Back Successfully");
+
+            history.push("/VendorApprovalDashboard");
+
+        } catch (error) {
+
+            console.log(error);
+            alert("Error while sending back request");
+
+        }
+    };
     const handleApprove = async () => {
 
         try {
@@ -155,8 +218,8 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                     BalanceEligibleAmount: formData.balanceAmount,
                     FromDate: new Date(formData.fromDate),
                     ToDate: new Date(formData.toDate),
-                    ApprovedByIDTChecker: "Yes"
-                    // ApprovedDate: new Date()
+                    ApprovedByIDTChecker: "Yes",
+                    CurrentApproverId: null,
                 });
 
             alert("Vendor Approved");
@@ -228,9 +291,9 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
         return <div>Loading...</div>;
     }
     const formatDate = (date: any) => {
-    if (!date) return "";
-    return new Date(date).toLocaleDateString("en-GB");
-};
+        if (!date) return "";
+        return new Date(date).toLocaleDateString("en-GB");
+    };
 
     return (
 
@@ -518,7 +581,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                 <div className='main-formcontainer'>
                                     <div className="row mb-20">
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className="font fontblock">
                                                 Nature Of Payment
                                             </label>
@@ -528,7 +591,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                                     vendorData?.NatureOfPayment?.Title
                                                 }
                                             </span>
-                                        </div>
+                                        </div> */}
 
                                         <div className="col-md-3">
                                             <label className="font fontblock">
@@ -554,7 +617,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                             </span>
                                         </div>
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className="font fontblock">
                                                 Country Of Tax Residence
                                             </label>
@@ -564,7 +627,7 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                                     vendorData?.CountryOfTaxResidence
                                                 }
                                             </span>
-                                        </div>
+                                        </div> */}
 
                                     </div>
                                 </div>
@@ -921,6 +984,12 @@ const VendorApprovalForm: React.FC<IForexModuleProps> = (props) => {
                                 </div>
                                 <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
                                     <a className="Submit-btn" onClick={handleApprove}>Submit</a>
+                                    <a
+                                        className="Reject-btn"
+                                        onClick={handleSendBack}
+                                    >
+                                        Send Back
+                                    </a>
                                     <a className="Reject-btn" onClick={handleReject}>Reject</a>
                                     <a className="Exit-btn" onClick={history.goBack}>Exit</a>
                                 </div>

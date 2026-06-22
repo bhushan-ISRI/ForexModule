@@ -881,11 +881,6 @@ const ensureUser = async (email: string): Promise<number> => {
         setFromDate(`${fyStartYear}-04-01`);
     };
 
-    
-
-
-
-
     const uploadToLibrary = async (
         libraryName: string,
         fileName: string,
@@ -1150,6 +1145,12 @@ const ensureUser = async (email: string): Promise<number> => {
             if (isNaN(Number(totalAmount)) || Number(totalAmount) <= 0) {
                 alert("Please enter a valid Total Amount.");
                 return;
+            }
+
+            if(Number(ballenceEligibleAmount) <= 0 ){
+                alert("eligible amount getting exceeded withholding tax will be applicable")
+                
+
             }
 
             const approverslist = approvers || [];

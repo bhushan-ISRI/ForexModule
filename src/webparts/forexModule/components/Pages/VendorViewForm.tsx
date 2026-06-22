@@ -432,7 +432,7 @@ const VendorViewForm: React.FC<IForexModuleProps> = (props) => {
                                 <div className='main-formcontainer'>
                                     <div className="row mb-20">
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className="font fontblock">
                                                 Nature Of Payment
                                             </label>
@@ -442,7 +442,7 @@ const VendorViewForm: React.FC<IForexModuleProps> = (props) => {
                                                     vendorData?.NatureOfPayment?.Title
                                                 }
                                             </span>
-                                        </div>
+                                        </div> */}
 
                                         <div className="col-md-3">
                                             <label className="font fontblock">
@@ -468,7 +468,7 @@ const VendorViewForm: React.FC<IForexModuleProps> = (props) => {
                                             </span>
                                         </div>
 
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className="font fontblock">
                                                 Country Of Tax Residence
                                             </label>
@@ -478,7 +478,7 @@ const VendorViewForm: React.FC<IForexModuleProps> = (props) => {
                                                     vendorData?.CountryOfTaxResidence
                                                 }
                                             </span>
-                                        </div>
+                                        </div> */}
 
                                     </div>
                                 </div>

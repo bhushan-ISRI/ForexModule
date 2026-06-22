@@ -107,12 +107,26 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
     //         `${window.location.origin}${props.context.pageContext.web.serverRelativeUrl}/SitePages/VendorCreation.aspx?Id=${id}`;
 
     // };
-    const openRequest = (id: number) => {
+    const openRequest = (
+        id: number,
+        requestStatus: string
+    ) => {
 
-        history.push(
-            `/VendorCreationForm/${id}`
-        );
+        if (
+            requestStatus?.toLowerCase() === "sent back"
+        ) {
 
+            history.push(
+                `/VendorCreationEditForm/${id}`
+            );
+
+        } else {
+
+            history.push(
+                `/VendorCreationForm/${id}`
+            );
+
+        }
     };
 
     return (
@@ -419,14 +433,19 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                 </td>
 
                                                 <td>
-                                                    {(item.RequestStatus === "Approved" && item.TaxDocumentAvailable === "No") && (
+                                                    {(item.ApprovedByIDTChecker === "No" && item.RequestStatus != "Rejected") && (
 
-                                                    <a  onClick={() => openRequest(item.Id)}>
-                                                        <img src={edit} alt="" width={15} />
-                                                    </a>
-                                                   
+                                                        <a onClick={() =>
+                                                            openRequest(
+                                                                item.Id,
+                                                                item.RequestStatus
+                                                            )
+                                                        }>
+                                                            <img src={edit} alt="" width={15} />
+                                                        </a>
+
                                                     )}
-                                                      <a  onClick={() => history.push(`/VendorViewForm/${item.Id}`)}>
+                                                    <a onClick={() => history.push(`/VendorViewForm/${item.Id}`)}>
                                                         <img src={view} alt="" width={15} />
                                                     </a>
                                                 </td>

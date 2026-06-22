@@ -7,8 +7,9 @@ import SPCRUDOPS from "../../service/BAL/spcrud";
 import { useEffect, useState } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import logo from "../../assets/sona-comstarlogo.png";
+import { boolean } from "yup";
 
-const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
+const VendorCreationEditForm: React.FC<IForexModuleProps> = (props) => {
     const [formData, setFormData] = useState({
         natureOfPayment: "",
         taxDocumentAvailable: "Yes",
@@ -18,7 +19,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
         peDocumentDate: "",
         peStartDate: "",
         peEndDate: "",
-
+        sepClause: false,
         trcDocumentAvailable: "Yes",
         trcDocumentNumber: "",
         trcDocumentDate: "",
@@ -49,18 +50,22 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     const [bankFile, setBankFile] = useState<any>(null);
     const [kycFile, setKycFile] = useState<any>(null);
     const [otherFile, setOtherFile] = useState<any>(null);
-
-    const [peFile, setPeFile] = useState<any>(null);
-    const [trcDeclarationFile, setTrcDeclarationFile] = useState<any>(null);
-    const [form10FFile, setForm10FFile] = useState<any>(null);
+    // const [peFileAttachments, setPeFileAttachments] = useState<any[]>([]);
+    // const [trcFileAttachments, setTrcFileAttachments] = useState<any[]>([]);
+    // const [form10FAttachments, setForm10FAttachments] = useState<any[]>([]);
+    const [peFile, setPeFile] = useState<any[]>([]);
+    const [trcDeclarationFile, setTrcDeclarationFile] = useState<any[]>([]);
+    const [form10FFile, setForm10FFile] = useState<any[]>([]);
     const [natureOfPaymentOptions, setNatureOfPaymentOptions] = useState<any[]>([]);
     const [vendorInfo, setVendorInfo] = useState<any>(null);
     const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
     const [countryOfTaxResidence, setCountryOfTaxResidence] = React.useState("");
     const [countries, setCountries] = React.useState<any[]>([]);
     const [dtaaApplicable, setDTAAApplicable] = React.useState("");
-    const [requesterStatus, setRequesterStatus] = React.useState("");
-
+    const [peDeclarationId, setPeDeclarationId] = useState<number>(0);
+    const [trcDeclarationId, setTrcDeclarationId] = useState<number>(0);
+    const [form10FDeclarationId, setForm10FDeclarationId] = useState<number>(0);
+    const [sepClause, setSepClause] = useState<boolean>(false);
     //const [approvalMatrix, setApprovalMatrix] = React.useState<any[]>([]);
 
     // const handleChange = (
@@ -76,9 +81,105 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
         loadcontries();
         loadVendorInfo(itemId.Id);
         loadApprovalMatrix();
+        loadTaxDeclaration(itemId.Id);
 
     }, []);
+    const loadTaxDeclaration = async (vendorId: string | undefined) => {
+        try {
+            if (!vendorId) return;
 
+            const data = await sp.web.lists
+                .getByTitle("VendorTaxDeclaration")
+                .items
+                .select(
+                    "*",
+                    "AttachmentFiles"
+                )
+                .expand("AttachmentFiles")
+                .filter(`VendorMasterIdId eq ${vendorId}`)
+                .get();
+
+            const peData = data.find(
+                (x: any) => x.DeclarationType === "Permanent Establishment"
+            );
+
+            const trcData = data.find(
+                (x: any) => x.DeclarationType === "TAX Residency Certificate"
+            );
+
+            const form10fData = data.find(
+                (x: any) => x.DeclarationType === "Form 10 F"
+            );
+            setPeDeclarationId(peData?.Id || 0);
+            setTrcDeclarationId(trcData?.Id || 0);
+            setForm10FDeclarationId(form10fData?.Id || 0);
+
+            setFormData((prev) => ({
+                ...prev,
+
+                peDocumentAvailable: peData?.DocumentAvailable || "No",
+                peDocumentNumber: peData?.DocumentNumber || "",
+                peDocumentDate: peData?.DocumentDate
+                    ? new Date(peData.DocumentDate).toISOString().split("T")[0]
+                    : "",
+                peStartDate: peData?.ValidityStartDate
+                    ? new Date(peData.ValidityStartDate).toISOString().split("T")[0]
+                    : "",
+                peEndDate: peData?.ValidityEndDate
+                    ? new Date(peData.ValidityEndDate).toISOString().split("T")[0]
+                    : "",
+
+                trcDocumentAvailable: trcData?.DocumentAvailable || "No",
+                trcDocumentNumber: trcData?.DocumentNumber || "",
+                trcDocumentDate: trcData?.DocumentDate
+                    ? new Date(trcData.DocumentDate).toISOString().split("T")[0]
+                    : "",
+                taxIdentificationNumber:
+                    trcData?.TaxIdentificationNumber || "",
+                trcStartDate: trcData?.ValidityStartDate
+                    ? new Date(trcData.ValidityStartDate).toISOString().split("T")[0]
+                    : "",
+                trcEndDate: trcData?.ValidityEndDate
+                    ? new Date(trcData.ValidityEndDate).toISOString().split("T")[0]
+                    : "",
+
+                form10FDocumentAvailable:
+                    form10fData?.DocumentAvailable || "No",
+                form10FDocumentNumber:
+                    form10fData?.DocumentNumber || "",
+                form10FDocumentDate:
+                    form10fData?.DocumentDate
+                        ? new Date(form10fData.DocumentDate)
+                            .toISOString()
+                            .split("T")[0]
+                        : "",
+                acknowledgmentNumber:
+                    form10fData?.AcknowledgmentNumber || "",
+                form10FStartDate:
+                    form10fData?.ValidityStartDate
+                        ? new Date(form10fData.ValidityStartDate)
+                            .toISOString()
+                            .split("T")[0]
+                        : "",
+                form10FEndDate:
+                    form10fData?.ValidityEndDate
+                        ? new Date(form10fData.ValidityEndDate)
+                            .toISOString()
+                            .split("T")[0]
+                        : "",
+                sepClause: peData?.SEPClause ?? false
+            }));
+            setPeFile(peData?.AttachmentFiles || []);
+            setTrcDeclarationFile(trcData?.AttachmentFiles || []);
+            setForm10FFile(form10fData?.AttachmentFiles || []);
+            setCountryOfTaxResidence(
+                trcData?.CountryOfTaxResidence || ""
+            );
+
+        } catch (error) {
+            console.log("Load Tax Declaration Error", error);
+        }
+    };
     const loadcontries = async () => {
         const spx = await spCrudOps;
         const countryData = await spx.getData(
@@ -143,9 +244,23 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
             if (data && data.length > 0) {
 
                 console.log("Vendor Info", data[0]);
-                setRequesterStatus(data[0].RequestStatus);
+                setDTAAApplicable(data[0].DTAAApplicable);
 
                 setVendorInfo(data[0]);
+                if (data && data.length > 0) {
+
+    setVendorInfo(data[0]);
+
+    setFormData((prev) => ({
+        ...prev,
+        taxDocumentAvailable:
+            data[0]?.TaxDocumentAvailable || "Yes"
+    }));
+
+    setDTAAApplicable(
+        data[0]?.DTAAApplicable || ""
+    );
+}
             }
 
         } catch (error) {
@@ -236,10 +351,10 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                     return;
                 }
 
-                if (!countryOfTaxResidence) {
-                    alert("Country Of Tax Residence is mandatory.");
-                    return;
-                }
+                // if (!countryOfTaxResidence) {
+                //     alert("Country Of Tax Residence is mandatory.");
+                //     return;
+                // }
 
                 if (!formData.trcStartDate) {
                     alert("TRC Validity Start Date is mandatory.");
@@ -255,7 +370,6 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                     alert("TRC Upload Document is mandatory.");
                     return;
                 }
-
             }
 
             // Form 10F
@@ -291,19 +405,13 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                     return;
                 }
             }
+            if (!dtaaApplicable) {
+                alert('DTAA Applicable is mandetory');
+                return;
+            }
             // ==============================
             // SAVE IN VendorMaster
             // ==============================
-            if (!dtaaApplicable) {
-                alert("DTAA Applicable is mandatory");
-                return;
-            }
-            let requeststatus;
-            if (requesterStatus == "Pending For Document Upload") {
-                requeststatus = 'Pending With IDT'
-            } else {
-                requeststatus = 'Pending'
-            }
 
             const vendorData: any = {
                 Title: "Vendor",
@@ -318,10 +426,11 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                 FromDate: new Date(formData.fromDate),
                 ToDate: new Date(formData.toDate),
                 DTAAApplicable: dtaaApplicable,
-                //CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null,
+                CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null,
                 ApprovedByIDTChecker: "Yes",
-                DocumentUpload: "Yes",
-                RequestStatus:requeststatus
+                RequestStatus: "Pending With IDT"
+
+
             };
 
             const vendorResponse = await spsf.updateData(
@@ -380,7 +489,8 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
 
             const peResponse = await sp.web.lists
                 .getByTitle("VendorTaxDeclaration")
-                .items.add({
+                .items.getById(peDeclarationId)
+                .update({
                     Title: "Permanent Establishment",
 
                     VendorMasterIdId: Number(itemId.Id),
@@ -396,7 +506,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                     DocumentDate:
                         new Date(formData.peDocumentDate) || null,
 
-                    SEPClause: true,
+                    SEPClause: sepClause,
 
                     ValidityStartDate:
                         new Date(formData.peStartDate) || null,
@@ -408,15 +518,18 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
 
             // Upload PE File
 
-            if (peFile) {
+            if (peFile?.length > 0) {
 
-                await sp.web.lists
-                    .getByTitle("VendorTaxDeclaration")
-                    .items.getById(peResponse.data.Id)
-                    .attachmentFiles.add(
-                        getUniqueFileName(peFile),
-                        peFile
-                    );
+                for (const file of peFile) {
+
+                    await sp.web.lists
+                        .getByTitle("VendorTaxDeclaration")
+                        .items.getById(peDeclarationId)
+                        .attachmentFiles.add(
+                            getUniqueFileName(file),
+                            file
+                        );
+                }
             }
 
             // ==============================
@@ -425,7 +538,8 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
 
             const trcResponse = await sp.web.lists
                 .getByTitle("VendorTaxDeclaration")
-                .items.add({
+                .items.getById(trcDeclarationId)
+                .update({
                     Title: "TAX Residency Certificate",
 
                     VendorMasterIdId: Number(itemId.Id),
@@ -454,16 +568,18 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                         formData.trcEndDate || null,
                     VendorCodeId: Number(vendorInfo.Id)
                 });
+            if (trcDeclarationFile?.length > 0) {
+                for (const file in trcDeclarationFile) {
 
-            if (trcDeclarationFile) {
 
-                await sp.web.lists
-                    .getByTitle("VendorTaxDeclaration")
-                    .items.getById(trcResponse.data.Id)
-                    .attachmentFiles.add(
-                        getUniqueFileName(trcDeclarationFile),
-                        trcDeclarationFile
-                    );
+                    await sp.web.lists
+                        .getByTitle("VendorTaxDeclaration")
+                        .items.getById(trcDeclarationId)
+                        .attachmentFiles.add(
+                            getUniqueFileName(trcDeclarationFile),
+                            file
+                        );
+                }
             }
 
             // ==============================
@@ -472,7 +588,8 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
 
             const form10Response = await sp.web.lists
                 .getByTitle("VendorTaxDeclaration")
-                .items.add({
+                .items.getById(form10FDeclarationId)
+                .update({
                     Title: "Form 10 F",
 
                     VendorMasterIdId: Number(itemId.Id),
@@ -499,15 +616,18 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                     VendorCodeId: Number(vendorInfo.Id)
                 });
 
-            if (form10FFile) {
+            if (form10FFile?.length > 0) {
+                for (const file in form10FFile) {
 
-                await sp.web.lists
-                    .getByTitle("VendorTaxDeclaration")
-                    .items.getById(form10Response.data.Id)
-                    .attachmentFiles.add(
-                        getUniqueFileName(form10FFile),
-                        form10FFile
-                    );
+
+                    await sp.web.lists
+                        .getByTitle("VendorTaxDeclaration")
+                        .items.getById(form10FDeclarationId)
+                        .attachmentFiles.add(
+                            getUniqueFileName(form10FFile),
+                            file
+                        );
+                }
             }
 
             alert("Vendor Saved Successfully");
@@ -957,17 +1077,30 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                             <label>Upload Document </label>
                                             <input
                                                 type="file"
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-
                                                 onChange={(e: any) => setPeFile(e.target.files[0])}
                                                 disabled={!isTaxDocAvailable}
                                             />
+                                            {peFile.length > 0 && (
+                                                <div>
+                                                    {peFile.map((file: any, index: number) => (
+                                                        <div key={index}>
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                            >
+                                                                {file.FileName}
+                                                            </a>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="row mb-20">
                                         <div className="col-md-3  form-group">
                                             <div style={{ display: "flex", gap: "5px", alignItems: "center", justifyContent: "start" }}>
-                                                <input type="checkbox" style={{ width: "15px", height: "15px" }} />
+                                                <input type="checkbox" checked={formData.sepClause} onChange={(e) => setSepClause(e.target.checked)} style={{ width: "15px", height: "15px" }} />
                                                 <label>SEP Clause</label>
                                             </div>
                                         </div>
@@ -1002,7 +1135,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                 <div className='main-formcontainer'>
                                     <div className="row mb-20">
                                         <div className="col-md-3  form-group">
-                                            <label>Document Available </label>
+                                            <label>Document Available</label>
 
                                             <select
                                                 name="trcDocumentAvailable"
@@ -1052,19 +1185,32 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                         </div>
 
                                         <div className="col-md-3  form-group">
-                                            <label>Upload Document</label>
+                                            <label>Upload Document </label>
                                             <input
                                                 type="file"
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-
                                                 onChange={(e: any) => setTrcDeclarationFile(e.target.files[0])}
                                                 disabled={!isTaxDocAvailable}
                                             />
+                                            {trcDeclarationFile.length > 0 && (
+                                                <div>
+                                                    {trcDeclarationFile.map((file: any, index: number) => (
+                                                        <div key={index}>
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                            >
+                                                                {file.FileName}
+                                                            </a>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
 
 
-                                        <div className="col-md-3  form-group">
-                                            <label>Country of Tax Residence </label>
+                                        {/* <div className="col-md-3  form-group">
+                                            <label>Country of Tax Residence <span style={{ color: "red" }}>*</span></label>
 
                                             <select
                                                 className="form-control"
@@ -1083,7 +1229,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                                     </option>
                                                 ))}
                                             </select>
-                                        </div>
+                                        </div> */}
 
                                         <div className="col-md-3  form-group">
                                             <label>Validity Start Date </label>
@@ -1142,7 +1288,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                         </div>
 
                                         <div className="col-md-3  form-group">
-                                            <label>Document Date</label>
+                                            <label>Document Date </label>
 
                                             <input
                                                 type="date"
@@ -1154,7 +1300,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                         </div>
 
                                         <div className="col-md-3  form-group">
-                                            <label>Acknowledgment Number</label>
+                                            <label>Acknowledgment Number </label>
 
                                             <input
                                                 type="text"
@@ -1166,14 +1312,27 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                         </div>
 
                                         <div className="col-md-3  form-group">
-                                            <label>Upload Document</label>
+                                            <label>Upload Document </label>
                                             <input
                                                 type="file"
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-
                                                 onChange={(e: any) => setForm10FFile(e.target.files[0])}
                                                 disabled={!isTaxDocAvailable}
                                             />
+                                            {form10FFile.length > 0 && (
+                                                <div>
+                                                    {form10FFile.map((file: any, index: number) => (
+                                                        <div key={index}>
+                                                            <a
+                                                                href={file.ServerRelativeUrl}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                            >
+                                                                {file.FileName}
+                                                            </a>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="col-md-3  form-group">
@@ -1339,4 +1498,4 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     );
 };
 
-export default VendorCreationForm;
+export default VendorCreationEditForm;

@@ -935,7 +935,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
                                 </div>
                                 <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
-                                    <a className="Submit-btn" onClick={saveVendorRequest}>  Save and sent to treasury  </a>
+                                    <a className="Submit-btn" onClick={saveVendorRequest}>  Save and Sent to Treasury  </a>
                                     <a className="Exit-btn" onClick={history.goBack}>Exit</a>
                                 </div>
                             </div>

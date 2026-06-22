@@ -664,7 +664,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                 } else {
                     //alert("Vendor not found");
-                    setShowVendorPopup(true);
+              //      setShowVendorPopup(true);
                 }
 
             })
@@ -767,7 +767,33 @@ const ViewRequestForm = (props: IForexModuleProps) => {
         setFromDate(`${fyStartYear}-04-01`);
     };
 
+    const hasValue = (value: any) =>
+        value !== null &&
+        value !== undefined &&
+        value !== "" &&
+        value !== "0";
 
+    const hasAdvanceData = rowsAdvance.some(
+        row =>
+            row.invoiceNo ||
+            row.invoiceDate ||
+            row.boeNo ||
+            row.boeDate ||
+            row.mrnNo ||
+            row.blNo ||
+            row.blDate ||
+            row.invoiceAmount
+    );
+    const hasPaymentData =
+    foreignCurrency ||
+    foreignAmountpayment ||
+    exchangeRatepayment ||
+    inrAmountpayment ||
+    paymentDatepayment ||
+    paymentReferencepayment ||
+    swiftCopy?.length > 0 ||
+    form15CA?.length > 0 ||
+    form15CB?.length > 0;
     return (
 
         <>
@@ -2057,7 +2083,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     </>
                                 )}
 
-                                {paymentType === "Goods-Advance Payment" && (
+                                {(paymentType === "Goods-Advance Payment" && hasAdvanceData) && (
                                     <>
                                         <div className="heading1" style={{ marginTop: "10px" }}>
                                             <label>Bill Payment Details (For Goods Bill Payment)</label>
@@ -2321,7 +2347,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                     </>
                                 )}
 
-                                {paymentType === "Service-Advance Payment" && (
+                                {(paymentType === "Service-Advance Payment" && hasAdvanceData) && (
                                     <>
                                         <p>
                                             <b>Bill Payment Details (for Service Bill Payment)</b>
@@ -2449,26 +2475,41 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                         </div>
                                     </>
                                 )}
-
-                                <div className="heading1" style={{ marginTop: "10px" }}>
-                                    <label>Vouching Details</label>
-                                </div>
-                                <div className='main-formcontainer'>
-                                    <div className='row mb-20'>
-                                        <div className='col-md-4'>
-                                            <label className='font'>Validation Date</label>
-                                            <input type="date" value={validationDateshow} className="form-control readonly" />
+                                {validationDateshow !== "" && (
+                                    <>
+                                        <div className="heading1" style={{ marginTop: "10px" }}>
+                                            <label>Vouching Details</label>
                                         </div>
-                                        {(paymentType.includes("Advance")) && (
-                                            <div className='col-md-4'>
-                                                <label className="font">Voucher Number</label>
-                                                <input type="text" value={voucherNumbershow} className="form-control readonly" />
+
+                                        <div className="main-formcontainer">
+                                            <div className="row mb-20">
+                                                <div className="col-md-4">
+                                                    <label className="font">Validation Date</label>
+                                                    <input
+                                                        type="date"
+                                                        value={validationDateshow}
+                                                        className="form-control readonly"
+                                                        readOnly
+                                                    />
+                                                </div>
+
+                                                {paymentType.includes("Advance") && voucherNumbershow && (
+                                                    <div className="col-md-4">
+                                                        <label className="font">Voucher Number</label>
+                                                        <input
+                                                            type="text"
+                                                            value={voucherNumbershow}
+                                                            className="form-control readonly"
+                                                            readOnly
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-
-                                </div>
-
+                                        </div>
+                                    </>
+                                )}
+                                {hasPaymentData && (
+                                    <>
                                 <div className="heading1" style={{ marginTop: "10px" }}>
                                     <label>Payment Details</label>
                                 </div>
@@ -2609,6 +2650,8 @@ const ViewRequestForm = (props: IForexModuleProps) => {
 
                                     </div>
                                 </div>
+                                </>
+                                )}
 
 
 
@@ -2627,7 +2670,7 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                     </div>
                 </div>
             </div>
-            {showVendorPopup && (
+            {/* {showVendorPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box">
                         <h3>Vendor Not Found</h3>
@@ -2649,11 +2692,11 @@ const ViewRequestForm = (props: IForexModuleProps) => {
                                 onClick={() => setShowVendorPopup(false)}
                             >
                                 Cancel
-                            </button> */}
+                            </button>
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
 
 
         </>

@@ -5,7 +5,7 @@ import { useHistory } from "react-router-dom";
 
 import edit from '../../assets/Pencil.png';
 import view from '../../assets/Eye.png';
-const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
+const IDTVendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
     const history = useHistory();
     const spCrudOps = SPCRUDOPS();
 
@@ -293,7 +293,7 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
                                             {Number(item.CurrentApproverId) ===
                                                 Number(props.context.pageContext.legacyPageContext.userId) &&
                                                 item.RequestStatus !== "Sent Back" &&
-                                                item.RequestStatus !== "Send Back" && item.RequestStatus === "Pending" && (
+                                                item.RequestStatus !== "Send Back" && item.DocumentUpload === "Yes" && (
                                                     <a
                                                         title="Edit"
                                                         onClick={() => openRequest(item)}
@@ -363,4 +363,4 @@ const VendorApprovalDashboard: React.FC<IForexModuleProps> = (props) => {
     );
 };
 
-export default VendorApprovalDashboard;
+export default IDTVendorApprovalDashboard;

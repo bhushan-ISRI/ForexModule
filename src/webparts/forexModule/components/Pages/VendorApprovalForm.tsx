@@ -12,13 +12,15 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
 
     const [item, setItem] = React.useState<any>(null);
     const [comments, setComments] = React.useState("");
-
+    const [approvalMatrix, setApprovalMatrix] = React.useState<any[]>([]);
     // const itemId = new URLSearchParams(window.location.href).get("Id");
     const itemId = useParams<{ Id: string }>();
-
+    const [checkDocumentUpload,setCheckDocumentUpload] = React.useState("");
     React.useEffect(() => {
         loadRequest(itemId.Id);
+        loadApprovalMatrix();
     }, []);
+
 
     const loadRequest = async (itemId: string) => {
 
@@ -41,21 +43,54 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
         // }
         if (data.length > 0) {
             console.log("Loaded Item", data[0]);
+            setCheckDocumentUpload(data[0].DocumentUpload);
             setItem(data[0]);
         }
     };
+ const loadApprovalMatrix = async () => {
 
+        try {
+
+            const spx = await spCrudOps;
+
+            const data = await spx.getData(
+                "ForexApprovalMAtrix",
+                "ID,Approver/Title,Approver/Id,RequestType,Status",
+                "Approver",
+                "RequestType eq 'IDT Checker' and Status eq 'Active'",
+                { column: "ID", isAscending: true },
+                5000,
+                props
+            );
+
+            console.log("Approval Matrix", data);
+
+            setApprovalMatrix(data);
+
+        } catch (error) {
+
+            console.log(error);
+
+        }
+    };
     const approveRequest = async () => {
 
         const sp = await spCrudOps;
+        let ApprovalStatus;
+        if(checkDocumentUpload == "Yes"){
+            ApprovalStatus = "Pending With IDT"
+        }else{
+            ApprovalStatus = "Pending For Document Upload"
+        }
+
 
         await sp.updateData(
             "VendorMaster",
             Number(itemId.Id),
             {
-                RequestStatus: "Approved",
+                RequestStatus:ApprovalStatus,
                 ApproverComments: comments,
-                CurrentApproverId: null,
+                    CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null,
                 Status: "Active"
             },
             props
@@ -403,7 +438,7 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                             />
 
                                         </div>
-                                        <div className="col-md-3">
+                                        {/* <div className="col-md-3">
                                             <label className='font'>
                                                 Country of Tax Residence
                                                
@@ -416,7 +451,7 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                             />
 
 
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
                                 <div className="heading1" style={{ marginTop: "10px" }}>
@@ -499,6 +534,8 @@ const VendorApprovalFormFirst: React.FC<IForexModuleProps> = (props) => {
                                 <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
                                     <a className="Submit-btn" onClick={approveRequest}> Approve </a>
                                     <a className="Reject-btn" onClick={rejectRequest}>Reject</a>
+                                    <a className="Exit-btn" onClick={()=>history.push('/VendorCreationDashboard')}>Exit</a>
+
                                 </div>
                             </div>
                         </div>

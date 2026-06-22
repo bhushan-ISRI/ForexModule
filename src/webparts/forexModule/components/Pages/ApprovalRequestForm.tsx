@@ -222,7 +222,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
         Attachmenturl: "",
         Attachmentfilename: ""
     });
-
+    const [VendorId, setVendorId] = useState(0)
     const [rows, setRows] = React.useState([
         {
             invoiceNo: "",
@@ -531,7 +531,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
 
         (await spCrudOps).getData(
             "VendorMaster",
-            "city0,Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
+            "Id,city0,Pincode,VendorCode,VendorName,VendorNameLegal,VendorShortName,VendorType,City/Title,City/City,State/Title,Country/Country,Currency/Title,PostalCode,ContactPersonName,EmailId,PhoneNumber,AlternateContact,BeneficiaryName,BankName,AccountNumberIBAN,SWIFTBICCode,RoutingNumberABA,IFSCCode,IntermediaryBank,IntermediarySWIFTCode,NatureOfPayment/Title,PurposeCodeRBI,BankCountry,BankAddress,VendorAddress,BalanceEligibleAmount,ApprovedAmountPaidAmount,EligibleAmountWithoutWHT,TaxDocumentAvailable,DTAAApplicable",
             "NatureOfPayment,City,State,Country,Currency",
             `VendorCode eq '${vendorCode}'`,
             { column: "ID", isAscending: true },
@@ -550,7 +550,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                         VendorNameLegal: v.VendorNameLegal || "",
                         VendorShortName: v.VendorShortName || "",
                         VendorType: v.VendorType || "",
-                        City: v.city0|| "",
+                        City: v.city0 || "",
                         State: v.State?.Title || "",
                         Country: v.Country?.Country || "",
                         Currency: v.Currency?.Title || "",
@@ -574,11 +574,12 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                         VendorAddress: v.VendorAddress || "",
                         Pincode: v.Pincode || ""
                     });
+                    setVendorId(v.Id)
                     getTaxDeclarationdata(v.VendorCode);
 
                 } else {
                     //alert("Vendor not found");
-                    setShowVendorPopup(true);
+                   // setShowVendorPopup(true);
                 }
 
             })
@@ -731,88 +732,88 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
         }
     };
 
-  const validateAndBuildApprovers = async (): Promise<any[]> => {
+    const validateAndBuildApprovers = async (): Promise<any[]> => {
 
-    const sp = await spCrudOps;
+        const sp = await spCrudOps;
 
-    const approvers: any[] = [];
+        const approvers: any[] = [];
 
-    // RM
-    if (employee.RMId) {
+        // RM
+        if (employee.RMId) {
 
-        approvers.push({
-            Id: employee.RMId,
-            Name: employee.RM,
-            Role: "RM",
-            Level: 1,
-            status: "Pending"
-          
+            approvers.push({
+                Id: employee.RMId,
+                Name: employee.RM,
+                Role: "RM",
+                Level: 1,
+                status: "Pending"
+
+            });
+
+        }
+
+        // HOD
+        if (employee.HODId) {
+
+            approvers.push({
+                Id: employee.HODId,
+                Name: employee.HOD,
+                Role: "HOD",
+                Level: 2,
+                status: ""
+
+            });
+
+        }
+
+        let requestTypeFilter = "";
+
+        if (
+            paymentType === "Goods-Advance Payment" ||
+            paymentType === "Service-Advance Payment"
+        ) {
+
+            requestTypeFilter = "Advance Payment";
+
+        } else {
+
+            requestTypeFilter = paymentType;
+
+        }
+
+        const matrix = await sp.getData(
+            "ForexApprovalMatrix",
+            "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
+            "Approver",
+            `RequestType eq '${requestTypeFilter}' and Status eq 'Active'`,
+            { column: "Level", isAscending: true },
+            5000,
+            props
+        );
+
+        matrix.forEach((item: any) => {
+
+            approvers.push({
+
+                Id: item.Approver?.Id,
+                Name: item.Approver?.Title,
+                Role: item.Role,
+                Level: item.Level,
+                status: ""
+
+
+            });
+
         });
 
-    }
+        // ✅ Ensure first approver is pending
+        if (approvers.length > 0) {
+            approvers[0].Status = "Pending";
+        }
 
-    // HOD
-    if (employee.HODId) {
+        return approvers;
 
-        approvers.push({
-            Id: employee.HODId,
-            Name: employee.HOD,
-            Role: "HOD",
-            Level: 2,
-            status: ""
-        
-        });
-
-    }
-
-    let requestTypeFilter = "";
-
-    if (
-        paymentType === "Goods-Advance Payment" ||
-        paymentType === "Service-Advance Payment"
-    ) {
-
-        requestTypeFilter = "Advance Payment";
-
-    } else {
-
-        requestTypeFilter = paymentType;
-
-    }
-
-    const matrix = await sp.getData(
-        "ForexApprovalMatrix",
-        "Title,Role,Approver/Id,Approver/Title,Level,RequestType",
-        "Approver",
-        `RequestType eq '${requestTypeFilter}' and Status eq 'Active'`,
-        { column: "Level", isAscending: true },
-        5000,
-        props
-    );
-
-    matrix.forEach((item: any) => {
-
-        approvers.push({
-
-            Id: item.Approver?.Id,
-            Name: item.Approver?.Title,
-            Role: item.Role,
-            Level: item.Level,
-            status: ""
-            
-
-        });
-
-    });
-
-    // ✅ Ensure first approver is pending
-    if (approvers.length > 0) {
-        approvers[0].Status = "Pending";
-    }
-
-    return approvers;
-
-};
+    };
 
     const getCurrencyData = async () => {
         try {
@@ -908,7 +909,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     ? approvers[currentIndex + 1]
                     : null;
 
-            if (nextApprover && !nextApprover.status ) {
+            if (nextApprover && !nextApprover.status) {
                 nextApprover.status = "Pending";
             }
 
@@ -1013,6 +1014,16 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 }
 
                 finalRemark = treasuryPaymentRemarks; // or treasuryRemarks if you want
+                const totalAmountAdd = Number(paidAmount) + Number(totalAmount)
+
+                await sp.web.lists
+                    .getByTitle("VendorMaster")
+                    .items.getById(Number(VendorId))
+                    .update({
+                        ApprovedAmountPaidAmount: totalAmountAdd
+                    })
+
+
             }
 
 
@@ -3186,7 +3197,7 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                     </div>
                 </div>
             </div>
-            {showVendorPopup && (
+            {/* {showVendorPopup && (
                 <div className="popup-overlay">
                     <div className="popup-box">
                         <h3>Vendor Not Found</h3>
@@ -3208,11 +3219,11 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                                 onClick={() => setShowVendorPopup(false)}
                             >
                                 Cancel
-                            </button> */}
+                            </button> 
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
 
         </>
     );

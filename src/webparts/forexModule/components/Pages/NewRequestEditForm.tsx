@@ -2779,10 +2779,10 @@ const Editrequest = (props: IForexModuleProps) => {
                                                         <label className='font'>Document Number</label>
                                                         <input type="text" value={taxResidencyCertificate.DocumentNumber || ""} className="form-control readonly" />
                                                     </div>
-                                                    <div className='col-md-4'>
+                                                    {/* <div className='col-md-4'>
                                                         <label className='font'>Country of Tax Residence</label>
                                                         <input type="text" value={taxResidencyCertificate.CountryOfTaxResidence || ""} className="form-control readonly" />
-                                                    </div>
+                                                    </div> */}
                                                 </div>
                                                 <div className='row mb-20'>
                                                     <div className="col-md-4">
