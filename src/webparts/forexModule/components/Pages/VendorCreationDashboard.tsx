@@ -43,6 +43,38 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
 
             setVendorData(data);
 
+            const declarationData = await sp.getData(
+                "VendorTaxDeclaration",
+                "Id,VendorMasterIdId,ValidityEndDate",
+                "",
+                "",
+                { column: "Id", isAscending: false },
+                5000,
+                props
+            );
+            const today = new Date();
+
+            const finalData = data.map((vendor: any) => {
+
+                const declarations = declarationData.filter(
+                    (d: any) => d.VendorMasterIdId === vendor.Id
+                );
+
+                const isExpired = declarations.some((d: any) => {
+
+                    if (!d.ValidityEndDate) return false;
+
+                    return new Date(d.ValidityEndDate) < new Date();
+                });
+
+                return {
+                    ...vendor,
+                    IsExpired: isExpired
+                };
+            });
+
+            setVendorData(finalData);
+
         } catch (error) {
             console.log(error);
         }
@@ -111,9 +143,11 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
         id: number,
         requestStatus: string
     ) => {
-
+        const item = vendorData.find(
+            (x: any) => x.Id === id
+        );
         if (
-            requestStatus?.toLowerCase() === "sent back"
+            requestStatus?.toLowerCase() === "sent back" || item?.IsExpired
         ) {
 
             history.push(
@@ -433,7 +467,7 @@ const VendorDashboard: React.FC<IForexModuleProps> = (props) => {
                                                 </td>
 
                                                 <td>
-                                                    {(item.ApprovedByIDTChecker === "No" && item.RequestStatus != "Rejected") && (
+                                                    {(item.ApprovedByIDTChecker === "No" && item.RequestStatus != "Rejected") || item.IsExpired && (
 
                                                         <a onClick={() =>
                                                             openRequest(

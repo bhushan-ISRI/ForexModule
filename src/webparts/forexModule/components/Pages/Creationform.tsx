@@ -4,6 +4,7 @@ import SPCRUDOPS from "../../service/BAL/spcrud";
 import { SPHttpClient } from "@microsoft/sp-http";
 import { useHistory } from "react-router-dom";
 import logo from "../../assets/sona-comstarlogo.png";
+import "../Pages/Css/VendorReviewForm.scss";
 
 const CreationForm: React.FC<IForexModuleProps> = (props) => {
     const history = useHistory();
@@ -59,6 +60,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
     // const [otherDocumentFile, setOtherDocumentFile] = React.useState<File | null>(null);
     const [cityName, setCityName] = React.useState("");
     const [stateName, setStateName] = React.useState("");
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
     const loadLookups = async () => {
         const sp = await spCrudOps;
 
@@ -154,24 +156,33 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
 
 
     const saveVendorRequest = async () => {
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+
         const sp = await spCrudOps;
         if (!vendorCode?.trim()) {
             alert("Oracle Vendor Code is mandatory.");
+            setIsSubmitting(false);
             return;
+
         }
 
         if (!vendorName?.trim()) {
             alert("Oracle Vendor Name is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!vendorNameLegal?.trim()) {
             alert("Vendor Name (Legal) is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!address?.trim()) {
             alert("Address Line 1 is mandatory.");
+            setIsSubmitting(false);
             return;
         }
         //       if (!vendorShortName?.trim()) {
@@ -181,11 +192,13 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
 
         if (!currencyId) {
             alert("Currency is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!countryId) {
             alert("Country is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
@@ -196,36 +209,44 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
 
         if (!cityName?.trim()) {
             alert("City is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!postalCode?.trim()) {
             alert("Postal Code is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!beneficiaryName?.trim()) {
             alert("Beneficiary Name is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!bankName?.trim()) {
             alert("Bank Name is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!bankAddress?.trim()) {
             alert("Bank Address is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!accountNumberIBAN?.trim()) {
             alert("Account Number / IBAN is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
         if (!swiftCode?.trim()) {
             alert("SWIFT / BIC Code is mandatory.");
+
+            setIsSubmitting(false);
             return;
         }
         // if (!dtaaApplicable) {
@@ -259,6 +280,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
         // }
         if (vendorInvoice.length === 0) {
             alert("Vendor Invoice / Proforma Invoice is mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
@@ -269,6 +291,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
 
         if (kycFile.length === 0) {
             alert("KYC Documents are mandatory.");
+            setIsSubmitting(false);
             return;
         }
 
@@ -282,6 +305,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             kycFile.some(file => !validateFile(file)) ||
             otherDocumentFile.some(file => !validateFile(file))
         ) {
+            setIsSubmitting(false);
             return;
         }
 
@@ -309,11 +333,13 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
 
             if (duplicateCode) {
                 alert("Oracle Vendor Code already exists.");
+                setIsSubmitting(false);
                 return;
             }
 
             if (duplicateName) {
                 alert("Vendor Name already exists.");
+                setIsSubmitting(false);
                 return;
             }
         }
@@ -411,6 +437,7 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
             );
         }
         alert("Saved Successfully");
+        setIsSubmitting(false);
         history.push(`/VendorCreationForm/${itemId}`);
 
     };
@@ -935,8 +962,28 @@ const CreationForm: React.FC<IForexModuleProps> = (props) => {
                                     </div>
                                 </div>
                                 <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
-                                    <a className="Submit-btn" onClick={saveVendorRequest}>  Save and Sent to Treasury  </a>
-                                    <a className="Exit-btn" onClick={history.goBack}>Exit</a>
+                                    <a
+                                        className={`Submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                                        onClick={!isSubmitting ? saveVendorRequest : undefined}
+                                        style={{
+                                            pointerEvents: isSubmitting ? "none" : "auto",
+                                            opacity: isSubmitting ? 0.7 : 1
+                                        }}
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <i
+                                                    className="fa fa-spinner fa-spin"
+                                                    style={{ marginRight: "6px" }}
+                                                />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            "Save and Sent to Treasury"
+                                        )}
+
+                                    </a>
+                                    <a className="Exit-btn" onClick={() => history.push('/VendorCreationDashboard')}>Exit</a>
                                 </div>
                             </div>
                         </div>

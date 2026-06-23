@@ -60,6 +60,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     const [countries, setCountries] = React.useState<any[]>([]);
     const [dtaaApplicable, setDTAAApplicable] = React.useState("");
     const [requesterStatus, setRequesterStatus] = React.useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     //const [approvalMatrix, setApprovalMatrix] = React.useState<any[]>([]);
 
@@ -184,6 +185,9 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
     };
 
     const handleSubmit = async () => {
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
         try {
             const spsf = await spCrudOps;
             // sp.setup({
@@ -194,26 +198,31 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
 
                 if (!formData.peDocumentNumber?.trim()) {
                     alert("PE Declaration Document Number is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.peDocumentDate) {
                     alert("PE Declaration Document Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.peStartDate) {
                     alert("PE Declaration Validity Start Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.peEndDate) {
                     alert("PE Declaration Validity End Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!peFile) {
                     alert("PE Declaration Document Upload is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
             }
@@ -223,36 +232,43 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
 
                 if (!formData.trcDocumentNumber?.trim()) {
                     alert("TRC Document Number is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.trcDocumentDate) {
                     alert("TRC Document Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.taxIdentificationNumber?.trim()) {
                     alert("Tax Identification Number is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!countryOfTaxResidence) {
                     alert("Country Of Tax Residence is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.trcStartDate) {
                     alert("TRC Validity Start Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.trcEndDate) {
                     alert("TRC Validity End Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!trcDeclarationFile) {
                     alert("TRC Upload Document is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
@@ -263,31 +279,37 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
 
                 if (!formData.form10FDocumentNumber?.trim()) {
                     alert("Form 10F Document Number is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.form10FDocumentDate) {
                     alert("Form 10F Document Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.acknowledgmentNumber?.trim()) {
                     alert("Form 10F Acknowledgment Number is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.form10FStartDate) {
                     alert("Form 10F Validity Start Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!formData.form10FEndDate) {
                     alert("Form 10F Validity End Date is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 if (!form10FFile) {
                     alert("Form 10F Upload Document is mandatory.");
+                    setIsSubmitting(false);
                     return;
                 }
             }
@@ -296,6 +318,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
             // ==============================
             if (!dtaaApplicable) {
                 alert("DTAA Applicable is mandatory");
+                setIsSubmitting(false);
                 return;
             }
             let requeststatus;
@@ -321,7 +344,7 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                 //CurrentApproverId: approvalMatrix.length > 0 ? approvalMatrix[0].Approver.Id : null,
                 ApprovedByIDTChecker: "Yes",
                 DocumentUpload: "Yes",
-                RequestStatus:requeststatus
+                RequestStatus: requeststatus
             };
 
             const vendorResponse = await spsf.updateData(
@@ -511,11 +534,13 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
             }
 
             alert("Vendor Saved Successfully");
+            setIsSubmitting(false);
             history.push("/VendorCreationDashboard");
 
         } catch (error) {
 
             console.log("Save Error", error);
+            setIsSubmitting(false);
             alert("Error while saving");
 
         }
@@ -1326,7 +1351,26 @@ const VendorCreationForm: React.FC<IForexModuleProps> = (props) => {
                                     </p>
                                 </div> */}
                                 <div style={{ margin: "10px", display: "flex", justifyContent: "center", gap: "5px", alignItems: "center" }}>
-                                    <a className="Submit-btn" onClick={handleSubmit}> Submit </a>
+                                    <a
+                                        className={`Submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                                        onClick={!isSubmitting ? handleSubmit : undefined}
+                                        style={{
+                                            pointerEvents: isSubmitting ? "none" : "auto",
+                                            opacity: isSubmitting ? 0.7 : 1
+                                        }}
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <i
+                                                    className="fa fa-spinner fa-spin"
+                                                    style={{ marginRight: "6px" }}
+                                                />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            "Submit"
+                                        )}
+                                    </a>
                                     <a className="Exit-btn" onClick={() => history.push("/VendorCreationDashboard")}>Exit</a>
                                 </div>
                             </div>
