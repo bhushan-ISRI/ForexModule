@@ -1089,16 +1089,16 @@ const ApprovalRequestForm = (props: IForexModuleProps) => {
                 const enteredINRAmount =
                     parseFloat(inrAmount || "0");
 
-                if (enteredINRAmount > totalAmountValue) {
+                // if (enteredINRAmount > totalAmountValue) {
 
-                    alert(
-                        "INR Amount should not exceed the Total Amount"
-                    );
+                //     alert(
+                //         "INR Amount should not exceed the Total Amount"
+                //     );
 
-                    setActionLoading(false);
+                //     setActionLoading(false);
 
-                    return;
-                }
+                //     return;
+                // }
                 if (!foreignAmount || isNaN(Number(foreignAmount))) {
                     alert("Please enter a valid foreign amount");
                     setActionLoading(false);
